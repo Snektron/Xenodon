@@ -22,6 +22,10 @@ add_project_arguments(
 vk_dep = dependency('vulkan')
 glfw_dep = dependency('glfw3', version: '>=3.2.1', fallback: ['glfw3', 'glfw_dep'])
 
+if not cxx.has_header('vulkan/vulkan.h', dependencies: vk_dep)
+    error('Vulkan C headers not found (vulkan/vulkan.h)')
+endif
+
 if not cxx.has_header('vulkan/vulkan.hpp', dependencies: vk_dep)
     error('Vulkan C++ headers not found (vulkan/vulkan.hpp)')
 endif
