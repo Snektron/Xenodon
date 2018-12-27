@@ -4,17 +4,29 @@ project(
     version: '0.0.0',
     default_options: [
         'cpp_std=c++17',
-        'cpp_args=[\'-march=native\']',
         'b_lto=true',
         'buildtype=debugoptimized',
     ]
 )
 
-dependencies = [
-    dependency('threads'),
-    dependency('GL'),
-    dependency('glfw3', version: '>=3.2.1', fallback: ['glfw3', 'glfw_dep'])
-]
+cxx = meson.get_compiler('cpp')
+
+add_project_arguments(
+    [
+        '-march=native',
+        '-DGLFW_INCLUDE_NONE'
+    ],
+    language: 'cpp'
+)
+
+vk_dep = dependency('vulkan')
+glfw_dep = dependency('glfw3', version: '>=3.2.1', fallback: ['glfw3', 'glfw_dep'])
+
+if not cxx.has_header('vulkan/vulkan.hpp', dependencies: vk_dep)
+    error('Vulkan C++ headers not found (vulkan/vulkan.hpp)')
+endif
+
+include = include_directories('src')
 
 sources = [
     'src/main.cpp'
@@ -23,5 +35,6 @@ sources = [
 executable('xenodon', sources,
     install: true,
     build_by_default: true,
-    dependencies: dependencies
+    dependencies: [vk_dep, glfw_dep],
+    include_directories: include
 )
