@@ -1,0 +1,4 @@
+[wrap-git]
+directory = glfw3
+url = https://github.com/henry4k/glfw-meson.git
+revision = 79d29d6
