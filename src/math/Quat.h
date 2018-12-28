@@ -1,5 +1,5 @@
-#ifndef _XENODON_MATH_MAT_H
-#define _XENODON_MATH_MAT_H
+#ifndef _XENODON_MATH_QUAT_H
+#define _XENODON_MATH_QUAT_H
 
 // Most formulas in this file are taken from https://en.wikipedia.org/wiki/Quaternion
 

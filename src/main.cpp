@@ -3,9 +3,7 @@
 #include <cstdlib>
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
-#include "graphics/debug_utility.h"
-#include "utility/utility.h"
-#include "math/Vec.h"
+#include "utility/ScopeGuard.h"
 
 namespace {
     constexpr const char* const APP_NAME = "Xenodon";
@@ -42,7 +40,7 @@ int main() {
         return 1;
     }
 
-    Defer _finalize_glfw([] {
+    ScopeGuard _finalize_glfw([] {
         glfwTerminate();
     });
 
@@ -50,7 +48,7 @@ int main() {
 
     auto* window = glfwCreateWindow(800, 600, "Vulkan test", nullptr, nullptr);
 
-    Defer _finalize_window([window] {
+    ScopeGuard _finalize_window([window] {
         glfwDestroyWindow(window);
     });
 
@@ -63,7 +61,7 @@ int main() {
             "Device: \n"
             "\tapi version: " << props.apiVersion << "\n"
             "\tdevice id: " << props.deviceID << "\n"
-            "\tdevice type: " << props.deviceType << "\n\n";
+            "\tdevice type: " << vk::to_string(props.deviceType) << "\n\n";
     }
 
     while (!glfwWindowShouldClose(window)) {

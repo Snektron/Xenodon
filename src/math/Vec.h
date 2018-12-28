@@ -1,5 +1,5 @@
-#ifndef _XENODON_MATH_MAT_H
-#define _XENODON_MATH_MAT_H
+#ifndef _XENODON_MATH_VEC_H
+#define _XENODON_MATH_VEC_H
 
 #include <array>
 #include <algorithm>

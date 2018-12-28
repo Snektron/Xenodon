@@ -3,7 +3,6 @@
 
 #include <array>
 #include <algorithm>
-#include <type_traits>
 #include "math/Vec.h"
 
 template <typename T, size_t M, size_t N>

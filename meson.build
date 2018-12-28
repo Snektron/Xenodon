@@ -14,7 +14,8 @@ cxx = meson.get_compiler('cpp')
 add_project_arguments(
     [
         '-march=native',
-        '-DGLFW_INCLUDE_NONE'
+        '-DGLFW_INCLUDE_NONE',
+        '-Wno-class-memaccess' # Vulkan-Hpp uses a lot of memcpy
     ],
     language: 'cpp'
 )
