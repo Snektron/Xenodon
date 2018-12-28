@@ -1,55 +1,18 @@
 #include <iostream>
-#include <utility>
+#include <array>
+#include <cstdlib>
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
+#include "graphics/debug_utility.h"
+#include "utility/utility.h"
+#include "math/Vec.h"
 
 namespace {
-    constexpr const char* APP_NAME = "Xenodon";
+    constexpr const char* const APP_NAME = "Xenodon";
     constexpr const uint32_t APP_VERSION = VK_MAKE_VERSION(0, 0, 0);
 }
 
-template <typename F>
-struct Defer {
-    F f;
-
-    Defer(F&& f):
-        f(std::forward<F>(f)) {
-    }
-
-    ~Defer() {
-        this->f();
-    }
-};
-
-constexpr const char* fmt_device_type(vk::PhysicalDeviceType ty) {
-    switch (ty) {
-        case vk::PhysicalDeviceType::eOther:
-            return "Other";
-        case vk::PhysicalDeviceType::eIntegratedGpu:
-            return "Integrated GPU";
-        case vk::PhysicalDeviceType::eDiscreteGpu:
-            return "Discrete GPU";
-        case vk::PhysicalDeviceType::eVirtualGpu:
-            return "Virtual GPU";
-        case vk::PhysicalDeviceType::eCpu:
-            return "CPU";
-    }
-}
-
-int main() {
-    // if (glfwInit() != GLFW_TRUE) {
-    //     std::cerr << "Failed to initialize GLFW" << std::endl;
-    //     return 1;
-    // }
-
-    // Defer _finalize_glfw([] {
-    //     glfwTerminate();
-    // });
-
-    // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-    // auto* window = glfwCreateWindow(800, 600, "Vulkan test", nullptr, nullptr);
-
+vk::UniqueInstance create_instance() {
     auto app_info = vk::ApplicationInfo(
         APP_NAME,
         APP_VERSION,
@@ -70,8 +33,28 @@ int main() {
         extensions
     );
 
-    auto instance = vk::createInstanceUnique(create_info);
+    return vk::createInstanceUnique(create_info);
+}
 
+int main() {
+    if (glfwInit() != GLFW_TRUE) {
+        std::cerr << "Failed to initialize GLFW" << std::endl;
+        return 1;
+    }
+
+    Defer _finalize_glfw([] {
+        glfwTerminate();
+    });
+
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+    auto* window = glfwCreateWindow(800, 600, "Vulkan test", nullptr, nullptr);
+
+    Defer _finalize_window([window] {
+        glfwDestroyWindow(window);
+    });
+
+    auto instance = create_instance();
     auto physical_devices = instance->enumeratePhysicalDevices();
 
     for (auto&& device : physical_devices) {
@@ -80,12 +63,10 @@ int main() {
             "Device: \n"
             "\tapi version: " << props.apiVersion << "\n"
             "\tdevice id: " << props.deviceID << "\n"
-            "\tdevice type: " << fmt_device_type(props.deviceType) << "\n\n";
+            "\tdevice type: " << props.deviceType << "\n\n";
     }
 
-    // while (!glfwWindowShouldClose(window)) {
-    //     glfwPollEvents();
-    // }
-
-    // glfwDestroyWindow(window);
+    while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+    }
 }

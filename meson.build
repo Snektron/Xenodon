@@ -19,7 +19,7 @@ add_project_arguments(
     language: 'cpp'
 )
 
-vk_dep = dependency('vulkan')
+vk_dep = dependency('vulkan', method: 'system')
 glfw_dep = dependency('glfw3', version: '>=3.2.1', fallback: ['glfw3', 'glfw_dep'])
 
 if not cxx.has_header('vulkan/vulkan.h', dependencies: vk_dep)
@@ -33,7 +33,7 @@ endif
 include = include_directories('src')
 
 sources = [
-    'src/main.cpp'
+    'src/main.cpp',
 ]
 
 executable('xenodon', sources,
