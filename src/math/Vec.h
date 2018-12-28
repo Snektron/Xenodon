@@ -227,17 +227,6 @@ constexpr auto generate_vec(F f) {
     return Vec<Result, N>::generate(f);
 }
 
-template <typename... Ts>
-constexpr auto make_vec(Ts&&... args) {
-    using Result = std::common_type_t<Ts...>;
-    return Vec<Result, sizeof...(Ts)>(std::forward<Ts>(args)...);
-}
-
-template <typename T, typename... Ts>
-constexpr auto make_vec(Ts&&... args) {
-    return Vec<T, sizeof...(Ts)>(std::forward<Ts>(args)...);
-}
-
 template <typename Os, typename T, size_t N>
 Os& operator<<(Os& os, const Vec<T, N>& v) {
     os << '(';

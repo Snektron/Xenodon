@@ -83,10 +83,10 @@ struct Quat {
     constexpr Quat<T>& normalize();
 
     template <typename U>
-    constexpr Quat<T>& mix(const Quat<U>& other);
+    constexpr Quat<T>& lerp(const Quat<U>& other);
 
     template <typename U>
-    constexpr Quat<T>& smix(const Quat<U>& other);
+    constexpr Quat<T>& slerp(const Quat<U>& other);
 
     constexpr Vec3<T> forward() const;
 
@@ -224,13 +224,13 @@ constexpr auto normalize(const Quat<T>& q) {
 }
 
 template <typename T, typename U, typename V>
-constexpr auto mix(const Quat<T>& lhs, const Quat<U>& rhs, V t) {
+constexpr auto lerp(const Quat<T>& lhs, const Quat<U>& rhs, V t) {
     return lhs + t * (rhs - lhs);
 }
 
 // See https://en.wikipedia.org/wiki/Slerp
 template <typename T, typename U, typename V>
-constexpr auto smix(const Quat<T>& lhs, const Quat<U>& rhs, V t) {
+constexpr auto slerp(const Quat<T>& lhs, const Quat<U>& rhs, V t) {
     auto dot = ::dot(lhs.vector, rhs.vector);
     auto q = normalize(rhs);
 
@@ -240,7 +240,7 @@ constexpr auto smix(const Quat<T>& lhs, const Quat<U>& rhs, V t) {
     }
 
     if (dot > static_cast<T>(SLERP_THRESHOLD))
-        return normalize(mix(lhs, q, t));
+        return normalize(lerp(lhs, q, t));
 
     auto theta_0 = std::acos(dot);
     auto theta = theta_0 * t;
@@ -304,14 +304,14 @@ constexpr Quat<T>& Quat<T>::normalize() {
 
 template <typename T>
 template <typename U>
-constexpr Quat<T>& Quat<T>::mix(const Quat<U>& other) {
-    return *this = mix(*this, other);
+constexpr Quat<T>& Quat<T>::lerp(const Quat<U>& other) {
+    return *this = lerp(*this, other);
 }
 
 template <typename T>
 template <typename U>
-constexpr Quat<T>& Quat<T>::smix(const Quat<U>& other) {
-    return *this = smix(*this, other);
+constexpr Quat<T>& Quat<T>::slerp(const Quat<U>& other) {
+    return *this = slerp(*this, other);
 }
 
 template <typename T>
