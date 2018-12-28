@@ -99,22 +99,6 @@ struct Quat {
     constexpr Mat4<T> to_view_matrix() const;
 };
 
-
-template <typename T>
-auto make_quat(const T& x, const T& y, const T& z, const T& w) {
-    return Quat<T>(x, y, z, w);
-}
-
-template <typename T>
-auto make_quat(const Vec4<T>& v) {
-    return Quat<T>(v);
-}
-
-template <typename T>
-auto make_quat(const Vec3<T>& v, const T& s) {
-    return Quat<T>(v, s);
-}
-
 template <typename T, typename U>
 constexpr auto operator+(const Quat<T>& lhs, const Quat<U>& rhs) {
     return make_quat(lhs.elements + rhs.elements);
