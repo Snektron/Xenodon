@@ -1,9 +1,10 @@
 #include <iostream>
 #include <array>
 #include <stdexcept>
-#include <optional>
 #include <utility>
 #include <algorithm>
+#include <limits>
+#include <cstring>
 #include <cstdlib>
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
@@ -12,6 +13,18 @@
 namespace {
     constexpr const char* const APP_NAME = "Xenodon";
     constexpr const uint32_t APP_VERSION = VK_MAKE_VERSION(0, 0, 0);
+
+    const vk::Extent2D WINDOW_SIZE = {800, 600};
+
+    constexpr const std::array DEVICE_EXTENSIONS = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
+    struct PickedDeviceInfo {
+        vk::PhysicalDevice physical_device;
+        uint32_t graphics_queue_index;
+        uint32_t present_queue_index;
+    };
 }
 
 vk::UniqueInstance create_instance() {
@@ -38,18 +51,50 @@ vk::UniqueInstance create_instance() {
     return vk::createInstanceUnique(create_info);
 }
 
-std::tuple<vk::PhysicalDevice, uint32_t, uint32_t> pick_physical_device(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
+PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
+    auto check_discrete = [](auto&& device) {
+        return device.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu;
+    };
+
+    auto check_extensions = [begin = DEVICE_EXTENSIONS.begin(), end = DEVICE_EXTENSIONS.end()](auto&& device) {
+        auto exts = device.enumerateDeviceExtensionProperties();
+
+        for (auto&& ext : exts) {
+            auto cmp_ext = [&](auto&& name) {
+                return std::strcmp(name, ext.extensionName) == 0;
+            };
+
+            if (std::find_if(begin, end, cmp_ext) != DEVICE_EXTENSIONS.end())
+                return true;
+        }
+
+        return false;
+    };
+
+    auto check_surface_caps = [&](auto&& device) -> bool {
+        auto formats = device.getSurfaceFormatsKHR(surface.get());
+        auto present_modes = device.getSurfacePresentModesKHR(surface.get());
+
+        return !formats.empty() && !present_modes.empty();
+    };
+
     auto physical_devices = instance->enumeratePhysicalDevices();
 
-    auto graphics_supported = std::vector<size_t>();
-    auto present_supported = std::vector<size_t>();
+    auto graphics_supported = std::vector<uint32_t>();
+    auto present_supported = std::vector<uint32_t>();
 
     for (auto&& device : physical_devices) {
+        if (!check_discrete(device)
+            || !check_extensions(device)
+            || !check_surface_caps(device))
+            continue;
+
         graphics_supported.clear();
         present_supported.clear();
         auto queue_families = device.getQueueFamilyProperties();
 
-        for (size_t i = 0; i < queue_families.size(); ++i) {
+        uint32_t num_queues = static_cast<uint32_t>(queue_families.size());
+        for (uint32_t i = 0; i < num_queues; ++i) {
             const auto& props = queue_families[i];
             if (props.queueFlags & vk::QueueFlagBits::eGraphics)
                 graphics_supported.push_back(i);
@@ -66,8 +111,8 @@ std::tuple<vk::PhysicalDevice, uint32_t, uint32_t> pick_physical_device(vk::Uniq
 
         // Check if theres a queue with both supported
         while (git != graphics_supported.end() && pit != present_supported.end()) {
-            size_t g = *git;
-            size_t p = *pit;
+            uint32_t g = *git;
+            uint32_t p = *pit;
 
             if (g == p)
                 return {device, g, p};
@@ -85,7 +130,7 @@ std::tuple<vk::PhysicalDevice, uint32_t, uint32_t> pick_physical_device(vk::Uniq
 }
 
 template <typename... QueueIndices>
-vk::UniqueDevice initialize_device(const vk::PhysicalDevice& physical_device, QueueIndices&&... indices) {
+vk::UniqueDevice initialize_device(vk::PhysicalDevice physical_device, QueueIndices&&... indices) {
     float priority = 1.0f;
 
     auto queue_create_infos = std::array{
@@ -100,7 +145,11 @@ vk::UniqueDevice initialize_device(const vk::PhysicalDevice& physical_device, Qu
     auto device_create_info = vk::DeviceCreateInfo(
         {},
         queue_create_infos.size(),
-        queue_create_infos.data()
+        queue_create_infos.data(),
+        0,
+        nullptr,
+        DEVICE_EXTENSIONS.size(),
+        DEVICE_EXTENSIONS.data()
     );
 
     return physical_device.createDeviceUnique(device_create_info);
@@ -114,6 +163,93 @@ vk::UniqueSurfaceKHR create_surface(vk::UniqueInstance& instance, GLFWwindow* wi
     return vk::UniqueSurfaceKHR(vk::SurfaceKHR(surface));
 }
 
+vk::SurfaceFormatKHR pick_surface_format(vk::PhysicalDevice physical_device, vk::SurfaceKHR& surface) {
+    auto formats = physical_device.getSurfaceFormatsKHR(surface);
+    auto preferred_format = vk::SurfaceFormatKHR{vk::Format::eR8G8B8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
+
+    // Can we pick any format?
+    if (formats.size() == 1 && formats[0].format == vk::Format::eUndefined)
+        return preferred_format;
+
+    // Check if the preferred format is available
+    for (auto&& format : formats) {
+        if (format == preferred_format)
+            return format;
+    }
+
+    // Pick any format
+    return formats[0];
+}
+
+vk::PresentModeKHR pick_present_mode(vk::PhysicalDevice physical_device, vk::SurfaceKHR& surface) {
+    auto present_modes = physical_device.getSurfacePresentModesKHR(surface);
+
+    // check for triple buffering support
+    if (std::find(present_modes.begin(), present_modes.end(), vk::PresentModeKHR::eMailbox) != present_modes.end())
+        return vk::PresentModeKHR::eMailbox;
+
+    // Immediate mode
+    if (std::find(present_modes.begin(), present_modes.end(), vk::PresentModeKHR::eImmediate) != present_modes.end())
+        return vk::PresentModeKHR::eMailbox;
+
+    // Double buffering, guaranteed to be available but not always supported
+    return vk::PresentModeKHR::eFifo;
+}
+
+vk::Extent2D pick_swap_extent(vk::PhysicalDevice physical_device, vk::SurfaceKHR& surface, const vk::Extent2D& window_size) {
+    auto caps = physical_device.getSurfaceCapabilitiesKHR(surface);
+
+    if (caps.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+        return caps.currentExtent;
+    } else {
+        return {
+            std::clamp(caps.minImageExtent.width, caps.maxImageExtent.width, window_size.width),
+            std::clamp(caps.minImageExtent.height, caps.maxImageExtent.height, window_size.height),
+        };
+    }
+}
+
+vk::UniqueSwapchainKHR create_swap_chain(PickedDeviceInfo& picked, vk::Device& device, vk::SurfaceKHR& surface, const vk::Extent2D& window_size) {
+    auto surface_format = pick_surface_format(picked.physical_device, surface);
+    auto present_mode = pick_present_mode(picked.physical_device, surface);
+    auto extent = pick_swap_extent(picked.physical_device, surface, window_size);
+
+    auto caps = picked.physical_device.getSurfaceCapabilitiesKHR(surface);
+
+    uint32_t image_count = caps.minImageCount + 1;
+    if (caps.maxImageCount > 0)
+        image_count = std::min(caps.maxImageCount, image_count);
+
+    auto create_info = vk::SwapchainCreateInfoKHR{
+        {},
+        surface,
+        image_count,
+        surface_format.format,
+        surface_format.colorSpace,
+        extent,
+        1,
+        vk::ImageUsageFlagBits::eColorAttachment,
+        vk::SharingMode::eExclusive,
+        0,
+        nullptr,
+        caps.currentTransform,
+        vk::CompositeAlphaFlagBitsKHR::eOpaque,
+        present_mode,
+        true,
+        nullptr
+    };
+
+    auto queue_indices = std::array{picked.graphics_queue_index, picked.present_queue_index};
+
+    if (picked.graphics_queue_index != picked.present_queue_index) {
+        create_info.imageSharingMode = vk::SharingMode::eConcurrent;
+        create_info.queueFamilyIndexCount = queue_indices.size();
+        create_info.pQueueFamilyIndices = queue_indices.data();
+    }
+
+    return device.createSwapchainKHRUnique(create_info);
+}
+
 int main() {
     if (glfwInit() != GLFW_TRUE) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -125,8 +261,15 @@ int main() {
     });
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    auto* window = glfwCreateWindow(800, 600, "Vulkan test", nullptr, nullptr);
+    auto* window = glfwCreateWindow(
+        static_cast<int>(WINDOW_SIZE.width),
+        static_cast<int>(WINDOW_SIZE.height),
+        "Vulkan test",
+        nullptr,
+        nullptr
+    );
 
     auto _finalize_window = ScopeGuard([window] {
         glfwDestroyWindow(window);
@@ -134,11 +277,12 @@ int main() {
 
     auto instance = create_instance();
     auto surface = create_surface(instance, window);
-    auto [physical_device, graphics_queue_index, present_queue_index] = pick_physical_device(instance, surface);
-    std::cout << "Picked device '" << physical_device.getProperties().deviceName << "'\n";
-    auto device = initialize_device(physical_device, graphics_queue_index, present_queue_index);
-    auto graphics_queue = device->getQueue(graphics_queue_index, 0);
-    auto present_queue = device->getQueue(present_queue_index, 0);
+    auto picked = pick_physical_device(instance, surface);
+    std::cout << "Picked device '" << picked.physical_device.getProperties().deviceName << "'\n";
+    auto device = initialize_device(picked.physical_device, picked.graphics_queue_index, picked.present_queue_index);
+    auto graphics_queue = device->getQueue(picked.graphics_queue_index, 0);
+    auto present_queue = device->getQueue(picked.present_queue_index, 0);
+    auto swapchain = create_swap_chain(picked, device.get(), surface.get(), WINDOW_SIZE);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();

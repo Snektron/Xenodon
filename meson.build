@@ -15,10 +15,15 @@ add_project_arguments(
     [
         '-march=native',
         '-DGLFW_INCLUDE_NONE',
-        '-Wno-class-memaccess' # Vulkan-Hpp uses a lot of memcpy
+        '-Wconversion'
     ],
     language: 'cpp'
 )
+
+# Silence gcc warnings about vulkan-hpp's memcpy
+if cxx.get_id() == 'gcc'
+    add_project_arguments(['-Wno-class-memaccess'], language: 'cpp')
+endif
 
 vk_dep = dependency('vulkan', method: 'system')
 glfw_dep = dependency('glfw3', version: '>=3.2.1', fallback: ['glfw3', 'glfw_dep'])
