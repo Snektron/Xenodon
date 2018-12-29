@@ -1,5 +1,9 @@
 #include <iostream>
 #include <array>
+#include <stdexcept>
+#include <optional>
+#include <utility>
+#include <algorithm>
 #include <cstdlib>
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
@@ -34,13 +38,89 @@ vk::UniqueInstance create_instance() {
     return vk::createInstanceUnique(create_info);
 }
 
+std::tuple<vk::PhysicalDevice, uint32_t, uint32_t> pick_physical_device(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
+    auto physical_devices = instance->enumeratePhysicalDevices();
+
+    auto graphics_supported = std::vector<size_t>();
+    auto present_supported = std::vector<size_t>();
+
+    for (auto&& device : physical_devices) {
+        graphics_supported.clear();
+        present_supported.clear();
+        auto queue_families = device.getQueueFamilyProperties();
+
+        for (size_t i = 0; i < queue_families.size(); ++i) {
+            const auto& props = queue_families[i];
+            if (props.queueFlags & vk::QueueFlagBits::eGraphics)
+                graphics_supported.push_back(i);
+
+            if (device.getSurfaceSupportKHR(i, surface.get()))
+                present_supported.push_back(i);
+        }
+
+        if (graphics_supported.empty() || present_supported.empty())
+            continue;
+
+        auto git = graphics_supported.begin();
+        auto pit = present_supported.begin();
+
+        // Check if theres a queue with both supported
+        while (git != graphics_supported.end() && pit != present_supported.end()) {
+            size_t g = *git;
+            size_t p = *pit;
+
+            if (g == p)
+                return {device, g, p};
+            else if (g < p)
+                ++git;
+            else
+                ++pit;
+        }
+
+        // No queue with both supported, but both are supported in any queue, so just take the first of both
+        return {device, graphics_supported[0], present_supported[0]};
+    }
+
+    throw std::runtime_error("Failed to find a suitable physical device");
+}
+
+template <typename... QueueIndices>
+vk::UniqueDevice initialize_device(const vk::PhysicalDevice& physical_device, QueueIndices&&... indices) {
+    float priority = 1.0f;
+
+    auto queue_create_infos = std::array{
+        vk::DeviceQueueCreateInfo(
+            {},
+            indices,
+            1,
+            &priority
+        )...
+    };
+
+    auto device_create_info = vk::DeviceCreateInfo(
+        {},
+        queue_create_infos.size(),
+        queue_create_infos.data()
+    );
+
+    return physical_device.createDeviceUnique(device_create_info);
+}
+
+vk::UniqueSurfaceKHR create_surface(vk::UniqueInstance& instance, GLFWwindow* window) {
+    VkSurfaceKHR surface;
+    if (glfwCreateWindowSurface(VkInstance(instance.get()), window, nullptr, &surface) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create window surface");
+
+    return vk::UniqueSurfaceKHR(vk::SurfaceKHR(surface));
+}
+
 int main() {
     if (glfwInit() != GLFW_TRUE) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return 1;
     }
 
-    ScopeGuard _finalize_glfw([] {
+    auto _finalize_glfw = ScopeGuard([] {
         glfwTerminate();
     });
 
@@ -48,21 +128,17 @@ int main() {
 
     auto* window = glfwCreateWindow(800, 600, "Vulkan test", nullptr, nullptr);
 
-    ScopeGuard _finalize_window([window] {
+    auto _finalize_window = ScopeGuard([window] {
         glfwDestroyWindow(window);
     });
 
     auto instance = create_instance();
-    auto physical_devices = instance->enumeratePhysicalDevices();
-
-    for (auto&& device : physical_devices) {
-        auto props = device.getProperties();
-        std::cout << 
-            "Device: \n"
-            "\tapi version: " << props.apiVersion << "\n"
-            "\tdevice id: " << props.deviceID << "\n"
-            "\tdevice type: " << vk::to_string(props.deviceType) << "\n\n";
-    }
+    auto surface = create_surface(instance, window);
+    auto [physical_device, graphics_queue_index, present_queue_index] = pick_physical_device(instance, surface);
+    std::cout << "Picked device '" << physical_device.getProperties().deviceName << "'\n";
+    auto device = initialize_device(physical_device, graphics_queue_index, present_queue_index);
+    auto graphics_queue = device->getQueue(graphics_queue_index, 0);
+    auto present_queue = device->getQueue(present_queue_index, 0);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
