@@ -25,6 +25,12 @@ namespace {
         uint32_t graphics_queue_index;
         uint32_t present_queue_index;
     };
+
+    struct SwapchainInfo {
+        vk::UniqueSwapchainKHR swapchain;
+        vk::Format format;
+        vk::Extent2D extent;
+    };
 }
 
 vk::UniqueInstance create_instance() {
@@ -129,30 +135,39 @@ PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::UniqueSu
     throw std::runtime_error("Failed to find a suitable physical device");
 }
 
-template <typename... QueueIndices>
-vk::UniqueDevice initialize_device(vk::PhysicalDevice physical_device, QueueIndices&&... indices) {
+vk::UniqueDevice initialize_device(PickedDeviceInfo& picked) {
     float priority = 1.0f;
 
-    auto queue_create_infos = std::array{
-        vk::DeviceQueueCreateInfo(
-            {},
-            indices,
-            1,
-            &priority
-        )...
+    auto queue_create_infos = std::array<vk::DeviceQueueCreateInfo, 2>();
+    uint32_t queues = 1;
+
+    queue_create_infos[0] = vk::DeviceQueueCreateInfo{
+        {},
+        picked.graphics_queue_index,
+        1,
+        &priority
     };
 
+    if (picked.graphics_queue_index != picked.present_queue_index) {
+        queues = 2;
+        queue_create_infos[1] = vk::DeviceQueueCreateInfo{
+            {},
+            picked.present_queue_index,
+            1,
+            &priority
+        };
+    }
     auto device_create_info = vk::DeviceCreateInfo(
         {},
-        queue_create_infos.size(),
+        queues,
         queue_create_infos.data(),
         0,
         nullptr,
-        DEVICE_EXTENSIONS.size(),
+        static_cast<uint32_t>(DEVICE_EXTENSIONS.size()),
         DEVICE_EXTENSIONS.data()
     );
 
-    return physical_device.createDeviceUnique(device_create_info);
+    return picked.physical_device.createDeviceUnique(device_create_info);
 }
 
 vk::UniqueSurfaceKHR create_surface(vk::UniqueInstance& instance, GLFWwindow* window) {
@@ -165,7 +180,7 @@ vk::UniqueSurfaceKHR create_surface(vk::UniqueInstance& instance, GLFWwindow* wi
 
 vk::SurfaceFormatKHR pick_surface_format(vk::PhysicalDevice physical_device, vk::SurfaceKHR& surface) {
     auto formats = physical_device.getSurfaceFormatsKHR(surface);
-    auto preferred_format = vk::SurfaceFormatKHR{vk::Format::eR8G8B8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
+    auto preferred_format = vk::SurfaceFormatKHR{vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
 
     // Can we pick any format?
     if (formats.size() == 1 && formats[0].format == vk::Format::eUndefined)
@@ -209,7 +224,7 @@ vk::Extent2D pick_swap_extent(vk::PhysicalDevice physical_device, vk::SurfaceKHR
     }
 }
 
-vk::UniqueSwapchainKHR create_swap_chain(PickedDeviceInfo& picked, vk::Device& device, vk::SurfaceKHR& surface, const vk::Extent2D& window_size) {
+SwapchainInfo create_swap_chain(PickedDeviceInfo& picked, vk::Device& device, vk::SurfaceKHR& surface, const vk::Extent2D& window_size) {
     auto surface_format = pick_surface_format(picked.physical_device, surface);
     auto present_mode = pick_present_mode(picked.physical_device, surface);
     auto extent = pick_swap_extent(picked.physical_device, surface, window_size);
@@ -243,11 +258,33 @@ vk::UniqueSwapchainKHR create_swap_chain(PickedDeviceInfo& picked, vk::Device& d
 
     if (picked.graphics_queue_index != picked.present_queue_index) {
         create_info.imageSharingMode = vk::SharingMode::eConcurrent;
-        create_info.queueFamilyIndexCount = queue_indices.size();
+        create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_indices.size());
         create_info.pQueueFamilyIndices = queue_indices.data();
     }
 
-    return device.createSwapchainKHRUnique(create_info);
+    return {device.createSwapchainKHRUnique(create_info), surface_format.format, extent};
+}
+
+std::vector<vk::UniqueImageView> initialize_views(vk::Device& device, vk::SwapchainKHR& swapchain, vk::Format format) {
+    auto swapchain_images = device.getSwapchainImagesKHR(swapchain);
+    auto image_views = std::vector<vk::UniqueImageView>(swapchain_images.size());
+
+    auto component_mapping = vk::ComponentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA);
+    auto sub_resource_range = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+    for (auto&& image : swapchain_images) {
+        auto create_info = vk::ImageViewCreateInfo{
+            {},
+            image,
+            vk::ImageViewType::e2D,
+            format,
+            component_mapping,
+            sub_resource_range
+        };
+
+        image_views.push_back(device.createImageViewUnique(create_info));
+    }
+
+    return image_views;
 }
 
 int main() {
@@ -279,10 +316,11 @@ int main() {
     auto surface = create_surface(instance, window);
     auto picked = pick_physical_device(instance, surface);
     std::cout << "Picked device '" << picked.physical_device.getProperties().deviceName << "'\n";
-    auto device = initialize_device(picked.physical_device, picked.graphics_queue_index, picked.present_queue_index);
+    auto device = initialize_device(picked);
     auto graphics_queue = device->getQueue(picked.graphics_queue_index, 0);
     auto present_queue = device->getQueue(picked.present_queue_index, 0);
-    auto swapchain = create_swap_chain(picked, device.get(), surface.get(), WINDOW_SIZE);
+    auto [swapchain, format, extent] = create_swap_chain(picked, device.get(), surface.get(), WINDOW_SIZE);
+    auto image_views = initialize_views(device.get(), swapchain.get(), format);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
