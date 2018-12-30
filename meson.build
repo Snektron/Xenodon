@@ -9,7 +9,19 @@ project(
     ]
 )
 
-cxx = meson.get_compiler('cpp')
+# Project sources & resources
+
+sources = [
+    'src/main.cpp',
+]
+
+shaders = [
+    'resources/test.vert'
+]
+
+resources = [
+    'resources/test.txt'
+]
 
 add_project_arguments(
     [
@@ -19,6 +31,8 @@ add_project_arguments(
     ],
     language: 'cpp'
 )
+
+cxx = meson.get_compiler('cpp')
 
 # Silence gcc warnings about vulkan-hpp's memcpy
 if cxx.get_id() == 'gcc'
@@ -32,19 +46,51 @@ if not cxx.has_header('vulkan/vulkan.h', dependencies: vk_dep)
     error('Vulkan C headers not found (vulkan/vulkan.h)')
 endif
 
+# Check if vulkan-hpp is installed.
 if not cxx.has_header('vulkan/vulkan.hpp', dependencies: vk_dep)
     error('Vulkan C++ headers not found (vulkan/vulkan.hpp)')
 endif
 
-include = include_directories('src')
+# GLSL compiler
+glslc = find_program('glslangValidator')
+spv_gen = generator(
+    glslc,
+    output: '@PLAINNAME@.spv',
+    arguments: ['-V', '@INPUT@', '-o', '@OUTPUT@']
+)
 
-sources = [
-    'src/main.cpp',
-]
+# Compile resources into the binary
+generate_resources = find_program('tools/generate_resources.py')
+resources_command = [generate_resources, '-i', '@OUTPUT0@', '-s', '@OUTPUT1@']
+inputs = []
+
+foreach resource : resources
+    resources_command += ['-f', '@INPUT@0@@'.format(inputs.length()), resource]
+    inputs += resource
+endforeach
+
+foreach shader : shaders
+    resources_command += ['-f', '@INPUT@0@@'.format(inputs.length()), shader]
+    inputs += spv_gen.process(shader)
+endforeach
+
+resources_target = custom_target(
+    'gen-resources',
+    input: inputs,
+    output: ['resources.h', 'resources.S'],
+    command: resources_command
+)
+
+resources_dep = declare_dependency(
+    sources: resources_target
+)
+
+# Main binary
+include = include_directories('src')
 
 executable('xenodon', sources,
     install: true,
     build_by_default: true,
-    dependencies: [vk_dep, glfw_dep],
+    dependencies: [vk_dep, glfw_dep, resources_dep],
     include_directories: include
 )
