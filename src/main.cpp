@@ -57,7 +57,7 @@ vk::UniqueInstance create_instance() {
     return vk::createInstanceUnique(create_info);
 }
 
-PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
+PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::SurfaceKHR& surface) {
     auto check_discrete = [](auto&& device) {
         return device.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu;
     };
@@ -78,8 +78,8 @@ PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::UniqueSu
     };
 
     auto check_surface_caps = [&](auto&& device) -> bool {
-        auto formats = device.getSurfaceFormatsKHR(surface.get());
-        auto present_modes = device.getSurfacePresentModesKHR(surface.get());
+        auto formats = device.getSurfaceFormatsKHR(surface);
+        auto present_modes = device.getSurfacePresentModesKHR(surface);
 
         return !formats.empty() && !present_modes.empty();
     };
@@ -105,7 +105,7 @@ PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::UniqueSu
             if (props.queueFlags & vk::QueueFlagBits::eGraphics)
                 graphics_supported.push_back(i);
 
-            if (device.getSurfaceSupportKHR(i, surface.get()))
+            if (device.getSurfaceSupportKHR(i, surface))
                 present_supported.push_back(i);
         }
 
@@ -175,7 +175,8 @@ vk::UniqueSurfaceKHR create_surface(vk::UniqueInstance& instance, GLFWwindow* wi
     if (glfwCreateWindowSurface(VkInstance(instance.get()), window, nullptr, &surface) != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
 
-    return vk::UniqueSurfaceKHR(vk::SurfaceKHR(surface));
+    vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderStatic> deleter(instance.get());
+    return vk::UniqueSurfaceKHR(vk::SurfaceKHR(surface), deleter);
 }
 
 vk::SurfaceFormatKHR pick_surface_format(vk::PhysicalDevice physical_device, vk::SurfaceKHR& surface) {
@@ -314,8 +315,8 @@ int main() {
 
     auto instance = create_instance();
     auto surface = create_surface(instance, window);
-    auto picked = pick_physical_device(instance, surface);
-    std::cout << "Picked device '" << picked.physical_device.getProperties().deviceName << "'\n";
+    auto picked = pick_physical_device(instance, surface.get());
+    std::cout << "Picked device '" << picked.physical_device.getProperties().deviceName << '\'' << std::endl;
     auto device = initialize_device(picked);
     auto graphics_queue = device->getQueue(picked.graphics_queue_index, 0);
     auto present_queue = device->getQueue(picked.present_queue_index, 0);
