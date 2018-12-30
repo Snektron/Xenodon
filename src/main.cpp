@@ -205,7 +205,7 @@ vk::PresentModeKHR pick_present_mode(vk::PhysicalDevice physical_device, vk::Sur
 
     // Immediate mode
     if (std::find(present_modes.begin(), present_modes.end(), vk::PresentModeKHR::eImmediate) != present_modes.end())
-        return vk::PresentModeKHR::eMailbox;
+        return vk::PresentModeKHR::eImmediate;
 
     // Double buffering, guaranteed to be available but not always supported
     return vk::PresentModeKHR::eFifo;
