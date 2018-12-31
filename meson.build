@@ -16,11 +16,9 @@ sources = [
 ]
 
 shaders = [
-    'resources/test.vert'
 ]
 
 resources = [
-    'resources/test.txt'
 ]
 
 add_project_arguments(

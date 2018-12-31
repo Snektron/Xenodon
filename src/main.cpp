@@ -9,6 +9,7 @@
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 #include "utility/ScopeGuard.h"
+#include "resources.h"
 
 namespace {
     constexpr const char* const APP_NAME = "Xenodon";
@@ -289,6 +290,8 @@ std::vector<vk::UniqueImageView> initialize_views(vk::Device& device, vk::Swapch
 }
 
 int main() {
+    std::cout << resources::open("resources/test.txt") << std::endl;
+
     if (glfwInit() != GLFW_TRUE) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return 1;

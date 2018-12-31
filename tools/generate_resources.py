@@ -7,22 +7,14 @@ header_template = """\
 #ifndef {guard}
 #define {guard}
 
-namespace {namespace} {{
-    namespace detail {{
-        // Constexpr variant of strcmp
-        constexpr bool str_eq(const char* a, const char* b) {{
-            while (*a && *b) {{
-                if (*a != *b)
-                    return false;
-                ++a;
-                ++b;
-            }}
+#include <string_view>
 
-            return *a == *b;
-        }}
+namespace {namespace} {{
+    namespace externals {{
+{externals}
     }}
 
-    constexpr const char* open(const char* path) {{
+    constexpr std::string_view open(const std::string_view& path) {{
 {cases}
         {on_error}
     }}
@@ -32,8 +24,18 @@ namespace {namespace} {{
 """
 
 case_template = """\
-if (detail::str_eq(path, {resource})) {{
-            return {symbol};
+if (path == "{alias}") {{
+{indent}    return std::string_view(externals::{symbol}, {size});
+"""
+
+extern_template = '{indent}extern "C" const char {symbol}[];'
+
+asm_template = """\
+# {alias}
+    .global {symbol}
+    .align 8
+{symbol}:
+    .incbin "{file}"
 """
 
 parser = argparse.ArgumentParser(description = 'Generate asm file and header from resources')
@@ -46,34 +48,54 @@ def mangle(name):
     return '_' + name.replace('/', '_').replace('.', '_')
 
 def generate_header(f):
+    indent = "        "
     cases = ""
+    externals = ""
+
     first = True
     for (path, alias) in args.resources:
-        cases += "        "
+        cases += indent
+        symbol = mangle(alias)
         if first:
             first = False
         else:
-            cases += "} else "
+            cases += '} else '
+            externals += '\n'
         cases += case_template.format(
-            resource = alias,
-            symbol = mangle(alias)
+            alias = alias,
+            indent = indent,
+            symbol = symbol,
+            size = os.path.getsize(path)
+        )
+
+        externals += extern_template.format(
+            indent = indent,
+            symbol = symbol
         )
 
     if len(args.resources) > 0:
-        cases += "        }"
+        cases += indent + '}'
 
     header = header_template.format(
         guard = '_RESOURCES_H',
         namespace = 'resources',
+        externals = externals,
         cases = cases,
-        on_error = 'return nullptr;'
+        on_error = 'return std::string_view();'
     )
 
     f.write(header.encode())
 
+def generate_asm(f):
+    asm = '\n'.join([asm_template.format(alias = alias, symbol = mangle(alias), file = path) for (path, alias) in args.resources])
+    f.write(asm.encode())
+
+if args.resources is None:
+    args.resources = []
+
 if args.asm_output is not None:
     with open(args.asm_output, 'wb') as f:
-        f.write(b'#asm output')
+        generate_asm(f)
 
 if args.header_output is not None:
     with open(args.header_output, 'wb') as f:
