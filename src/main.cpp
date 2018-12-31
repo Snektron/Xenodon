@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <limits>
 #include <string_view>
+#include <vector>
 #include <cstring>
 #include <cstdlib>
 #include <vulkan/vulkan.hpp>
@@ -276,7 +277,7 @@ SwapchainInfo create_swap_chain(PickedDeviceInfo& picked, vk::Device& device, vk
 
 std::vector<vk::UniqueImageView> initialize_views(vk::Device& device, vk::SwapchainKHR& swapchain, vk::Format format) {
     auto swapchain_images = device.getSwapchainImagesKHR(swapchain);
-    auto image_views = std::vector<vk::UniqueImageView>(swapchain_images.size());
+    auto image_views = std::vector<vk::UniqueImageView>();
 
     auto component_mapping = vk::ComponentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA);
     auto sub_resource_range = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
@@ -296,7 +297,7 @@ std::vector<vk::UniqueImageView> initialize_views(vk::Device& device, vk::Swapch
     return image_views;
 }
 
-vk::UniqueShaderModule create_shader(const vk::Device& device, const std::string_view& code) {
+vk::UniqueShaderModule create_shader(vk::Device device, const std::string_view& code) {
     return device.createShaderModuleUnique(vk::ShaderModuleCreateInfo(
         {},
         code.size(),
@@ -313,7 +314,7 @@ vk::PipelineShaderStageCreateInfo create_shader_info(const vk::ShaderModule& sha
     );
 }
 
-Pipeline create_pipeline(const vk::Device& device, const vk::Extent2D& extent, vk::Format format) {
+Pipeline create_pipeline(vk::Device device, const vk::Extent2D& extent, vk::Format format) {
     auto vertex_shader = create_shader(device, resources::open("resources/test.vert"));
     auto fragment_shader = create_shader(device, resources::open("resources/test.frag"));
 
@@ -364,12 +365,23 @@ Pipeline create_pipeline(const vk::Device& device, const vk::Extent2D& extent, v
         &attachment_ref
     );
 
+    auto dependency = vk::SubpassDependency(
+        VK_SUBPASS_EXTERNAL,
+        0,
+        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        vk::AccessFlags(),
+        vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentRead
+    );
+
     auto render_pass_info = vk::RenderPassCreateInfo(
         {},
         1,
         &color_attachment,
         1,
-        &subpass
+        &subpass,
+        1,
+        &dependency
     );
 
     auto render_pass = device.createRenderPassUnique(render_pass_info);
@@ -396,6 +408,42 @@ Pipeline create_pipeline(const vk::Device& device, const vk::Extent2D& extent, v
         std::move(render_pass),
         device.createGraphicsPipelineUnique(vk::PipelineCache(), pipeline_info)
     };
+}
+
+std::vector<vk::UniqueFramebuffer> create_frame_buffers(vk::Device device, const std::vector<vk::UniqueImageView>& views, const Pipeline& pipeline, const vk::Extent2D& extent) {
+    auto frame_buffers = std::vector<vk::UniqueFramebuffer>(views.size());
+
+    for (size_t i = 0; i < views.size(); ++i) {
+        auto create_info = vk::FramebufferCreateInfo(
+            {},
+            pipeline.render_pass.get(),
+            1,
+            &views[i].get(),
+            extent.width,
+            extent.height,
+            1
+        );
+
+        frame_buffers[i] = device.createFramebufferUnique(create_info);
+    }
+
+    return frame_buffers;
+}
+
+vk::UniqueCommandPool create_command_pool(vk::Device device, uint32_t graphics_queue) {
+    auto command_pool_info = vk::CommandPoolCreateInfo({}, graphics_queue);
+    return device.createCommandPoolUnique(command_pool_info);
+}
+
+std::vector<vk::UniqueCommandBuffer> create_command_buffers(vk::Device device, const std::vector<vk::UniqueFramebuffer>& frame_buffers, vk::CommandPool pool) {
+    auto command_buffers_info = vk::CommandBufferAllocateInfo(pool);
+    command_buffers_info.commandBufferCount = static_cast<uint32_t>(frame_buffers.size());
+
+    return device.allocateCommandBuffersUnique(command_buffers_info);
+}
+
+vk::UniqueSemaphore create_semaphore(vk::Device device) {
+    return device.createSemaphoreUnique(vk::SemaphoreCreateInfo());
 }
 
 int main() {
@@ -434,8 +482,64 @@ int main() {
     auto image_views = initialize_views(device.get(), swapchain.get(), format);
 
     auto pipeline = create_pipeline(device.get(), extent, format); 
+    auto frame_buffers = create_frame_buffers(device.get(), image_views, pipeline, extent);
+
+    auto command_pool = create_command_pool(device.get(), picked.graphics_queue_index);
+    auto command_buffers = create_command_buffers(device.get(), frame_buffers, command_pool.get());
+
+    // Actually render something to the command buffers
+
+    {
+        auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+        auto clear_color = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.f, 0.f, 0.f, 1.f}));
+        for (size_t i = 0; i < frame_buffers.size(); ++i) {
+            command_buffers[i]->begin(&begin_info);
+
+            auto render_pass_begin_info = vk::RenderPassBeginInfo(
+                pipeline.render_pass.get(),
+                frame_buffers[i].get(),
+                vk::Rect2D({0, 0}, extent),
+                1,
+                &clear_color
+            );
+
+            command_buffers[i]->beginRenderPass(&render_pass_begin_info, vk::SubpassContents::eInline);
+            command_buffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline.get());
+            command_buffers[i]->draw(3, 1, 0, 0);
+            command_buffers[i]->endRenderPass();
+            command_buffers[i]->end();
+        }
+    }
+
+    auto image_available = create_semaphore(device.get());
+    auto render_finished = create_semaphore(device.get());
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+
+        uint32_t image_index = device->acquireNextImageKHR(swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available.get(), vk::Fence()).value;
+
+        auto wait_stages = std::array{vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)};
+        auto submit_info = vk::SubmitInfo(
+            1,
+            &image_available.get(),
+            wait_stages.data(),
+            1,
+            &command_buffers[image_index].get(),
+            1,
+            &render_finished.get()
+        );
+
+        graphics_queue.submit(1, &submit_info, vk::Fence());
+
+        auto present_info = vk::PresentInfoKHR(
+            1,
+            &render_finished.get(),
+            1,
+            &swapchain.get(),
+            &image_index
+        );
+
+        present_queue.presentKHR(&present_info);
     }
 }
