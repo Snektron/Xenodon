@@ -33,6 +33,12 @@ namespace {
         vk::Format format;
         vk::Extent2D extent;
     };
+
+    struct Pipeline {
+        vk::UniquePipelineLayout layout;
+        vk::UniqueRenderPass render_pass;
+        vk::UniquePipeline pipeline;
+    };
 }
 
 vk::UniqueInstance create_instance() {
@@ -143,21 +149,21 @@ vk::UniqueDevice initialize_device(PickedDeviceInfo& picked) {
     auto queue_create_infos = std::array<vk::DeviceQueueCreateInfo, 2>();
     uint32_t queues = 1;
 
-    queue_create_infos[0] = vk::DeviceQueueCreateInfo{
+    queue_create_infos[0] = vk::DeviceQueueCreateInfo(
         {},
         picked.graphics_queue_index,
         1,
         &priority
-    };
+    );
 
     if (picked.graphics_queue_index != picked.present_queue_index) {
         queues = 2;
-        queue_create_infos[1] = vk::DeviceQueueCreateInfo{
+        queue_create_infos[1] = vk::DeviceQueueCreateInfo(
             {},
             picked.present_queue_index,
             1,
             &priority
-        };
+        );
     }
     auto device_create_info = vk::DeviceCreateInfo(
         {},
@@ -238,7 +244,7 @@ SwapchainInfo create_swap_chain(PickedDeviceInfo& picked, vk::Device& device, vk
     if (caps.maxImageCount > 0)
         image_count = std::min(caps.maxImageCount, image_count);
 
-    auto create_info = vk::SwapchainCreateInfoKHR{
+    auto create_info = vk::SwapchainCreateInfoKHR(
         {},
         surface,
         image_count,
@@ -255,7 +261,7 @@ SwapchainInfo create_swap_chain(PickedDeviceInfo& picked, vk::Device& device, vk
         present_mode,
         true,
         nullptr
-    };
+    );
 
     auto queue_indices = std::array{picked.graphics_queue_index, picked.present_queue_index};
 
@@ -275,14 +281,14 @@ std::vector<vk::UniqueImageView> initialize_views(vk::Device& device, vk::Swapch
     auto component_mapping = vk::ComponentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA);
     auto sub_resource_range = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
     for (auto&& image : swapchain_images) {
-        auto create_info = vk::ImageViewCreateInfo{
+        auto create_info = vk::ImageViewCreateInfo(
             {},
             image,
             vk::ImageViewType::e2D,
             format,
             component_mapping,
             sub_resource_range
-        };
+        );
 
         image_views.push_back(device.createImageViewUnique(create_info));
     }
@@ -291,19 +297,104 @@ std::vector<vk::UniqueImageView> initialize_views(vk::Device& device, vk::Swapch
 }
 
 vk::UniqueShaderModule create_shader(const vk::Device& device, const std::string_view& code) {
-    return device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
+    return device.createShaderModuleUnique(vk::ShaderModuleCreateInfo(
         {},
         code.size(),
         reinterpret_cast<const uint32_t*>(code.data())
-    });
+    ));
 }
 
 vk::PipelineShaderStageCreateInfo create_shader_info(const vk::ShaderModule& shader, vk::ShaderStageFlagBits stage) {
-    return vk::PipelineShaderStageCreateInfo{
+    return vk::PipelineShaderStageCreateInfo(
         {},
         stage,
         shader,
         "main"
+    );
+}
+
+Pipeline create_pipeline(const vk::Device& device, const vk::Extent2D& extent, vk::Format format) {
+    auto vertex_shader = create_shader(device, resources::open("resources/test.vert"));
+    auto fragment_shader = create_shader(device, resources::open("resources/test.frag"));
+
+    auto shader_stages_infos = std::array{
+        create_shader_info(vertex_shader.get(), vk::ShaderStageFlagBits::eVertex),
+        create_shader_info(fragment_shader.get(), vk::ShaderStageFlagBits::eFragment)
+    };
+
+    auto vertex_input_info = vk::PipelineVertexInputStateCreateInfo();
+    auto assembly_info = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList);
+
+    auto viewport = vk::Viewport(0, 0, extent.width, extent.height, 0, 1);
+    auto scissor = vk::Rect2D({0, 0}, extent);
+    auto viewport_info = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
+
+    auto rasterizer_info = vk::PipelineRasterizationStateCreateInfo();
+    rasterizer_info.cullMode = vk::CullModeFlagBits::eBack;
+    rasterizer_info.lineWidth = 1.0f;
+
+    auto multisample_info = vk::PipelineMultisampleStateCreateInfo();
+
+    auto color_blend_attachment_info = vk::PipelineColorBlendAttachmentState();
+    color_blend_attachment_info.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+
+    auto color_blend_info = vk::PipelineColorBlendStateCreateInfo();
+    color_blend_info.attachmentCount = 1;
+    color_blend_info.pAttachments = &color_blend_attachment_info;
+
+    auto pipeline_layout_info = vk::PipelineLayoutCreateInfo();
+    auto pipeline_layout = device.createPipelineLayoutUnique(pipeline_layout_info);
+
+    // Create render pass
+    auto color_attachment = vk::AttachmentDescription({}, format);
+    color_attachment.loadOp = vk::AttachmentLoadOp::eClear;
+    color_attachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+    auto attachment_ref = vk::AttachmentReference(
+        0, // The layout(location = x) of the fragment shader
+        vk::ImageLayout::eColorAttachmentOptimal
+    );
+
+    auto subpass = vk::SubpassDescription(
+        {},
+        vk::PipelineBindPoint::eGraphics,
+        0,
+        nullptr,
+        1,
+        &attachment_ref
+    );
+
+    auto render_pass_info = vk::RenderPassCreateInfo(
+        {},
+        1,
+        &color_attachment,
+        1,
+        &subpass
+    );
+
+    auto render_pass = device.createRenderPassUnique(render_pass_info);
+
+    auto pipeline_info = vk::GraphicsPipelineCreateInfo(
+        {},
+        shader_stages_infos.size(),
+        shader_stages_infos.data(),
+        &vertex_input_info,
+        &assembly_info,
+        nullptr,
+        &viewport_info,
+        &rasterizer_info,
+        &multisample_info,
+        nullptr,
+        &color_blend_info,
+        nullptr,
+        pipeline_layout.get(),
+        render_pass.get()
+    );
+
+    return {
+        std::move(pipeline_layout),
+        std::move(render_pass),
+        device.createGraphicsPipelineUnique(vk::PipelineCache(), pipeline_info)
     };
 }
 
@@ -342,13 +433,7 @@ int main() {
     auto [swapchain, format, extent] = create_swap_chain(picked, device.get(), surface.get(), WINDOW_SIZE);
     auto image_views = initialize_views(device.get(), swapchain.get(), format);
 
-    auto vertex_shader = create_shader(device.get(), resources::open("resources/test.vert"));
-    auto fragment_shader = create_shader(device.get(), resources::open("resources/test.frag"));
-
-    auto shader_stages_infos = std::array{
-        create_shader_info(vertex_shader.get(), vk::ShaderStageFlagBits::eVertex),
-        create_shader_info(fragment_shader.get(), vk::ShaderStageFlagBits::eFragment)
-    }; 
+    auto pipeline = create_pipeline(device.get(), extent, format); 
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
