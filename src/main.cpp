@@ -4,6 +4,7 @@
 #include <utility>
 #include <algorithm>
 #include <limits>
+#include <string_view>
 #include <cstring>
 #include <cstdlib>
 #include <vulkan/vulkan.hpp>
@@ -289,9 +290,24 @@ std::vector<vk::UniqueImageView> initialize_views(vk::Device& device, vk::Swapch
     return image_views;
 }
 
-int main() {
-    std::cout << resources::open("resources/test.txt") << std::endl;
+vk::UniqueShaderModule create_shader(const vk::Device& device, const std::string_view& code) {
+    return device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
+        {},
+        code.size(),
+        reinterpret_cast<const uint32_t*>(code.data())
+    });
+}
 
+vk::PipelineShaderStageCreateInfo create_shader_info(const vk::ShaderModule& shader, vk::ShaderStageFlagBits stage) {
+    return vk::PipelineShaderStageCreateInfo{
+        {},
+        stage,
+        shader,
+        "main"
+    };
+}
+
+int main() {
     if (glfwInit() != GLFW_TRUE) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return 1;
@@ -325,6 +341,14 @@ int main() {
     auto present_queue = device->getQueue(picked.present_queue_index, 0);
     auto [swapchain, format, extent] = create_swap_chain(picked, device.get(), surface.get(), WINDOW_SIZE);
     auto image_views = initialize_views(device.get(), swapchain.get(), format);
+
+    auto vertex_shader = create_shader(device.get(), resources::open("resources/test.vert"));
+    auto fragment_shader = create_shader(device.get(), resources::open("resources/test.frag"));
+
+    auto shader_stages_infos = std::array{
+        create_shader_info(vertex_shader.get(), vk::ShaderStageFlagBits::eVertex),
+        create_shader_info(fragment_shader.get(), vk::ShaderStageFlagBits::eFragment)
+    }; 
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();

@@ -16,10 +16,11 @@ sources = [
 ]
 
 shaders = [
+    'resources/test.frag',
+    'resources/test.vert'
 ]
 
-resources = [
-]
+resources = []
 
 add_project_arguments(
     [
