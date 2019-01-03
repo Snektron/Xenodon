@@ -491,7 +491,7 @@ int main() {
 
     {
         auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-        auto clear_color = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.f, 0.f, 0.f, 1.f}));
+        auto clear_color = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.f, 0.0f, 0.f, 1.f}));
         for (size_t i = 0; i < frame_buffers.size(); ++i) {
             command_buffers[i]->begin(&begin_info);
 
@@ -541,5 +541,8 @@ int main() {
         );
 
         present_queue.presentKHR(&present_info);
+        present_queue.waitIdle();
     }
+
+    device->waitIdle();
 }
