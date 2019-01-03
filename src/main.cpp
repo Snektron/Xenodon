@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <limits>
 #include <string_view>
+#include <chrono>
 #include <vector>
 #include <cstring>
 #include <cstdlib>
@@ -16,6 +17,8 @@
 namespace {
     constexpr const char* const APP_NAME = "Xenodon";
     constexpr const uint32_t APP_VERSION = VK_MAKE_VERSION(0, 0, 0);
+
+    constexpr const size_t MAX_FRAMES = 2;
 
     const vk::Extent2D WINDOW_SIZE = {800, 600};
 
@@ -446,7 +449,13 @@ vk::UniqueSemaphore create_semaphore(vk::Device device) {
     return device.createSemaphoreUnique(vk::SemaphoreCreateInfo());
 }
 
+vk::UniqueFence create_fence(vk::Device device) {
+    return device.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+}
+
 int main() {
+    using namespace std::literals::chrono_literals;
+
     if (glfwInit() != GLFW_TRUE) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return 1;
@@ -511,30 +520,49 @@ int main() {
         }
     }
 
-    auto image_available = create_semaphore(device.get());
-    auto render_finished = create_semaphore(device.get());
+    auto image_available_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
+    auto render_finished_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
+    auto fences = std::vector<vk::UniqueFence>(MAX_FRAMES);
+
+    for (size_t i = 0; i < MAX_FRAMES; ++i) {
+        image_available_sems[i] = create_semaphore(device.get());
+        render_finished_sems[i] = create_semaphore(device.get());
+        fences[i] = create_fence(device.get());
+    }
+
+    auto start = std::chrono::high_resolution_clock::now();
+    size_t start_frame = 0;
+    size_t total_frames = 0;
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-        uint32_t image_index = device->acquireNextImageKHR(swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available.get(), vk::Fence()).value;
+        size_t current_frame = total_frames % MAX_FRAMES;
+        auto& fence = fences[current_frame].get();
+        device->waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
+        device->resetFences(fence);
+
+        auto& image_available = image_available_sems[current_frame].get();
+        auto& render_finished = render_finished_sems[current_frame].get();
+
+        uint32_t image_index = device->acquireNextImageKHR(swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available, vk::Fence()).value;
 
         auto wait_stages = std::array{vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)};
         auto submit_info = vk::SubmitInfo(
             1,
-            &image_available.get(),
+            &image_available,
             wait_stages.data(),
             1,
             &command_buffers[image_index].get(),
             1,
-            &render_finished.get()
+            &render_finished
         );
 
-        graphics_queue.submit(1, &submit_info, vk::Fence());
+        graphics_queue.submit(1, &submit_info, fence);
 
         auto present_info = vk::PresentInfoKHR(
             1,
-            &render_finished.get(),
+            &render_finished,
             1,
             &swapchain.get(),
             &image_index
@@ -542,6 +570,18 @@ int main() {
 
         present_queue.presentKHR(&present_info);
         present_queue.waitIdle();
+
+        total_frames++;
+
+        auto now = std::chrono::high_resolution_clock::now();
+        auto diff = std::chrono::duration<double>(now - start);
+
+        if (diff > 1s) {
+            size_t frames = total_frames - start_frame;
+            std::cout << "FPS: " << frames / diff.count() << std::endl;
+            start_frame = total_frames;
+            start = now;
+        }
     }
 
     device->waitIdle();
