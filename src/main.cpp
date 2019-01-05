@@ -20,8 +20,6 @@ namespace {
 
     constexpr const size_t MAX_FRAMES = 2;
 
-    const vk::Extent2D WINDOW_SIZE = {800, 600};
-
     constexpr const std::array DEVICE_EXTENSIONS = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
@@ -69,7 +67,7 @@ vk::UniqueInstance create_instance() {
     return vk::createInstanceUnique(create_info);
 }
 
-PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::SurfaceKHR& surface) {
+PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::SurfaceKHR surface) {
     auto check_discrete = [](auto&& device) {
         return device.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu;
     };
@@ -191,7 +189,7 @@ vk::UniqueSurfaceKHR create_surface(vk::UniqueInstance& instance, GLFWwindow* wi
     return vk::UniqueSurfaceKHR(vk::SurfaceKHR(surface), deleter);
 }
 
-vk::SurfaceFormatKHR pick_surface_format(vk::PhysicalDevice physical_device, vk::SurfaceKHR& surface) {
+vk::SurfaceFormatKHR pick_surface_format(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface) {
     auto formats = physical_device.getSurfaceFormatsKHR(surface);
     auto preferred_format = vk::SurfaceFormatKHR{vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
 
@@ -209,7 +207,7 @@ vk::SurfaceFormatKHR pick_surface_format(vk::PhysicalDevice physical_device, vk:
     return formats[0];
 }
 
-vk::PresentModeKHR pick_present_mode(vk::PhysicalDevice physical_device, vk::SurfaceKHR& surface) {
+vk::PresentModeKHR pick_present_mode(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface) {
     auto present_modes = physical_device.getSurfacePresentModesKHR(surface);
 
     // check for triple buffering support
@@ -224,23 +222,26 @@ vk::PresentModeKHR pick_present_mode(vk::PhysicalDevice physical_device, vk::Sur
     return vk::PresentModeKHR::eFifo;
 }
 
-vk::Extent2D pick_swap_extent(vk::PhysicalDevice physical_device, vk::SurfaceKHR& surface, const vk::Extent2D& window_size) {
+vk::Extent2D pick_swap_extent(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface, GLFWwindow* window) {
     auto caps = physical_device.getSurfaceCapabilitiesKHR(surface);
 
     if (caps.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return caps.currentExtent;
     } else {
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+
         return {
-            std::clamp(caps.minImageExtent.width, caps.maxImageExtent.width, window_size.width),
-            std::clamp(caps.minImageExtent.height, caps.maxImageExtent.height, window_size.height),
+            std::clamp(caps.minImageExtent.width, caps.maxImageExtent.width, static_cast<uint32_t>(width)),
+            std::clamp(caps.minImageExtent.height, caps.maxImageExtent.height, static_cast<uint32_t>(height)),
         };
     }
 }
 
-SwapchainInfo create_swap_chain(PickedDeviceInfo& picked, vk::Device& device, vk::SurfaceKHR& surface, const vk::Extent2D& window_size) {
+SwapchainInfo create_swap_chain(PickedDeviceInfo& picked, vk::Device device, vk::SurfaceKHR surface, GLFWwindow* window) {
     auto surface_format = pick_surface_format(picked.physical_device, surface);
     auto present_mode = pick_present_mode(picked.physical_device, surface);
-    auto extent = pick_swap_extent(picked.physical_device, surface, window_size);
+    auto extent = pick_swap_extent(picked.physical_device, surface, window);
 
     auto caps = picked.physical_device.getSurfaceCapabilitiesKHR(surface);
 
@@ -327,9 +328,9 @@ Pipeline create_pipeline(vk::Device device, const vk::Extent2D& extent, vk::Form
     };
 
     auto vertex_input_info = vk::PipelineVertexInputStateCreateInfo();
-    auto assembly_info = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList);
+    auto assembly_info = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleStrip);
 
-    auto viewport = vk::Viewport(0, 0, extent.width, extent.height, 0, 1);
+    auto viewport = vk::Viewport(0, 0, static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 1);
     auto scissor = vk::Rect2D({0, 0}, extent);
     auto viewport_info = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
 
@@ -453,6 +454,61 @@ vk::UniqueFence create_fence(vk::Device device) {
     return device.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
 }
 
+struct RenderState {
+    vk::UniqueSwapchainKHR swapchain;
+    vk::Format format;
+    vk::Extent2D extent;
+    std::vector<vk::UniqueImageView> image_views;
+    Pipeline pipeline;
+    std::vector<vk::UniqueFramebuffer> frame_buffers;
+    std::vector<vk::UniqueCommandBuffer> command_buffers;
+};
+
+RenderState create_render_state(PickedDeviceInfo& physical_device, vk::Device device, vk::SurfaceKHR surface, GLFWwindow* window, vk::CommandPool command_pool) {
+    auto [swapchain, format, extent] = create_swap_chain(physical_device, device, surface, window);
+    auto image_views = initialize_views(device, swapchain.get(), format);
+    auto pipeline = create_pipeline(device, extent, format); 
+    auto frame_buffers = create_frame_buffers(device, image_views, pipeline, extent);
+    auto command_buffers = create_command_buffers(device, frame_buffers, command_pool);
+
+    return {
+        std::move(swapchain),
+        format,
+        extent,
+        std::move(image_views),
+        std::move(pipeline),
+        std::move(frame_buffers),
+        std::move(command_buffers)
+    };
+}
+
+void render_triangle(RenderState& state, vk::CommandBuffer buf, vk::Framebuffer frame_buffer) {
+    const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+    const auto clear_color = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.f, 0.0f, 0.f, 1.f}));
+
+    buf.begin(&begin_info);
+
+    auto render_pass_begin_info = vk::RenderPassBeginInfo(
+        state.pipeline.render_pass.get(),
+        frame_buffer,
+        vk::Rect2D({0, 0}, state.extent),
+        1,
+        &clear_color
+    );
+
+    buf.beginRenderPass(&render_pass_begin_info, vk::SubpassContents::eInline);
+    buf.bindPipeline(vk::PipelineBindPoint::eGraphics, state.pipeline.pipeline.get());
+    buf.draw(4, 1, 0, 0);
+    buf.endRenderPass();
+    buf.end();
+}
+
+void render_triangle(RenderState& state) {
+    for (size_t i = 0; i < state.frame_buffers.size(); ++i) {
+        render_triangle(state, state.command_buffers[i].get(), state.frame_buffers[i].get());
+    }
+}
+
 int main() {
     using namespace std::literals::chrono_literals;
 
@@ -466,11 +522,10 @@ int main() {
     });
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     auto* window = glfwCreateWindow(
-        static_cast<int>(WINDOW_SIZE.width),
-        static_cast<int>(WINDOW_SIZE.height),
+        800,
+        600,
         "Vulkan test",
         nullptr,
         nullptr
@@ -485,40 +540,13 @@ int main() {
     auto picked = pick_physical_device(instance, surface.get());
     std::cout << "Picked device '" << picked.physical_device.getProperties().deviceName << '\'' << std::endl;
     auto device = initialize_device(picked);
+    auto command_pool = create_command_pool(device.get(), picked.graphics_queue_index);
+
     auto graphics_queue = device->getQueue(picked.graphics_queue_index, 0);
     auto present_queue = device->getQueue(picked.present_queue_index, 0);
-    auto [swapchain, format, extent] = create_swap_chain(picked, device.get(), surface.get(), WINDOW_SIZE);
-    auto image_views = initialize_views(device.get(), swapchain.get(), format);
 
-    auto pipeline = create_pipeline(device.get(), extent, format); 
-    auto frame_buffers = create_frame_buffers(device.get(), image_views, pipeline, extent);
-
-    auto command_pool = create_command_pool(device.get(), picked.graphics_queue_index);
-    auto command_buffers = create_command_buffers(device.get(), frame_buffers, command_pool.get());
-
-    // Actually render something to the command buffers
-
-    {
-        auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-        auto clear_color = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.f, 0.0f, 0.f, 1.f}));
-        for (size_t i = 0; i < frame_buffers.size(); ++i) {
-            command_buffers[i]->begin(&begin_info);
-
-            auto render_pass_begin_info = vk::RenderPassBeginInfo(
-                pipeline.render_pass.get(),
-                frame_buffers[i].get(),
-                vk::Rect2D({0, 0}, extent),
-                1,
-                &clear_color
-            );
-
-            command_buffers[i]->beginRenderPass(&render_pass_begin_info, vk::SubpassContents::eInline);
-            command_buffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline.get());
-            command_buffers[i]->draw(3, 1, 0, 0);
-            command_buffers[i]->endRenderPass();
-            command_buffers[i]->end();
-        }
-    }
+    auto render_state = create_render_state(picked, device.get(), surface.get(), window, command_pool.get());
+    render_triangle(render_state);
 
     auto image_available_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
     auto render_finished_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
@@ -545,7 +573,16 @@ int main() {
         auto& image_available = image_available_sems[current_frame].get();
         auto& render_finished = render_finished_sems[current_frame].get();
 
-        uint32_t image_index = device->acquireNextImageKHR(swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available, vk::Fence()).value;
+        uint32_t image_index;
+        auto result = device->acquireNextImageKHR(render_state.swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available, vk::Fence(), &image_index);
+        if (result == vk::Result::eErrorOutOfDateKHR) {
+            device->waitIdle();
+            render_state = create_render_state(picked, device.get(), surface.get(), window, command_pool.get());
+            render_triangle(render_state);
+            image_index = device->acquireNextImageKHR(render_state.swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available, vk::Fence()).value;
+        } else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
+            throw std::runtime_error("Failed to acquire next image");
+        }
 
         auto wait_stages = std::array{vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)};
         auto submit_info = vk::SubmitInfo(
@@ -553,7 +590,7 @@ int main() {
             &image_available,
             wait_stages.data(),
             1,
-            &command_buffers[image_index].get(),
+            &render_state.command_buffers[image_index].get(),
             1,
             &render_finished
         );
@@ -564,7 +601,7 @@ int main() {
             1,
             &render_finished,
             1,
-            &swapchain.get(),
+            &render_state.swapchain.get(),
             &image_index
         );
 
@@ -578,7 +615,7 @@ int main() {
 
         if (diff > 1s) {
             size_t frames = total_frames - start_frame;
-            std::cout << "FPS: " << frames / diff.count() << std::endl;
+            std::cout << "FPS: " << static_cast<double>(frames) / diff.count() << std::endl;
             start_frame = total_frames;
             start = now;
         }
