@@ -12,6 +12,7 @@
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 #include "utility/ScopeGuard.h"
+#include "graphics/PhysicalDevicePicker.h"
 #include "resources.h"
 
 namespace {
@@ -67,6 +68,15 @@ vk::UniqueInstance create_instance() {
     return vk::createInstanceUnique(create_info);
 }
 
+void pick_physical_device2(vk::Instance instance, vk::SurfaceKHR surface) {
+    PhysicalDevicePicker(instance)
+        .filter([](auto device) {
+            return device.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu;
+        })
+        .with_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+        .with_surface_support(surface);
+}
+
 PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::SurfaceKHR surface) {
     auto check_discrete = [](auto&& device) {
         return device.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu;
@@ -80,7 +90,7 @@ PickedDeviceInfo pick_physical_device(vk::UniqueInstance& instance, vk::SurfaceK
                 return std::strcmp(name, ext.extensionName) == 0;
             };
 
-            if (std::find_if(begin, end, cmp_ext) != DEVICE_EXTENSIONS.end())
+            if (std::find_if(begin, end, cmp_ext) != end)
                 return true;
         }
 

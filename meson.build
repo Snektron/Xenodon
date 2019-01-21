@@ -12,7 +12,8 @@ project(
 # Project sources & resources
 
 sources = [
-    'src/main.cpp',
+    'src/graphics/PhysicalDevicePicker.cpp',
+    'src/main.cpp'
 ]
 
 shaders = [

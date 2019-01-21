@@ -3,10 +3,10 @@
 layout(location = 0) out vec3 v_color;
 
 const vec2 positions[] = vec2[](
-    vec2(0.5, 0.5),
-    vec2(0.0, -0.5),
-    vec2(-0.5, 0.5),
-    vec2(-1.0, -.5)
+    vec2(1.0, 1.0),
+    vec2(1.0, -1.0),
+    vec2(-1.0, 1.0),
+    vec2(-1.0, -1.0)
 );
 
 const vec3 colors[] = vec3[](
