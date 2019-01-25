@@ -12,7 +12,10 @@ project(
 # Project sources & resources
 
 sources = [
-    'src/graphics/PhysicalDevicePicker.cpp',
+    'src/render/PhysicalDeviceInfo.cpp',
+    'src/render/Renderer.cpp',
+    'src/interactive/interactive.cpp',
+    'src/headless/headless.cpp',
     'src/main.cpp'
 ]
 
@@ -21,7 +24,9 @@ shaders = [
     'resources/test.vert'
 ]
 
-resources = []
+resources = [
+    'resources/options.txt'
+]
 
 add_project_arguments(
     [
