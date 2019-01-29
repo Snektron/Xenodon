@@ -12,10 +12,10 @@ project(
 # Project sources & resources
 
 sources = [
+    'src/headless/headless.cpp',
+    'src/interactive/interactive.cpp',
     'src/render/PhysicalDeviceInfo.cpp',
     'src/render/Renderer.cpp',
-    'src/interactive/interactive.cpp',
-    'src/headless/headless.cpp',
     'src/main.cpp'
 ]
 

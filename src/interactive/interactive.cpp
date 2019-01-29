@@ -10,6 +10,7 @@
 #include <vector>
 #include <cstring>
 #include <cstdlib>
+#include <memory>
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 #include "utility/ScopeGuard.h"
@@ -43,6 +44,18 @@ namespace {
         vk::UniquePipelineLayout layout;
         vk::UniqueRenderPass render_pass;
         vk::UniquePipeline pipeline;
+    };
+
+    struct RenderState {
+        vk::UniqueSwapchainKHR swapchain;
+        vk::Format format;
+        vk::Extent2D extent;
+        std::vector<vk::UniqueImageView> image_views;
+        std::vector<vk::UniqueFramebuffer> frame_buffers;
+        std::vector<vk::UniqueCommandBuffer> command_buffers;
+
+        std::unique_ptr<DeviceContext> device_context;
+        Renderer renderer;
     };
 
     vk::UniqueInstance create_instance() {
@@ -278,126 +291,13 @@ namespace {
         return image_views;
     }
 
-    vk::UniqueShaderModule create_shader(vk::Device device, const std::string_view& code) {
-        return device.createShaderModuleUnique(vk::ShaderModuleCreateInfo(
-            {},
-            code.size(),
-            reinterpret_cast<const uint32_t*>(code.data())
-        ));
-    }
-
-    vk::PipelineShaderStageCreateInfo create_shader_info(const vk::ShaderModule& shader, vk::ShaderStageFlagBits stage) {
-        return vk::PipelineShaderStageCreateInfo(
-            {},
-            stage,
-            shader,
-            "main"
-        );
-    }
-
-    Pipeline create_pipeline(vk::Device device, const vk::Extent2D& extent, vk::Format format) {
-        auto vertex_shader = create_shader(device, resources::open("resources/test.vert"));
-        auto fragment_shader = create_shader(device, resources::open("resources/test.frag"));
-
-        auto shader_stages_infos = std::array{
-            create_shader_info(vertex_shader.get(), vk::ShaderStageFlagBits::eVertex),
-            create_shader_info(fragment_shader.get(), vk::ShaderStageFlagBits::eFragment)
-        };
-
-        auto vertex_input_info = vk::PipelineVertexInputStateCreateInfo();
-        auto assembly_info = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleStrip);
-
-        auto viewport = vk::Viewport(0, 0, static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 1);
-        auto scissor = vk::Rect2D({0, 0}, extent);
-        auto viewport_info = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
-
-        auto rasterizer_info = vk::PipelineRasterizationStateCreateInfo();
-        rasterizer_info.cullMode = vk::CullModeFlagBits::eBack;
-        rasterizer_info.lineWidth = 1.0f;
-
-        auto multisample_info = vk::PipelineMultisampleStateCreateInfo();
-
-        auto color_blend_attachment_info = vk::PipelineColorBlendAttachmentState();
-        color_blend_attachment_info.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-
-        auto color_blend_info = vk::PipelineColorBlendStateCreateInfo();
-        color_blend_info.attachmentCount = 1;
-        color_blend_info.pAttachments = &color_blend_attachment_info;
-
-        auto pipeline_layout_info = vk::PipelineLayoutCreateInfo();
-        auto pipeline_layout = device.createPipelineLayoutUnique(pipeline_layout_info);
-
-        // Create render pass
-        auto color_attachment = vk::AttachmentDescription({}, format);
-        color_attachment.loadOp = vk::AttachmentLoadOp::eClear;
-        color_attachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
-
-        auto attachment_ref = vk::AttachmentReference(
-            0, // The layout(location = x) of the fragment shader
-            vk::ImageLayout::eColorAttachmentOptimal
-        );
-
-        auto subpass = vk::SubpassDescription(
-            {},
-            vk::PipelineBindPoint::eGraphics,
-            0,
-            nullptr,
-            1,
-            &attachment_ref
-        );
-
-        auto dependency = vk::SubpassDependency(
-            VK_SUBPASS_EXTERNAL,
-            0,
-            vk::PipelineStageFlagBits::eColorAttachmentOutput,
-            vk::PipelineStageFlagBits::eColorAttachmentOutput,
-            vk::AccessFlags(),
-            vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentRead
-        );
-
-        auto render_pass_info = vk::RenderPassCreateInfo(
-            {},
-            1,
-            &color_attachment,
-            1,
-            &subpass,
-            1,
-            &dependency
-        );
-
-        auto render_pass = device.createRenderPassUnique(render_pass_info);
-
-        auto pipeline_info = vk::GraphicsPipelineCreateInfo(
-            {},
-            shader_stages_infos.size(),
-            shader_stages_infos.data(),
-            &vertex_input_info,
-            &assembly_info,
-            nullptr,
-            &viewport_info,
-            &rasterizer_info,
-            &multisample_info,
-            nullptr,
-            &color_blend_info,
-            nullptr,
-            pipeline_layout.get(),
-            render_pass.get()
-        );
-
-        return {
-            std::move(pipeline_layout),
-            std::move(render_pass),
-            device.createGraphicsPipelineUnique(vk::PipelineCache(), pipeline_info)
-        };
-    }
-
-    std::vector<vk::UniqueFramebuffer> create_frame_buffers(vk::Device device, const std::vector<vk::UniqueImageView>& views, const Pipeline& pipeline, const vk::Extent2D& extent) {
+    std::vector<vk::UniqueFramebuffer> create_frame_buffers(vk::Device device, const std::vector<vk::UniqueImageView>& views, const vk::Extent2D& extent, vk::RenderPass pass) {
         auto frame_buffers = std::vector<vk::UniqueFramebuffer>(views.size());
 
         for (size_t i = 0; i < views.size(); ++i) {
             auto create_info = vk::FramebufferCreateInfo(
                 {},
-                pipeline.render_pass.get(),
+                pass,
                 1,
                 &views[i].get(),
                 extent.width,
@@ -431,58 +331,38 @@ namespace {
         return device.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
     }
 
-    struct RenderState {
-        vk::UniqueSwapchainKHR swapchain;
-        vk::Format format;
-        vk::Extent2D extent;
-        std::vector<vk::UniqueImageView> image_views;
-        Pipeline pipeline;
-        std::vector<vk::UniqueFramebuffer> frame_buffers;
-        std::vector<vk::UniqueCommandBuffer> command_buffers;
-    };
-
-    RenderState create_render_state(PickedDeviceInfo& physical_device, vk::Device device, vk::SurfaceKHR surface, GLFWwindow* window, vk::CommandPool command_pool) {
+    std::unique_ptr<RenderState> create_render_state(PickedDeviceInfo& physical_device, vk::Device device, vk::SurfaceKHR surface, GLFWwindow* window, vk::CommandPool command_pool) {
         auto [swapchain, format, extent] = create_swap_chain(physical_device, device, surface, window);
         auto image_views = initialize_views(device, swapchain.get(), format);
-        auto pipeline = create_pipeline(device, extent, format); 
-        auto frame_buffers = create_frame_buffers(device, image_views, pipeline, extent);
+
+        auto color_attachment = vk::AttachmentDescription({}, format);
+        color_attachment.loadOp = vk::AttachmentLoadOp::eClear;
+        color_attachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+        
+        auto device_context = std::unique_ptr<DeviceContext>(new DeviceContext {
+                physical_device.physical_device,
+                device
+        });
+
+        auto renderer = Renderer(*device_context, vk::Rect2D({0, 0}, extent), color_attachment);
+        auto frame_buffers = create_frame_buffers(device, image_views, extent, renderer.final_render_pass());
         auto command_buffers = create_command_buffers(device, frame_buffers, command_pool);
 
-        return {
+        return std::unique_ptr<RenderState>(new RenderState{
             std::move(swapchain),
             format,
             extent,
             std::move(image_views),
-            std::move(pipeline),
             std::move(frame_buffers),
-            std::move(command_buffers)
-        };
+            std::move(command_buffers),
+            std::move(device_context),
+            std::move(renderer)
+        });
     }
 
-    void render_triangle(RenderState& state, vk::CommandBuffer buf, vk::Framebuffer frame_buffer) {
-        const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-        const auto clear_color = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.f, 0.0f, 0.f, 1.f}));
-
-        buf.begin(&begin_info);
-
-        auto render_pass_begin_info = vk::RenderPassBeginInfo(
-            state.pipeline.render_pass.get(),
-            frame_buffer,
-            vk::Rect2D({0, 0}, state.extent),
-            1,
-            &clear_color
-        );
-
-        buf.beginRenderPass(&render_pass_begin_info, vk::SubpassContents::eInline);
-        buf.bindPipeline(vk::PipelineBindPoint::eGraphics, state.pipeline.pipeline.get());
-        buf.draw(4, 1, 0, 0);
-        buf.endRenderPass();
-        buf.end();
-    }
-
-    void render_triangle(RenderState& state) {
+    void render(RenderState& state) {
         for (size_t i = 0; i < state.frame_buffers.size(); ++i) {
-            render_triangle(state, state.command_buffers[i].get(), state.frame_buffers[i].get());
+            state.renderer.render(state.command_buffers[i].get(), state.frame_buffers[i].get());
         }
     }
 }
@@ -523,7 +403,7 @@ void interactive_main() {
     auto present_queue = device->getQueue(picked.present_queue_index, 0);
 
     auto render_state = create_render_state(picked, device.get(), surface.get(), window, command_pool.get());
-    render_triangle(render_state);
+    render(*render_state);
 
     auto image_available_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
     auto render_finished_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
@@ -551,12 +431,12 @@ void interactive_main() {
         auto& render_finished = render_finished_sems[current_frame].get();
 
         uint32_t image_index;
-        auto result = device->acquireNextImageKHR(render_state.swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available, vk::Fence(), &image_index);
+        auto result = device->acquireNextImageKHR(render_state->swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available, vk::Fence(), &image_index);
         if (result == vk::Result::eErrorOutOfDateKHR) {
             device->waitIdle();
             render_state = create_render_state(picked, device.get(), surface.get(), window, command_pool.get());
-            render_triangle(render_state);
-            image_index = device->acquireNextImageKHR(render_state.swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available, vk::Fence()).value;
+            render(*render_state);
+            image_index = device->acquireNextImageKHR(render_state->swapchain.get(), std::numeric_limits<uint64_t>::max(), image_available, vk::Fence()).value;
         } else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
             throw std::runtime_error("Failed to acquire next image");
         }
@@ -567,7 +447,7 @@ void interactive_main() {
             &image_available,
             wait_stages.data(),
             1,
-            &render_state.command_buffers[image_index].get(),
+            &render_state->command_buffers[image_index].get(),
             1,
             &render_finished
         );
@@ -578,7 +458,7 @@ void interactive_main() {
             1,
             &render_finished,
             1,
-            &render_state.swapchain.get(),
+            &render_state->swapchain.get(),
             &image_index
         );
 
