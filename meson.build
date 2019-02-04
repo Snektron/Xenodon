@@ -16,6 +16,7 @@ sources = [
     'src/interactive/interactive.cpp',
     'src/render/PhysicalDeviceInfo.cpp',
     'src/render/Renderer.cpp',
+    'src/interactive/Window.cpp',
     'src/main.cpp'
 ]
 
@@ -32,7 +33,8 @@ add_project_arguments(
     [
         '-march=native',
         '-DGLFW_INCLUDE_NONE',
-        '-Wconversion'
+        '-Wconversion',
+        '-DVK_USE_PLATFORM_XCB_KHR'
     ],
     language: 'cpp'
 )
@@ -46,6 +48,7 @@ endif
 
 vk_dep = dependency('vulkan', method: 'system')
 glfw_dep = dependency('glfw3', version: '>=3.2.1', fallback: ['glfw3', 'glfw_dep'])
+xcb_dep = dependency('xcb')
 
 if not cxx.has_header('vulkan/vulkan.h', dependencies: vk_dep)
     error('Vulkan C headers not found (vulkan/vulkan.h)')
@@ -96,6 +99,6 @@ include = include_directories('src')
 executable('xenodon', sources,
     install: true,
     build_by_default: true,
-    dependencies: [vk_dep, glfw_dep, resources_dep],
+    dependencies: [vk_dep, glfw_dep, xcb_dep, resources_dep],
     include_directories: include
 )

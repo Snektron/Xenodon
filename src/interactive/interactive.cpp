@@ -93,7 +93,8 @@ namespace {
 
             if (!info.supports_extensions(DEVICE_EXTENSIONS)
                 || !info.supports_surface(surface)
-                || device.getProperties().deviceType != vk::PhysicalDeviceType::eDiscreteGpu)
+                || (device.getProperties().deviceType != vk::PhysicalDeviceType::eDiscreteGpu
+                    && device.getProperties().deviceType != vk::PhysicalDeviceType::eIntegratedGpu))
                 continue;
 
             graphics_supported.clear();
