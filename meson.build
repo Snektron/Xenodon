@@ -32,7 +32,6 @@ resources = [
 add_project_arguments(
     [
         '-march=native',
-        '-DGLFW_INCLUDE_NONE',
         '-Wconversion',
         '-DVK_USE_PLATFORM_XCB_KHR'
     ],
@@ -47,7 +46,6 @@ if cxx.get_id() == 'gcc'
 endif
 
 vk_dep = dependency('vulkan', method: 'system')
-glfw_dep = dependency('glfw3', version: '>=3.2.1', fallback: ['glfw3', 'glfw_dep'])
 xcb_dep = dependency('xcb')
 
 if not cxx.has_header('vulkan/vulkan.h', dependencies: vk_dep)
@@ -99,6 +97,6 @@ include = include_directories('src')
 executable('xenodon', sources,
     install: true,
     build_by_default: true,
-    dependencies: [vk_dep, glfw_dep, xcb_dep, resources_dep],
+    dependencies: [vk_dep, xcb_dep, resources_dep],
     include_directories: include
 )

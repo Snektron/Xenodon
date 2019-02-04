@@ -4,6 +4,9 @@
 #include <iostream>
 
 namespace {
+    using std::literals::operator ""sv;
+    using std::literals::operator ""s;
+
     constexpr const uint32_t EVENT_MASK =
           XCB_EVENT_MASK_KEY_RELEASE
         | XCB_EVENT_MASK_KEY_PRESS
@@ -12,27 +15,13 @@ namespace {
         | XCB_EVENT_MASK_POINTER_MOTION
         | XCB_EVENT_MASK_BUTTON_PRESS
         | XCB_EVENT_MASK_BUTTON_RELEASE;
-
-    Window::AtomReply atom(xcb_connection_t* connection, bool only_if_exists, const std::string_view& str) {
-        xcb_intern_atom_cookie_t cookie = xcb_intern_atom(
-            connection,
-            only_if_exists,
-            static_cast<uint16_t>(str.size()),
-            str.data()
-        );
-
-        xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(connection, cookie, NULL);
-        return Window::AtomReply(reply);
-    }
-
-    using std::literals::operator ""sv;
 }
 
 Window::Window(xcb_connection_t* connection, xcb_screen_t* screen):
     connection(connection),
     screen(screen),
     window(xcb_generate_id(connection)),
-    atom_wm_delete_window(atom(connection, false, "WM_DELETE_WINDOW"sv)),
+    atom_wm_delete_window(this->atom(false, "WM_DELETE_WINDOW"sv)),
     width(screen->width_in_pixels),
     height(screen->height_in_pixels) {
     uint32_t value_mask = XCB_CW_BACK_PIXEL | XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK;
@@ -42,7 +31,7 @@ Window::Window(xcb_connection_t* connection, xcb_screen_t* screen):
         EVENT_MASK
     };
 
-    xcb_create_window(
+    xcb_create_window_checked(
         this->connection,
         XCB_COPY_FROM_PARENT,
         this->window,
@@ -83,35 +72,40 @@ Window::Window(xcb_connection_t* connection, xcb_screen_t* screen):
     );
 
     // Make window send destroy notifications
-    {
-        AtomReply atom_wm_protocols = atom(connection, true, "WM_PROTOCOLS"sv);
+    AtomReply atom_wm_protocols = this->atom(true, "WM_PROTOCOLS"sv);
 
-        xcb_change_property(
-            this->connection,
-            XCB_PROP_MODE_REPLACE,
-            this->window,
-            atom_wm_protocols->atom,
-            XCB_ATOM_ATOM,
-            32,
-            1,
-            &this->atom_wm_delete_window->atom
-        );
-    }
+    xcb_change_property(
+        this->connection,
+        XCB_PROP_MODE_REPLACE,
+        this->window,
+        atom_wm_protocols->atom,
+        XCB_ATOM_ATOM,
+        32,
+        1,
+        &this->atom_wm_delete_window->atom
+    );
 }
 
 Window::~Window() {
     xcb_destroy_window(this->connection, this->window);
 }
 
-void Window::set_title(const std::string_view& title) const {
-    xcb_change_property(
+vk::XcbSurfaceCreateInfoKHR Window::surface_create_info() const {
+    return vk::XcbSurfaceCreateInfoKHR(
+        {},
         this->connection,
-        XCB_PROP_MODE_REPLACE,
-        this->window,
-        XCB_ATOM_WM_NAME,
-        XCB_ATOM_STRING,
-        8,
-        static_cast<uint32_t>(title.size()),
-        title.data()
+        this->window
     );
+}
+
+Window::AtomReply Window::atom(bool only_if_exists, const std::string_view& str) const {
+    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(
+        connection,
+        only_if_exists,
+        static_cast<uint16_t>(str.size()),
+        str.data()
+    );
+
+    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(connection, cookie, nullptr);
+    return Window::AtomReply(reply);
 }

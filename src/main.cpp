@@ -47,7 +47,6 @@ void test_xcb() {
         xcb_disconnect(connection);
     });
 
-
     for (xcb_screen_iterator_t it = xcb_setup_roots_iterator(xcb_get_setup(connection)); it.rem; xcb_screen_next(&it)) {
         xcb_screen_t* screen = it.data;
         std::cout << "Screen " << screen->width_in_pixels << "x" << screen->height_in_pixels << std::endl;
@@ -90,10 +89,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    test_xcb();
-
-    // if (interactive)
-    //     interactive_main();
-    // else
-    //     headless_main();
+    if (interactive)
+        interactive_main();
+    else
+        headless_main();
 }

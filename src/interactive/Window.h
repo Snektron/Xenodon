@@ -2,13 +2,13 @@
 #define _XENODON_INTERACTIVE_WINDOW_H
 
 #include <xcb/xcb.h>
+#include <vulkan/vulkan.hpp>
 #include "utility/MallocPtr.h"
 
 class Window {
-public:
+private:
     using AtomReply = MallocPtr<xcb_intern_atom_reply_t>;
 
-private:
     xcb_connection_t* connection;
     xcb_screen_t* screen;
     xcb_window_t window;
@@ -19,8 +19,10 @@ public:
 
     Window(xcb_connection_t* connection, xcb_screen_t* screen);
     ~Window();
+    vk::XcbSurfaceCreateInfoKHR surface_create_info() const;
 
-    void set_title(const std::string_view& title) const;
+private:
+    AtomReply atom(bool only_if_exists, const std::string_view& str) const;
 };
 
 #endif

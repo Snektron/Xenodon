@@ -12,10 +12,11 @@
 #include <cstdlib>
 #include <memory>
 #include <vulkan/vulkan.hpp>
-#include <GLFW/glfw3.h>
-#include "utility/ScopeGuard.h"
+#include <xcb/xcb.h>
 #include "render/PhysicalDeviceInfo.h"
 #include "render/Renderer.h"
+#include "interactive/Window.h"
+#include "utility/ScopeGuard.h"
 #include "resources.h"
 
 namespace {
@@ -23,6 +24,11 @@ namespace {
     constexpr const uint32_t APP_VERSION = VK_MAKE_VERSION(0, 0, 0);
 
     constexpr const size_t MAX_FRAMES = 2;
+
+    constexpr const std::array INSTANCE_EXTENSIONS = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+        VK_KHR_XCB_SURFACE_EXTENSION_NAME
+    };
 
     constexpr const std::array DEVICE_EXTENSIONS = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -67,16 +73,13 @@ namespace {
             VK_API_VERSION_1_1
         );
 
-        uint32_t ext_count;
-        const auto** extensions = glfwGetRequiredInstanceExtensions(&ext_count);
-
         auto create_info = vk::InstanceCreateInfo(
             {},
             &app_info,
             0,
             nullptr,
-            ext_count,
-            extensions
+            INSTANCE_EXTENSIONS.size(),
+            INSTANCE_EXTENSIONS.data()
         );
 
         return vk::createInstanceUnique(create_info);
@@ -171,15 +174,6 @@ namespace {
         return picked.physical_device.createDeviceUnique(device_create_info);
     }
 
-    vk::UniqueSurfaceKHR create_surface(vk::UniqueInstance& instance, GLFWwindow* window) {
-        VkSurfaceKHR surface;
-        if (glfwCreateWindowSurface(VkInstance(instance.get()), window, nullptr, &surface) != VK_SUCCESS)
-            throw std::runtime_error("Failed to create window surface");
-
-        vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderStatic> deleter(instance.get());
-        return vk::UniqueSurfaceKHR(vk::SurfaceKHR(surface), deleter);
-    }
-
     vk::SurfaceFormatKHR pick_surface_format(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface) {
         auto formats = physical_device.getSurfaceFormatsKHR(surface);
         auto preferred_format = vk::SurfaceFormatKHR{vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
@@ -213,23 +207,20 @@ namespace {
         return vk::PresentModeKHR::eFifo;
     }
 
-    vk::Extent2D pick_swap_extent(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface, GLFWwindow* window) {
+    vk::Extent2D pick_swap_extent(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface, const Window& window) {
         auto caps = physical_device.getSurfaceCapabilitiesKHR(surface);
 
         if (caps.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return caps.currentExtent;
         } else {
-            int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
-
             return {
-                std::clamp(caps.minImageExtent.width, caps.maxImageExtent.width, static_cast<uint32_t>(width)),
-                std::clamp(caps.minImageExtent.height, caps.maxImageExtent.height, static_cast<uint32_t>(height)),
+                std::clamp(caps.minImageExtent.width, caps.maxImageExtent.width, static_cast<uint32_t>(window.width)),
+                std::clamp(caps.minImageExtent.height, caps.maxImageExtent.height, static_cast<uint32_t>(window.height)),
             };
         }
     }
 
-    SwapchainInfo create_swap_chain(PickedDeviceInfo& picked, vk::Device device, vk::SurfaceKHR surface, GLFWwindow* window) {
+    SwapchainInfo create_swap_chain(PickedDeviceInfo& picked, vk::Device device, vk::SurfaceKHR surface, const Window& window) {
         auto surface_format = pick_surface_format(picked.physical_device, surface);
         auto present_mode = pick_present_mode(picked.physical_device, surface);
         auto extent = pick_swap_extent(picked.physical_device, surface, window);
@@ -332,7 +323,7 @@ namespace {
         return device.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
     }
 
-    std::unique_ptr<RenderState> create_render_state(PickedDeviceInfo& physical_device, vk::Device device, vk::SurfaceKHR surface, GLFWwindow* window, vk::CommandPool command_pool) {
+    std::unique_ptr<RenderState> create_render_state(PickedDeviceInfo& physical_device, vk::Device device, vk::SurfaceKHR surface, const Window& window, vk::CommandPool command_pool) {
         auto [swapchain, format, extent] = create_swap_chain(physical_device, device, surface, window);
         auto image_views = initialize_views(device, swapchain.get(), format);
 
@@ -371,30 +362,16 @@ namespace {
 void interactive_main() {
     using namespace std::literals::chrono_literals;
 
-    if (glfwInit() != GLFW_TRUE) {
-        throw std::runtime_error("Failed to initialize GLFW");
-    }
-
-    auto _finalize_glfw = ScopeGuard([] {
-        glfwTerminate();
+    xcb_connection_t* connection = xcb_connect(NULL, NULL);
+    auto _destroy_xcb_connection = ScopeGuard([connection]{
+        xcb_disconnect(connection);
     });
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-    auto* window = glfwCreateWindow(
-        800,
-        600,
-        "Vulkan test",
-        nullptr,
-        nullptr
-    );
-
-    auto _finalize_window = ScopeGuard([window] {
-        glfwDestroyWindow(window);
-    });
+    xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(connection)).data;
+    auto window = Window(connection, screen);
 
     auto instance = create_instance();
-    auto surface = create_surface(instance, window);
+    auto surface = instance->createXcbSurfaceKHRUnique(window.surface_create_info());
     auto picked = pick_physical_device(instance.get(), surface.get());
     std::cout << "Picked device '" << picked.physical_device.getProperties().deviceName << '\'' << std::endl;
     auto device = initialize_device(picked);
@@ -420,8 +397,20 @@ void interactive_main() {
     size_t start_frame = 0;
     size_t total_frames = 0;
 
-    while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
+    bool quit = false;
+
+    auto poll_events = [&] {
+        xcb_generic_event_t* event;
+        while ((event = xcb_poll_for_event(connection))) {
+            int type = static_cast<int>(event->response_type) & ~0x80;
+            if (type == XCB_KEY_PRESS)
+                quit = true;
+            std::free(event);
+        }
+    };
+
+    while (!quit) {
+        poll_events();
 
         size_t current_frame = total_frames % MAX_FRAMES;
         auto& fence = fences[current_frame].get();
