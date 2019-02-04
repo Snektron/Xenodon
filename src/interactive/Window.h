@@ -21,8 +21,6 @@ public:
     ~Window();
 
     void set_title(const std::string_view& title) const;
-    void map() const;
-    void unmap() const;
 };
 
 #endif

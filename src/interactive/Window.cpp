@@ -1,6 +1,7 @@
 #include "interactive/Window.h"
 #include <string_view>
 #include <cstdint>
+#include <iostream>
 
 namespace {
     constexpr const uint32_t EVENT_MASK =
@@ -34,9 +35,10 @@ Window::Window(xcb_connection_t* connection, xcb_screen_t* screen):
     atom_wm_delete_window(atom(connection, false, "WM_DELETE_WINDOW"sv)),
     width(screen->width_in_pixels),
     height(screen->height_in_pixels) {
-    uint32_t value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+    uint32_t value_mask = XCB_CW_BACK_PIXEL | XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK;
     uint32_t value_list[] = {
         this->screen->black_pixel,
+        true,
         EVENT_MASK
     };
 
@@ -56,21 +58,29 @@ Window::Window(xcb_connection_t* connection, xcb_screen_t* screen):
         value_list
     );
 
-    // Set window full screen
-    {
-        AtomReply atom_wm_state = atom(connection, false, "_NET_WM_STATE"sv);
-        AtomReply atom_wm_fullscreen = atom(connection, false, "_NET_WM_STATE_FULLSCREEN"sv);
-        xcb_change_property(
-            this->connection,
-            XCB_PROP_MODE_REPLACE,
-            this->window,
-            atom_wm_state->atom,
-            XCB_ATOM_ATOM,
-            32,
-            1,
-            &atom_wm_fullscreen->atom
-        );
-    }
+    xcb_map_window(this->connection, this->window);
+    xcb_flush(this->connection);
+
+    xcb_grab_keyboard(
+        this->connection,
+        1,
+        this->window,
+        XCB_CURRENT_TIME,
+        XCB_GRAB_MODE_ASYNC,
+        XCB_GRAB_MODE_ASYNC
+    );
+
+    xcb_grab_pointer(
+        this->connection,
+        1,
+        this->window,
+        XCB_NONE,
+        XCB_GRAB_MODE_ASYNC,
+        XCB_GRAB_MODE_ASYNC,
+        this->window,
+        XCB_NONE,
+        XCB_CURRENT_TIME
+    );
 
     // Make window send destroy notifications
     {
@@ -81,7 +91,7 @@ Window::Window(xcb_connection_t* connection, xcb_screen_t* screen):
             XCB_PROP_MODE_REPLACE,
             this->window,
             atom_wm_protocols->atom,
-            4,
+            XCB_ATOM_ATOM,
             32,
             1,
             &this->atom_wm_delete_window->atom
@@ -104,12 +114,4 @@ void Window::set_title(const std::string_view& title) const {
         static_cast<uint32_t>(title.size()),
         title.data()
     );
-}
-
-void Window::map() const {
-    xcb_map_window(this->connection, this->window);
-}
-
-void Window::unmap() const {
-    xcb_unmap_window(this->connection, this->window);
 }
