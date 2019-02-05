@@ -16,6 +16,7 @@
 #include "render/PhysicalDeviceInfo.h"
 #include "render/Renderer.h"
 #include "interactive/Window.h"
+#include "interactive/EventHandler.h"
 #include "utility/ScopeGuard.h"
 #include "resources.h"
 
@@ -213,9 +214,11 @@ namespace {
         if (caps.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return caps.currentExtent;
         } else {
+            vk::Rect2D geometry = window.geometry();
+
             return {
-                std::clamp(caps.minImageExtent.width, caps.maxImageExtent.width, static_cast<uint32_t>(window.width)),
-                std::clamp(caps.minImageExtent.height, caps.maxImageExtent.height, static_cast<uint32_t>(window.height)),
+                std::clamp(caps.minImageExtent.width, caps.maxImageExtent.width, geometry.extent.width),
+                std::clamp(caps.minImageExtent.height, caps.maxImageExtent.height, geometry.extent.height),
             };
         }
     }
@@ -362,13 +365,14 @@ namespace {
 void interactive_main() {
     using namespace std::literals::chrono_literals;
 
-    xcb_connection_t* connection = xcb_connect(NULL, NULL);
+    xcb_connection_t* connection = xcb_connect(nullptr, nullptr);
     auto _destroy_xcb_connection = ScopeGuard([connection]{
         xcb_disconnect(connection);
     });
 
+    auto handler = EventHandler(connection);
     xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(connection)).data;
-    auto window = Window(connection, screen);
+    auto window = Window(connection, screen, Window::Mode::WINDOWED, 800, 600);
 
     auto instance = create_instance();
     auto surface = instance->createXcbSurfaceKHRUnique(window.surface_create_info());
@@ -400,12 +404,10 @@ void interactive_main() {
     bool quit = false;
 
     auto poll_events = [&] {
-        xcb_generic_event_t* event;
-        while ((event = xcb_poll_for_event(connection))) {
+        while (auto event = handler.poll_event()) {
             int type = static_cast<int>(event->response_type) & ~0x80;
             if (type == XCB_KEY_PRESS)
                 quit = true;
-            std::free(event);
         }
     };
 

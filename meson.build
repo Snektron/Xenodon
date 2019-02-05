@@ -14,9 +14,10 @@ project(
 sources = [
     'src/headless/headless.cpp',
     'src/interactive/interactive.cpp',
+    'src/interactive/Window.cpp',
+    'src/interactive/EventHandler.cpp',
     'src/render/PhysicalDeviceInfo.cpp',
     'src/render/Renderer.cpp',
-    'src/interactive/Window.cpp',
     'src/main.cpp'
 ]
 
