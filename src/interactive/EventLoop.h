@@ -5,11 +5,11 @@
 #include <xcb/xcb.h>
 #include "utility/MallocPtr.h"
 
-class EventHandler {
+class EventLoop {
     xcb_connection_t* connection;
 
 public:
-    EventHandler(xcb_connection_t* connection);
+    EventLoop(xcb_connection_t* connection);
     MallocPtr<xcb_generic_event_t> poll_event();
 };
 

@@ -5,6 +5,8 @@
 #include "interactive/interactive.h"
 #include "resources.h"
 
+#include <vulkan/vulkan.hpp>
+
 void print_help(const char* program_name) {
     std::cout << "Usage: " << program_name << " [options]\n\n"
         << resources::open("resources/options.txt") << std::endl;

@@ -2,12 +2,7 @@
 #define _XENODON_RENDER_RENDERER_H
 
 #include <vulkan/vulkan.hpp>
-#include <cstdint>
-
-struct DeviceContext {
-    vk::PhysicalDevice physical_device;
-    vk::Device device;
-};
+#include "render/DeviceContext.h"
 
 class Renderer {
     DeviceContext& device_context;

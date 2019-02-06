@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.hpp>
 #include "utility/MallocPtr.h"
 
+class EventLoop;
+
 class Window {
     using AtomReply = MallocPtr<xcb_intern_atom_reply_t>;
 
@@ -18,8 +20,8 @@ private:
 
 public:
     struct Mode {
-        constexpr const static struct Fullscreen {} FULLSCREEN;
-        constexpr const static struct Windowed {} WINDOWED;
+        constexpr const static struct Fullscreen {} FULLSCREEN = {};
+        constexpr const static struct Windowed {} WINDOWED = {};
     };
 
     Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Fullscreen);

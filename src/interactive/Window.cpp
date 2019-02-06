@@ -2,6 +2,7 @@
 #include <string_view>
 #include <cstdint>
 #include <iostream>
+#include "interactive/EventLoop.h"
 
 namespace {
     using std::literals::operator ""sv;
@@ -14,8 +15,7 @@ namespace {
         | XCB_EVENT_MASK_STRUCTURE_NOTIFY
         | XCB_EVENT_MASK_POINTER_MOTION
         | XCB_EVENT_MASK_BUTTON_PRESS
-        | XCB_EVENT_MASK_BUTTON_RELEASE
-        | XCB_EVENT_MASK_RESIZE_REDIRECT;
+        | XCB_EVENT_MASK_BUTTON_RELEASE;
 }
 
 Window::Window(xcb_connection_t* connection, xcb_screen_t* screen):

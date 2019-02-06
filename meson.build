@@ -15,7 +15,8 @@ sources = [
     'src/headless/headless.cpp',
     'src/interactive/interactive.cpp',
     'src/interactive/Window.cpp',
-    'src/interactive/EventHandler.cpp',
+    'src/interactive/EventLoop.cpp',
+    'src/interactive/Swapchain.cpp',
     'src/render/PhysicalDeviceInfo.cpp',
     'src/render/Renderer.cpp',
     'src/main.cpp'
@@ -99,5 +100,6 @@ executable('xenodon', sources,
     install: true,
     build_by_default: true,
     dependencies: [vk_dep, xcb_dep, resources_dep],
-    include_directories: include
+    include_directories: include,
+    link_args: '-g'
 )
