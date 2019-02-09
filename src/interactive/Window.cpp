@@ -21,8 +21,7 @@ namespace {
 Window::Window(xcb_connection_t* connection, xcb_screen_t* screen):
     connection(connection),
     screen(screen),
-    xid(xcb_generate_id(connection)),
-    atom_wm_delete_window(this->atom(false, "WM_DELETE_WINDOW"sv)) {
+    xid(xcb_generate_id(connection)) {
 }
 
 Window::Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Fullscreen):
@@ -74,8 +73,6 @@ Window::Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Fullscr
         XCB_NONE,
         XCB_CURRENT_TIME
     );
-
-    this->enable_destroy_events();
 }
 
 Window::Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Windowed, uint16_t width, uint16_t height):
@@ -105,8 +102,6 @@ Window::Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Windowe
 
     xcb_map_window(this->connection, this->xid);
     xcb_flush(this->connection);
-
-    this->enable_destroy_events();
 }
 
 Window::~Window() {
@@ -136,29 +131,17 @@ vk::Rect2D Window::geometry() const {
     );
 }
 
-Window::AtomReply Window::atom(bool only_if_exists, const std::string_view& str) const {
-    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(
-        connection,
-        only_if_exists,
-        static_cast<uint16_t>(str.size()),
-        str.data()
-    );
+// void Window::enable_destroy_events() const {
+//     AtomReply atom_wm_protocols = this->atom(true, "WM_PROTOCOLS"sv);
 
-    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(connection, cookie, nullptr);
-    return Window::AtomReply(reply);
-}
-
-void Window::enable_destroy_events() const {
-    AtomReply atom_wm_protocols = this->atom(true, "WM_PROTOCOLS"sv);
-
-    xcb_change_property(
-        this->connection,
-        XCB_PROP_MODE_REPLACE,
-        this->xid,
-        atom_wm_protocols->atom,
-        XCB_ATOM_ATOM,
-        32,
-        1,
-        &this->atom_wm_delete_window->atom
-    );
-}
+//     xcb_change_property(
+//         this->connection,
+//         XCB_PROP_MODE_REPLACE,
+//         this->xid,
+//         atom_wm_protocols->atom,
+//         XCB_ATOM_ATOM,
+//         32,
+//         1,
+//         &this->atom_wm_delete_window->atom
+//     );
+// }

@@ -8,14 +8,10 @@
 class EventLoop;
 
 class Window {
-    using AtomReply = MallocPtr<xcb_intern_atom_reply_t>;
-
     xcb_connection_t* connection;
     xcb_screen_t* screen;
     xcb_window_t xid;
-    AtomReply atom_wm_delete_window;
 
-private:
     Window(xcb_connection_t* connection, xcb_screen_t* screen);
 
 public:
@@ -37,11 +33,8 @@ public:
     vk::XcbSurfaceCreateInfoKHR surface_create_info() const;
     vk::Rect2D geometry() const;
 
-private:
-    AtomReply atom(bool only_if_exists, const std::string_view& str) const;
-    void enable_destroy_events() const;
-
     friend class EventHandler;
+    friend class Display;
 };
 
 #endif

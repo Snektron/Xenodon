@@ -17,6 +17,9 @@ sources = [
     'src/interactive/Window.cpp',
     'src/interactive/EventLoop.cpp',
     'src/interactive/Swapchain.cpp',
+    'src/interactive/DisplayArray.cpp',
+    'src/interactive/Display.cpp',
+    'src/interactive/WindowManager.cpp',
     'src/render/PhysicalDeviceInfo.cpp',
     'src/render/Renderer.cpp',
     'src/main.cpp'

@@ -213,7 +213,7 @@ void interactive_main() {
 
     auto renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, window_extent), color_attachment);
     auto swapchain = Swapchain(device_context, surface.get(), window_extent, renderer->final_render_pass());
-    render(*renderer, swapchain);
+    // render(*renderer, swapchain);
 
     auto image_available_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
     auto render_finished_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
@@ -235,9 +235,9 @@ void interactive_main() {
         while (auto event = handler.poll_event()) {
             switch (static_cast<int>(event->response_type) & ~0x80) {
                 case XCB_KEY_PRESS: {
-                    std::cout << "key press" << std::endl;
                     auto key_press = event_cast<xcb_key_press_event_t>(event);
                     quit = true;
+                    std::cout << "key press " << int(key_press->detail) << std::endl;
                     break;
                 }
                 case XCB_CONFIGURE_NOTIFY: {
@@ -272,18 +272,19 @@ void interactive_main() {
         vk::Result result = swapchain.acquire_next_image(image_available);
         if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
             device->waitIdle();
-            renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, window_extent), color_attachment);
             swapchain.recreate(window_extent, renderer->final_render_pass());
             result = swapchain.acquire_next_image(image_available);
 
             if (result == vk::Result::eSuccess) {
-                render(*renderer, swapchain);
+                // render(*renderer, swapchain);
             }
         }
 
         if (result != vk::Result::eSuccess) {
             throw std::runtime_error("Failed to acquire next image");
         }
+
+        renderer->render(swapchain.active_frame().command_buffer.get(), swapchain.active_frame().framebuffer.get());
 
         auto wait_stages = std::array{vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)};
         auto submit_info = vk::SubmitInfo(
