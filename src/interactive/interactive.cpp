@@ -155,7 +155,7 @@ namespace {
     }
 
     vk::UniqueCommandPool create_command_pool(vk::Device device, uint32_t graphics_queue) {
-        auto command_pool_info = vk::CommandPoolCreateInfo({}, graphics_queue);
+        auto command_pool_info = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, graphics_queue);
         return device.createCommandPoolUnique(command_pool_info);
     }
 
@@ -224,7 +224,7 @@ void interactive_main() {
     auto recreate_swapchain = [&](){
         device->waitIdle();
         sinf = SurfaceInfo(device_context.physical_device, surface.get(), window_extent);
-        renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, window_extent), sinf.attachment_description);
+        renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, sinf.extent), sinf.attachment_description);
         swapchain.recreate(sinf, renderer->final_render_pass());
     };
 
@@ -276,6 +276,7 @@ void interactive_main() {
             throw std::runtime_error("Failed to acquire next image: " + vk::to_string(result));
         }
 
+        swapchain.active_frame().command_buffer->reset({});
         renderer->render(swapchain.active_frame().command_buffer.get(), swapchain.active_frame().framebuffer.get());
 
         auto wait_stages = std::array{vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)};
