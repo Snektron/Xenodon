@@ -15,7 +15,6 @@ sources = [
     'src/headless/headless.cpp',
     'src/interactive/interactive.cpp',
     'src/interactive/Window.cpp',
-    'src/interactive/EventLoop.cpp',
     'src/interactive/Swapchain.cpp',
     'src/interactive/DisplayArray.cpp',
     'src/interactive/Display.cpp',

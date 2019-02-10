@@ -17,7 +17,6 @@
 #include "render/PhysicalDeviceInfo.h"
 #include "render/Renderer.h"
 #include "interactive/Window.h"
-#include "interactive/EventLoop.h"
 #include "interactive/Swapchain.h"
 #include "interactive/SurfaceInfo.h"
 #include "interactive/Display.h"
@@ -29,8 +28,6 @@
 namespace {
     constexpr const char* const APP_NAME = "Xenodon";
     constexpr const uint32_t APP_VERSION = VK_MAKE_VERSION(0, 0, 0);
-
-    constexpr const size_t MAX_FRAMES = 2;
 
     constexpr const std::array INSTANCE_EXTENSIONS = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -160,19 +157,6 @@ namespace {
     vk::UniqueCommandPool create_command_pool(vk::Device device, uint32_t graphics_queue) {
         auto command_pool_info = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, graphics_queue);
         return device.createCommandPoolUnique(command_pool_info);
-    }
-
-    vk::UniqueSemaphore create_semaphore(vk::Device device) {
-        return device.createSemaphoreUnique(vk::SemaphoreCreateInfo());
-    }
-
-    vk::UniqueFence create_fence(vk::Device device) {
-        return device.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
-    }
-
-    template <typename To, typename From>
-    MallocPtr<To> event_cast(MallocPtr<From>& from) {
-        return MallocPtr<To>(reinterpret_cast<To*>(from.release()));
     }
 
     std::vector<std::unique_ptr<Display>> initialize_displays(vk::Instance instance, WindowManager& wm) {
