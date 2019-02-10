@@ -31,7 +31,7 @@ struct Queue {
 
 struct DeviceContext {
     vk::PhysicalDevice physical_device;
-    vk::Device device;
+    vk::UniqueDevice device;
 
     Queue graphics;
     Queue present;

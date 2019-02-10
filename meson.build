@@ -53,6 +53,7 @@ endif
 
 vk_dep = dependency('vulkan', method: 'system')
 xcb_dep = dependency('xcb')
+xcb_keysyms_dep = dependency('xcb-keysyms')
 
 if not cxx.has_header('vulkan/vulkan.h', dependencies: vk_dep)
     error('Vulkan C headers not found (vulkan/vulkan.h)')
@@ -103,7 +104,7 @@ include = include_directories('src')
 executable('xenodon', sources,
     install: true,
     build_by_default: true,
-    dependencies: [vk_dep, xcb_dep, resources_dep],
+    dependencies: [vk_dep, xcb_dep, xcb_keysyms_dep, resources_dep],
     include_directories: include,
     link_args: '-g'
 )

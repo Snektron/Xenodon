@@ -20,6 +20,9 @@
 #include "interactive/EventLoop.h"
 #include "interactive/Swapchain.h"
 #include "interactive/SurfaceInfo.h"
+#include "interactive/Display.h"
+#include "interactive/DisplayArray.h"
+#include "interactive/WindowManager.h"
 #include "utility/ScopeGuard.h"
 #include "resources.h"
 
@@ -171,130 +174,73 @@ namespace {
     MallocPtr<To> event_cast(MallocPtr<From>& from) {
         return MallocPtr<To>(reinterpret_cast<To*>(from.release()));
     }
+
+    std::vector<std::unique_ptr<Display>> initialize_displays(vk::Instance instance, WindowManager& wm) {
+        xcb_screen_iterator_t it = xcb_setup_roots_iterator(xcb_get_setup(wm.connection));
+        auto displays = std::vector<std::unique_ptr<Display>>();
+        // displays.reserve(static_cast<size_t>(it.rem));
+
+        for (; it.rem; xcb_screen_next(&it)) {
+            auto window = Window(wm.connection, it.data, Window::Mode::FULLSCREEN);
+            auto surface = instance.createXcbSurfaceKHRUnique(window.surface_create_info());
+            auto picked = pick_physical_device(instance, surface.get());
+
+            std::cout << "Picked device '" << picked.physical_device.getProperties().deviceName << '\'' << std::endl;
+            auto device = initialize_device(picked);
+
+            auto device_context = [&] {
+                auto device = initialize_device(picked);
+
+                auto graphics = Queue(device.get(), picked.graphics_queue_index);
+                auto present = Queue(device.get(), picked.present_queue_index);
+                auto command_pool = create_command_pool(device.get(), picked.graphics_queue_index);
+
+                return DeviceContext {
+                    .physical_device = picked.physical_device,
+                    .device = std::move(device),
+                    .graphics = graphics,
+                    .present = present,
+                    .graphics_command_pool = std::move(command_pool)
+                };
+            }();
+
+            auto area = vk::Rect2D({0, 0}, window.geometry().extent);
+
+            displays.push_back(std::make_unique<Display>(std::move(device_context), std::move(window), std::move(surface), area));
+        }
+
+        return displays;
+    }
 }
 
 void interactive_main() {
     using namespace std::literals::chrono_literals;
-
+    auto instance = create_instance();
     xcb_connection_t* connection = xcb_connect(nullptr, nullptr);
     auto _destroy_xcb_connection = ScopeGuard([connection]{
         xcb_disconnect(connection);
     });
 
-    auto handler = EventLoop(connection);
-    xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(connection)).data;
-    auto window = Window(connection, screen, Window::Mode::WINDOWED, 800, 600);
+    auto wm = WindowManager(connection);
 
-    auto instance = create_instance();
-    auto surface = instance->createXcbSurfaceKHRUnique(window.surface_create_info());
-
-    auto picked = pick_physical_device(instance.get(), surface.get());
-    std::cout << "Picked device '" << picked.physical_device.getProperties().deviceName << '\'' << std::endl;
-    auto device = initialize_device(picked);
-
-    auto device_context = DeviceContext {
-        .physical_device = picked.physical_device,
-        .device = device.get(),
-        .graphics = Queue(device.get(), picked.graphics_queue_index),
-        .present = Queue(device.get(), picked.present_queue_index),
-        .graphics_command_pool = create_command_pool(device.get(), picked.graphics_queue_index)
-    };
-
-    vk::Extent2D window_extent = window.geometry().extent;
-    auto sinf = SurfaceInfo(device_context.physical_device, surface.get(), window_extent);
-    auto renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, window_extent), sinf.attachment_description);
-    auto swapchain = Swapchain(device_context, surface.get(), sinf, renderer->final_render_pass());
-
-    auto image_available_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
-    auto render_finished_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
-    auto fences = std::vector<vk::UniqueFence>(MAX_FRAMES);
-
-    for (size_t i = 0; i < MAX_FRAMES; ++i) {
-        image_available_sems[i] = create_semaphore(device.get());
-        render_finished_sems[i] = create_semaphore(device.get());
-        fences[i] = create_fence(device.get());
-    }
+    auto display_array = DisplayArray(wm, initialize_displays(instance.get(), wm));
 
     auto start = std::chrono::high_resolution_clock::now();
     size_t start_frame = 0;
     size_t total_frames = 0;
 
-    bool quit = false;
+    while (true) {
+        while (auto event = MallocPtr<xcb_generic_event_t>(xcb_poll_for_event(connection))) {
+            display_array.event(*event.get());
 
-    auto recreate_swapchain = [&](){
-        device->waitIdle();
-        sinf = SurfaceInfo(device_context.physical_device, surface.get(), window_extent);
-        renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, sinf.extent), sinf.attachment_description);
-        swapchain.recreate(sinf, renderer->final_render_pass());
-    };
-
-    auto poll_events = [&] {
-        while (auto event = handler.poll_event()) {
-            switch (static_cast<int>(event->response_type) & ~0x80) {
-                case XCB_KEY_PRESS: {
-                    auto key_press = event_cast<xcb_key_press_event_t>(event);
-                    quit = true;
-                    std::cout << "key press " << int(key_press->detail) << std::endl;
-                    break;
-                }
-                case XCB_CONFIGURE_NOTIFY: {
-                    auto config = event_cast<xcb_configure_notify_event_t>(event);
-                    auto new_extent = vk::Extent2D{
-                        static_cast<uint32_t>(config->width),
-                        static_cast<uint32_t>(config->height)
-                    };
-
-                    if (new_extent != window_extent) {
-                        window_extent = new_extent;
-                        recreate_swapchain();
-                    }
-
-                    break;
-                }
-            }
-        }
-    };
-
-    while (!quit) {
-        poll_events();
-
-        size_t current_frame = total_frames % MAX_FRAMES;
-        auto& fence = fences[current_frame].get();
-        device->waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
-        device->resetFences(fence);
-
-        auto& image_available = image_available_sems[current_frame].get();
-        auto& render_finished = render_finished_sems[current_frame].get();
-
-        vk::Result result = swapchain.acquire_next_image(image_available);
-        if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
-            recreate_swapchain();
-            result = swapchain.acquire_next_image(image_available);
         }
 
-        if (result != vk::Result::eSuccess) {
-            throw std::runtime_error("Failed to acquire next image: " + vk::to_string(result));
-        }
-
-        swapchain.active_frame().command_buffer->reset({});
-        renderer->render(swapchain.active_frame().command_buffer.get(), swapchain.active_frame().framebuffer.get());
-
-        auto wait_stages = std::array{vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)};
-        auto submit_info = vk::SubmitInfo(
-            1,
-            &image_available,
-            wait_stages.data(),
-            1,
-            &swapchain.active_frame().command_buffer.get(),
-            1,
-            &render_finished
-        );
-
-        device_context.graphics.queue.submit(1, &submit_info, fence);
-
-        swapchain.present(render_finished);
+        if (display_array.close_requested)
+            break;
 
         total_frames++;
+
+        display_array.render();
 
         auto now = std::chrono::high_resolution_clock::now();
         auto diff = std::chrono::duration<double>(now - start);
@@ -306,6 +252,4 @@ void interactive_main() {
             start = now;
         }
     }
-
-    device->waitIdle();
 }

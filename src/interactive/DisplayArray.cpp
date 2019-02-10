@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <X11/keysym.h>
 
-DisplayArray::DisplayArray(WindowManager& manager, std::vector<Display>&& displays):
+DisplayArray::DisplayArray(WindowManager& manager, std::vector<std::unique_ptr<Display>>&& displays):
     manager(manager),
     displays(std::move(displays)),
     symbols(xcb_key_symbols_alloc(manager.connection)),
@@ -16,8 +16,8 @@ void DisplayArray::event(xcb_generic_event_t& event) {
             const auto& event_args = reinterpret_cast<const xcb_configure_notify_event_t&>(event);
             const xcb_window_t xid = event_args.event;
 
-            const auto it = std::find_if(this->displays.begin(), this->displays.end(), [xid](const Display& display) {
-                return display.xid() == xid;
+            const auto it = std::find_if(this->displays.begin(), this->displays.end(), [xid](const auto& display) {
+                return display->xid() == xid;
             });
 
             if (it == this->displays.end())
@@ -31,7 +31,7 @@ void DisplayArray::event(xcb_generic_event_t& event) {
                 }
             );
 
-            it->reconfigure(area);
+            it->get()->reconfigure(area);
         }
         case XCB_KEY_PRESS: {
             const auto& event_args = reinterpret_cast<const xcb_key_press_event_t&>(event);
@@ -49,5 +49,11 @@ void DisplayArray::event(xcb_generic_event_t& event) {
                 this->close_requested = true;
             }
         }
+    }
+}
+
+void DisplayArray::render() {
+    for (auto&& display : this->displays) {
+        display->render();
     }
 }

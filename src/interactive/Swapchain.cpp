@@ -41,12 +41,12 @@ void Swapchain::recreate(SurfaceInfo& sinf, vk::RenderPass render_pass) {
             create_info.pQueueFamilyIndices = queue_indices.data();
         }
 
-        this->swapchain = this->device_context.device.createSwapchainKHRUnique(create_info);
+        this->swapchain = this->device_context.device->createSwapchainKHRUnique(create_info);
     }
 
     // Retrieve the swapchain images
     {
-        auto swapchain_images = this->device_context.device.getSwapchainImagesKHR(this->swapchain.get());
+        auto swapchain_images = this->device_context.device->getSwapchainImagesKHR(this->swapchain.get());
         this->frames.resize(swapchain_images.size());
 
         for (size_t i = 0; i < this->frames.size(); ++i) {
@@ -69,7 +69,7 @@ void Swapchain::recreate(SurfaceInfo& sinf, vk::RenderPass render_pass) {
                 sub_resource_range
             );
 
-            this->frames[i].view = this->device_context.device.createImageViewUnique(create_info);
+            this->frames[i].view = this->device_context.device->createImageViewUnique(create_info);
         }
     }
     
@@ -86,7 +86,7 @@ void Swapchain::recreate(SurfaceInfo& sinf, vk::RenderPass render_pass) {
                 1
             );
 
-            this->frames[i].framebuffer = this->device_context.device.createFramebufferUnique(create_info);
+            this->frames[i].framebuffer = this->device_context.device->createFramebufferUnique(create_info);
         }
     }
 
@@ -94,7 +94,7 @@ void Swapchain::recreate(SurfaceInfo& sinf, vk::RenderPass render_pass) {
     {
         auto command_buffers_info = vk::CommandBufferAllocateInfo(this->device_context.graphics_command_pool.get());
         command_buffers_info.commandBufferCount = static_cast<uint32_t>(this->frames.size());
-        auto command_buffers = this->device_context.device.allocateCommandBuffersUnique(command_buffers_info);
+        auto command_buffers = this->device_context.device->allocateCommandBuffersUnique(command_buffers_info);
 
         for (size_t i = 0; i < this->frames.size(); ++i) {
             this->frames[i].command_buffer = std::move(command_buffers[i]);
@@ -103,7 +103,7 @@ void Swapchain::recreate(SurfaceInfo& sinf, vk::RenderPass render_pass) {
 }
 
 vk::Result Swapchain::acquire_next_image(vk::Semaphore image_available) {
-    return this->device_context.device.acquireNextImageKHR(
+    return this->device_context.device->acquireNextImageKHR(
         this->swapchain.get(),
         std::numeric_limits<uint64_t>::max(),
         image_available,

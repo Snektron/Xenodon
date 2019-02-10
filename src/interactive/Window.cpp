@@ -104,8 +104,23 @@ Window::Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Windowe
     xcb_flush(this->connection);
 }
 
+Window::Window(Window&& other):
+    connection(other.connection),
+    screen(other.screen),
+    xid(other.xid) {
+    other.connection = nullptr;
+}
+
+Window& Window::operator=(Window&& other) {
+    std::swap(this->connection, other.connection);
+    std::swap(this->screen, other.screen);
+    std::swap(this->xid, other.xid);
+    return *this;
+}
+
 Window::~Window() {
-    xcb_destroy_window(this->connection, this->xid);
+    if (this->connection)
+        xcb_destroy_window(this->connection, this->xid);
 }
 
 vk::XcbSurfaceCreateInfoKHR Window::surface_create_info() const {
@@ -130,18 +145,3 @@ vk::Rect2D Window::geometry() const {
         }
     );
 }
-
-// void Window::enable_destroy_events() const {
-//     AtomReply atom_wm_protocols = this->atom(true, "WM_PROTOCOLS"sv);
-
-//     xcb_change_property(
-//         this->connection,
-//         XCB_PROP_MODE_REPLACE,
-//         this->xid,
-//         atom_wm_protocols->atom,
-//         XCB_ATOM_ATOM,
-//         32,
-//         1,
-//         &this->atom_wm_delete_window->atom
-//     );
-// }

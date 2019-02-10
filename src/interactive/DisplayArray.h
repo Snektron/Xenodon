@@ -16,14 +16,15 @@ class DisplayArray {
     };
 
     WindowManager& manager;
-    std::vector<Display> displays;
+    std::vector<std::unique_ptr<Display>> displays;
     std::unique_ptr<xcb_key_symbols_t, FreeXcbKeySymbols> symbols;
 
 public:
     bool close_requested;
 
-    DisplayArray(WindowManager& manager, std::vector<Display>&& displays);
+    DisplayArray(WindowManager& manager, std::vector<std::unique_ptr<Display>>&& displays);
     void event(xcb_generic_event_t& event);
+    void render();
 };
 
 #endif

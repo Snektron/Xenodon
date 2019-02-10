@@ -24,12 +24,13 @@ public:
     Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Windowed, uint16_t width, uint16_t height);
 
     Window(const Window&) = delete;
-    Window(Window&&) = default;
+    Window(Window&& other);
 
     Window& operator=(const Window&) = delete;
-    Window& operator=(Window&&) = default;
+    Window& operator=(Window&& other);
 
     ~Window();
+
     vk::XcbSurfaceCreateInfoKHR surface_create_info() const;
     vk::Rect2D geometry() const;
 

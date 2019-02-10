@@ -7,11 +7,12 @@
 #include "utility/MallocPtr.h"
 
 class WindowManager {
+public:
     using AtomReply = MallocPtr<xcb_intern_atom_reply_t>;
 
     xcb_connection_t* connection;
     AtomReply atom_wm_delete_window;
-public:
+
     WindowManager(xcb_connection_t* connection);
 
     xcb_intern_atom_reply_t* delete_window_atom() {
