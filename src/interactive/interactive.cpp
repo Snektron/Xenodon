@@ -19,6 +19,7 @@
 #include "interactive/Window.h"
 #include "interactive/EventLoop.h"
 #include "interactive/Swapchain.h"
+#include "interactive/SurfaceInfo.h"
 #include "utility/ScopeGuard.h"
 #include "resources.h"
 
@@ -166,16 +167,10 @@ namespace {
         return device.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
     }
 
-    void render(Renderer& renderer, Swapchain& swapchain) {
-        for (auto& frame : swapchain.frames) {
-            renderer.render(frame.command_buffer.get(), frame.framebuffer.get());
-        }
+    template <typename To, typename From>
+    MallocPtr<To> event_cast(MallocPtr<From>& from) {
+        return MallocPtr<To>(reinterpret_cast<To*>(from.release()));
     }
-}
-
-template <typename To, typename From>
-MallocPtr<To> event_cast(MallocPtr<From>& from) {
-    return MallocPtr<To>(reinterpret_cast<To*>(from.release()));
 }
 
 void interactive_main() {
@@ -206,14 +201,9 @@ void interactive_main() {
     };
 
     vk::Extent2D window_extent = window.geometry().extent;
-
-    auto color_attachment = vk::AttachmentDescription({}, vk::Format::eB8G8R8A8Unorm);
-    color_attachment.loadOp = vk::AttachmentLoadOp::eClear;
-    color_attachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
-
-    auto renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, window_extent), color_attachment);
-    auto swapchain = Swapchain(device_context, surface.get(), window_extent, renderer->final_render_pass());
-    // render(*renderer, swapchain);
+    auto sinf = SurfaceInfo(device_context.physical_device, surface.get(), window_extent);
+    auto renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, window_extent), sinf.attachment_description);
+    auto swapchain = Swapchain(device_context, surface.get(), sinf, renderer->final_render_pass());
 
     auto image_available_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
     auto render_finished_sems = std::vector<vk::UniqueSemaphore>(MAX_FRAMES);
@@ -231,6 +221,13 @@ void interactive_main() {
 
     bool quit = false;
 
+    auto recreate_swapchain = [&](){
+        device->waitIdle();
+        sinf = SurfaceInfo(device_context.physical_device, surface.get(), window_extent);
+        renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, window_extent), sinf.attachment_description);
+        swapchain.recreate(sinf, renderer->final_render_pass());
+    };
+
     auto poll_events = [&] {
         while (auto event = handler.poll_event()) {
             switch (static_cast<int>(event->response_type) & ~0x80) {
@@ -242,15 +239,15 @@ void interactive_main() {
                 }
                 case XCB_CONFIGURE_NOTIFY: {
                     auto config = event_cast<xcb_configure_notify_event_t>(event);
-                    window_extent = vk::Extent2D{
+                    auto new_extent = vk::Extent2D{
                         static_cast<uint32_t>(config->width),
                         static_cast<uint32_t>(config->height)
                     };
 
-                    device->waitIdle();
-                    renderer = std::make_unique<Renderer>(device_context, vk::Rect2D({0, 0}, window_extent), color_attachment);
-                    swapchain.recreate(window_extent, renderer->final_render_pass());
-                    render(*renderer, swapchain);
+                    if (new_extent != window_extent) {
+                        window_extent = new_extent;
+                        recreate_swapchain();
+                    }
 
                     break;
                 }
@@ -271,17 +268,12 @@ void interactive_main() {
 
         vk::Result result = swapchain.acquire_next_image(image_available);
         if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
-            device->waitIdle();
-            swapchain.recreate(window_extent, renderer->final_render_pass());
+            recreate_swapchain();
             result = swapchain.acquire_next_image(image_available);
-
-            if (result == vk::Result::eSuccess) {
-                // render(*renderer, swapchain);
-            }
         }
 
         if (result != vk::Result::eSuccess) {
-            throw std::runtime_error("Failed to acquire next image");
+            throw std::runtime_error("Failed to acquire next image: " + vk::to_string(result));
         }
 
         renderer->render(swapchain.active_frame().command_buffer.get(), swapchain.active_frame().framebuffer.get());

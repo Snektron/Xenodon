@@ -22,7 +22,7 @@ class DisplayArray {
 public:
     bool close_requested;
 
-    explicit DisplayArray(WindowManager& manager, std::vector<Display>&& displays);
+    DisplayArray(WindowManager& manager, std::vector<Display>&& displays);
     void event(xcb_generic_event_t& event);
 };
 
