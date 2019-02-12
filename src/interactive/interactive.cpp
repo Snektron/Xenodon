@@ -21,7 +21,6 @@
 #include "interactive/SurfaceInfo.h"
 #include "interactive/Display.h"
 #include "interactive/DisplayArray.h"
-#include "interactive/WindowManager.h"
 #include "utility/ScopeGuard.h"
 #include "resources.h"
 
@@ -159,13 +158,13 @@ namespace {
         return device.createCommandPoolUnique(command_pool_info);
     }
 
-    std::vector<std::unique_ptr<Display>> initialize_displays(vk::Instance instance, WindowManager& wm) {
-        xcb_screen_iterator_t it = xcb_setup_roots_iterator(xcb_get_setup(wm.connection));
+    std::vector<std::unique_ptr<Display>> initialize_displays(vk::Instance instance, WindowContext& window_context) {
+        xcb_screen_iterator_t it = xcb_setup_roots_iterator(xcb_get_setup(window_context.connection));
         auto displays = std::vector<std::unique_ptr<Display>>();
         // displays.reserve(static_cast<size_t>(it.rem));
 
         for (; it.rem; xcb_screen_next(&it)) {
-            auto window = Window(wm.connection, it.data, Window::Mode::FULLSCREEN);
+            auto window = Window(window_context, it.data, Window::Mode::FULLSCREEN);
             auto surface = instance.createXcbSurfaceKHRUnique(window.surface_create_info());
             auto picked = pick_physical_device(instance, surface.get());
 
@@ -205,9 +204,8 @@ void interactive_main() {
         xcb_disconnect(connection);
     });
 
-    auto wm = WindowManager(connection);
-
-    auto display_array = DisplayArray(wm, initialize_displays(instance.get(), wm));
+    auto window_context = WindowContext(connection);
+    auto display_array = DisplayArray(window_context, initialize_displays(instance.get(), window_context));
 
     auto start = std::chrono::high_resolution_clock::now();
     size_t start_frame = 0;

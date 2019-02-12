@@ -17,14 +17,45 @@ namespace {
         | XCB_EVENT_MASK_BUTTON_RELEASE;
 }
 
-Window::Window(xcb_connection_t* connection, xcb_screen_t* screen):
+WindowContext::WindowContext(xcb_connection_t* connection):
     connection(connection),
-    screen(screen),
-    xid(xcb_generate_id(connection)) {
+    atom_wm_delete_window(this->atom(false, std::string_view{"WM_DELETE_WINDOW"})) {
 }
 
-Window::Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Fullscreen):
-    Window(connection, screen) {
+AtomReply WindowContext::atom(bool only_if_exists, const std::string_view& str) const {
+    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(
+        this->connection,
+        only_if_exists,
+        static_cast<uint16_t>(str.size()),
+        str.data()
+    );
+
+    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(this->connection, cookie, nullptr);
+    return AtomReply(reply);
+}
+
+Window::Window(WindowContext& window_context, xcb_screen_t* screen):
+    connection(window_context.connection),
+    screen(screen),
+    xid(xcb_generate_id(window_context.connection)) {
+
+    // Enable sending delete events if the window is closed.
+    AtomReply atom_wm_protocols = window_context.atom(true, "WM_PROTOCOLS"sv);
+
+    xcb_change_property(
+        this->connection,
+        XCB_PROP_MODE_REPLACE,
+        this->xid,
+        atom_wm_protocols->atom,
+        XCB_ATOM_ATOM,
+        32,
+        1,
+        &window_context.atom_wm_delete_window->atom
+    );
+}
+
+Window::Window(WindowContext& window_context, xcb_screen_t* screen, Mode::Fullscreen):
+    Window(window_context, screen) {
 
     uint32_t value_mask = XCB_CW_BACK_PIXEL | XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK;
     uint32_t value_list[] = {
@@ -74,8 +105,8 @@ Window::Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Fullscr
     );
 }
 
-Window::Window(xcb_connection_t* connection, xcb_screen_t* screen, Mode::Windowed, uint16_t width, uint16_t height):
-    Window(connection, screen) {
+Window::Window(WindowContext& window_context, xcb_screen_t* screen, Mode::Windowed, uint16_t width, uint16_t height):
+    Window(window_context, screen) {
 
     uint32_t value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
     uint32_t value_list[] = {

@@ -3,10 +3,10 @@
 #include <cstdint>
 #include <X11/keysym.h>
 
-DisplayArray::DisplayArray(WindowManager& manager, std::vector<std::unique_ptr<Display>>&& displays):
-    manager(manager),
+DisplayArray::DisplayArray(WindowContext& window_context, std::vector<std::unique_ptr<Display>>&& displays):
+    window_context(window_context),
     displays(std::move(displays)),
-    symbols(xcb_key_symbols_alloc(manager.connection)),
+    symbols(xcb_key_symbols_alloc(window_context.connection)),
     close_requested(false) {
 }
 
@@ -45,7 +45,7 @@ void DisplayArray::event(xcb_generic_event_t& event) {
             const auto& event_args = reinterpret_cast<const xcb_client_message_event_t&>(event);
 
             // Check if the [X] button has been pressed
-            if (event_args.data.data32[0] == this->manager.delete_window_atom()->atom) {
+            if (event_args.data.data32[0] == this->window_context.atom_wm_delete_window->atom) {
                 this->close_requested = true;
             }
         }

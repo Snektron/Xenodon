@@ -6,7 +6,7 @@
 #include <xcb/xcb.h>
 #include <xcb/xcb_keysyms.h>
 #include "interactive/Display.h"
-#include "interactive/WindowManager.h"
+#include "interactive/Window.h"
 
 class DisplayArray {
     struct FreeXcbKeySymbols {
@@ -15,14 +15,14 @@ class DisplayArray {
         }
     };
 
-    WindowManager& manager;
+    WindowContext& window_context;
     std::vector<std::unique_ptr<Display>> displays;
     std::unique_ptr<xcb_key_symbols_t, FreeXcbKeySymbols> symbols;
 
 public:
     bool close_requested;
 
-    DisplayArray(WindowManager& manager, std::vector<std::unique_ptr<Display>>&& displays);
+    DisplayArray(WindowContext& window_context, std::vector<std::unique_ptr<Display>>&& displays);
     void event(xcb_generic_event_t& event);
     void render();
 };
