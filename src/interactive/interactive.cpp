@@ -201,12 +201,8 @@ namespace {
 void interactive_main() {
     using namespace std::literals::chrono_literals;
     auto instance = create_instance();
-    xcb_connection_t* connection = xcb_connect(nullptr, nullptr);
-    auto _destroy_xcb_connection = ScopeGuard([connection]{
-        xcb_disconnect(connection);
-    });
 
-    auto window_context = WindowContext(connection);
+    auto window_context = WindowContext();
     auto display_array = DisplayArray(window_context, initialize_displays(instance.get(), window_context));
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -214,7 +210,7 @@ void interactive_main() {
     size_t total_frames = 0;
 
     while (true) {
-        while (auto event = MallocPtr<xcb_generic_event_t>(xcb_poll_for_event(connection))) {
+        while (auto event = window_context.poll_event()) {
             display_array.event(*event.get());
         }
 

@@ -8,12 +8,22 @@
 #include "utility/MallocPtr.h"
 
 using AtomReply = MallocPtr<xcb_intern_atom_reply_t>;
+using XcbEvent = MallocPtr<xcb_generic_event_t>;
 
 struct WindowContext {
     xcb_connection_t* connection;
     AtomReply atom_wm_delete_window;
 
-    WindowContext(xcb_connection_t* connection);
+    WindowContext();
+    ~WindowContext();
+
+    WindowContext(const WindowContext&) = delete;
+    WindowContext(WindowContext&&) = delete;
+
+    WindowContext& operator=(const WindowContext&) = delete;
+    WindowContext& operator=(WindowContext&&) = delete;
+
+    XcbEvent poll_event() const;
     AtomReply atom(bool only_if_exists, const std::string_view& str) const;
 };
 

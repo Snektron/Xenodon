@@ -17,9 +17,17 @@ namespace {
         | XCB_EVENT_MASK_BUTTON_RELEASE;
 }
 
-WindowContext::WindowContext(xcb_connection_t* connection):
-    connection(connection),
+WindowContext::WindowContext():
+    connection(xcb_connect(nullptr, nullptr)),
     atom_wm_delete_window(this->atom(false, std::string_view{"WM_DELETE_WINDOW"})) {
+}
+
+WindowContext::~WindowContext() {
+    xcb_disconnect(this->connection);
+}
+
+XcbEvent WindowContext::poll_event() const {
+    return XcbEvent(xcb_poll_for_event(this->connection));
 }
 
 AtomReply WindowContext::atom(bool only_if_exists, const std::string_view& str) const {
