@@ -1,5 +1,6 @@
 #include "interactive/DisplayArray.h"
 #include <algorithm>
+#include <iostream>
 #include <cstdint>
 #include <X11/keysym.h>
 
@@ -32,6 +33,7 @@ void DisplayArray::event(xcb_generic_event_t& event) {
             );
 
             it->get()->reconfigure(area);
+            break;
         }
         case XCB_KEY_PRESS: {
             const auto& event_args = reinterpret_cast<const xcb_key_press_event_t&>(event);
@@ -40,6 +42,7 @@ void DisplayArray::event(xcb_generic_event_t& event) {
             if (key == XK_Escape) {
                 this->close_requested = true;
             }
+            break;
         }
         case XCB_CLIENT_MESSAGE: {
             const auto& event_args = reinterpret_cast<const xcb_client_message_event_t&>(event);
@@ -48,6 +51,7 @@ void DisplayArray::event(xcb_generic_event_t& event) {
             if (event_args.data.data32[0] == this->window_context.atom_wm_delete_window->atom) {
                 this->close_requested = true;
             }
+            break;
         }
     }
 }

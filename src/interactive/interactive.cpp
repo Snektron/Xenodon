@@ -41,6 +41,7 @@ namespace {
         vk::PhysicalDevice physical_device;
         uint32_t graphics_queue_index;
         uint32_t present_queue_index;
+        uint32_t index;
     };
 
     vk::UniqueInstance create_instance() {
@@ -69,8 +70,9 @@ namespace {
 
         auto graphics_supported = std::vector<uint32_t>();
         auto present_supported = std::vector<uint32_t>();
+        for (size_t i = 0; i < physical_devices.size(); ++i) {
+            const auto& device = physical_devices[i];
 
-        for (auto&& device : physical_devices) {
             auto info = PhysicalDeviceInfo(device);
 
             if (!info.supports_extensions(DEVICE_EXTENSIONS)
@@ -104,7 +106,7 @@ namespace {
                 uint32_t p = *pit;
 
                 if (g == p)
-                    return {device, g, p};
+                    return {device, g, p, static_cast<uint32_t>(i)};
                 else if (g < p)
                     ++git;
                 else
@@ -112,7 +114,7 @@ namespace {
             }
 
             // No queue with both supported, but both are supported in any queue, so just take the first of both
-            return {device, graphics_supported[0], present_supported[0]};
+            return {device, graphics_supported[0], present_supported[0], static_cast<uint32_t>(i)};
         }
 
         throw std::runtime_error("Failed to find a suitable physical device");
@@ -161,14 +163,14 @@ namespace {
     std::vector<std::unique_ptr<Display>> initialize_displays(vk::Instance instance, WindowContext& window_context) {
         xcb_screen_iterator_t it = xcb_setup_roots_iterator(xcb_get_setup(window_context.connection));
         auto displays = std::vector<std::unique_ptr<Display>>();
-        // displays.reserve(static_cast<size_t>(it.rem));
+        displays.reserve(static_cast<size_t>(it.rem));
 
-        for (; it.rem; xcb_screen_next(&it)) {
-            auto window = Window(window_context, it.data, Window::Mode::FULLSCREEN);
+        for (int i = 0; it.rem; ++i, xcb_screen_next(&it)) {
+            auto window = Window(window_context, it.data);
             auto surface = instance.createXcbSurfaceKHRUnique(window.surface_create_info());
             auto picked = pick_physical_device(instance, surface.get());
 
-            std::cout << "Picked device '" << picked.physical_device.getProperties().deviceName << '\'' << std::endl;
+            std::cout << "Screen " << i << " Picked device " << picked.index << " '" << picked.physical_device.getProperties().deviceName << '\'' << std::endl;
             auto device = initialize_device(picked);
 
             auto device_context = [&] {
@@ -214,7 +216,6 @@ void interactive_main() {
     while (true) {
         while (auto event = MallocPtr<xcb_generic_event_t>(xcb_poll_for_event(connection))) {
             display_array.event(*event.get());
-
         }
 
         if (display_array.close_requested)

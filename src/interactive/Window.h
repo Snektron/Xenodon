@@ -2,6 +2,7 @@
 #define _XENODON_INTERACTIVE_WINDOW_H
 
 #include <string_view>
+#include <cstdint>
 #include <xcb/xcb.h>
 #include <vulkan/vulkan.hpp>
 #include "utility/MallocPtr.h"
@@ -21,16 +22,9 @@ class Window {
     xcb_screen_t* screen;
     xcb_window_t xid;
 
-    Window(WindowContext& window_context, xcb_screen_t* screen);
-
 public:
-    struct Mode {
-        constexpr const static struct Fullscreen {} FULLSCREEN = {};
-        constexpr const static struct Windowed {} WINDOWED = {};
-    };
-
-    Window(WindowContext& window_context, xcb_screen_t* screen, Mode::Fullscreen);
-    Window(WindowContext& window_context, xcb_screen_t* screen, Mode::Windowed, uint16_t width, uint16_t height);
+    Window(WindowContext& window_context, xcb_screen_t* screen, uint16_t width, uint16_t height, bool override_redirect = false);
+    Window(WindowContext& window_context, xcb_screen_t* screen, bool override_redirect = true);
 
     Window(const Window&) = delete;
     Window(Window&& other);
@@ -43,6 +37,7 @@ public:
     vk::XcbSurfaceCreateInfoKHR surface_create_info() const;
     vk::Rect2D geometry() const;
 
+private:
     friend class Display;
 };
 
