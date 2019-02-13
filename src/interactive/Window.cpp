@@ -4,9 +4,6 @@
 #include <iostream>
 
 namespace {
-    using std::literals::operator ""sv;
-    using std::literals::operator ""s;
-
     constexpr const uint32_t EVENT_MASK =
           XCB_EVENT_MASK_KEY_RELEASE
         | XCB_EVENT_MASK_KEY_PRESS
@@ -40,6 +37,10 @@ AtomReply WindowContext::atom(bool only_if_exists, const std::string_view& str) 
 
     xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(this->connection, cookie, nullptr);
     return AtomReply(reply);
+}
+
+bool WindowContext::is_close_event(const xcb_client_message_event_t& event) const {
+    return event.data.data32[0] == this->atom_wm_delete_window->atom;
 }
 
 Window::Window(WindowContext& window_context, xcb_screen_t* screen, uint16_t width, uint16_t height, bool override_redirect):
@@ -78,7 +79,7 @@ Window::Window(WindowContext& window_context, xcb_screen_t* screen, uint16_t wid
 
     // Enable window delete events
     {
-        AtomReply atom_wm_protocols = window_context.atom(true, "WM_PROTOCOLS"sv);
+        AtomReply atom_wm_protocols = window_context.atom(true, std::string_view{"WM_PROTOCOLS"});
 
         xcb_change_property(
             this->connection,

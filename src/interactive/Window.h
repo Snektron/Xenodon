@@ -25,6 +25,8 @@ struct WindowContext {
 
     XcbEvent poll_event() const;
     AtomReply atom(bool only_if_exists, const std::string_view& str) const;
+
+    bool is_close_event(const xcb_client_message_event_t& event) const;
 };
 
 class Window {

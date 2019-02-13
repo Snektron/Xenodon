@@ -23,7 +23,7 @@ public:
     bool close_requested;
 
     DisplayArray(WindowContext& window_context, std::vector<std::unique_ptr<Display>>&& displays);
-    void event(xcb_generic_event_t& event);
+    void event(const xcb_generic_event_t& event);
     void render();
 };
 

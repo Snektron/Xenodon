@@ -11,7 +11,7 @@ DisplayArray::DisplayArray(WindowContext& window_context, std::vector<std::uniqu
     close_requested(false) {
 }
 
-void DisplayArray::event(xcb_generic_event_t& event) {
+void DisplayArray::event(const xcb_generic_event_t& event) {
     switch (static_cast<int>(event.response_type) & ~0x80) {
         case XCB_CONFIGURE_REQUEST: {
             const auto& event_args = reinterpret_cast<const xcb_configure_notify_event_t&>(event);
@@ -47,8 +47,7 @@ void DisplayArray::event(xcb_generic_event_t& event) {
         case XCB_CLIENT_MESSAGE: {
             const auto& event_args = reinterpret_cast<const xcb_client_message_event_t&>(event);
 
-            // Check if the [X] button has been pressed
-            if (event_args.data.data32[0] == this->window_context.atom_wm_delete_window->atom) {
+            if (this->window_context.is_close_event(event_args)) {
                 this->close_requested = true;
             }
             break;
