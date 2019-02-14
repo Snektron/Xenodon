@@ -166,7 +166,7 @@ namespace {
         displays.reserve(static_cast<size_t>(it.rem));
 
         for (int i = 0; it.rem; ++i, xcb_screen_next(&it)) {
-            auto window = Window(window_context, it.data);
+            auto window = Window(window_context, it.data, 800, 600);
             auto surface = instance.createXcbSurfaceKHRUnique(window.surface_create_info());
             auto picked = pick_physical_device(instance, surface.get());
 
