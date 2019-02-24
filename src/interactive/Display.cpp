@@ -18,7 +18,7 @@ Display::Display(DeviceContext&& device_context, Window&& window, vk::UniqueSurf
     device_context(std::move(device_context)),
     window(std::move(window)),
     surface(std::move(surface)),
-    sinf(this->device_context.physical_device, this->surface.get(), area.extent),
+    sinf(this->device_context.physical, this->surface.get(), area.extent),
     area(area.offset, this->sinf.extent),
     renderer(std::make_unique<Renderer>(this->device_context, area, this->sinf.attachment_description)),
     swapchain(this->device_context, this->surface.get(), this->sinf, this->renderer->final_render_pass()),
@@ -26,12 +26,12 @@ Display::Display(DeviceContext&& device_context, Window&& window, vk::UniqueSurf
 
     this->sync_objects.reserve(MAX_FRAMES);
     for (size_t i = 0; i < MAX_FRAMES; ++i) {
-        this->sync_objects.emplace_back(this->device_context.device.get());
+        this->sync_objects.emplace_back(this->device_context.logical.get());
     }
 }
 
 Display::~Display() {
-    this->device_context.device->waitIdle();
+    this->device_context.logical->waitIdle();
 }
 
 void Display::reconfigure(vk::Rect2D area) {
@@ -43,15 +43,15 @@ void Display::reconfigure(vk::Rect2D area) {
 }
 
 void Display::recreate_swapchain(vk::Extent2D window_extent) {
-    this->device_context.device->waitIdle();
-    this->sinf = SurfaceInfo(device_context.physical_device, this->surface.get(), window_extent);
+    this->device_context.logical->waitIdle();
+    this->sinf = SurfaceInfo(device_context.physical, this->surface.get(), window_extent);
     this->area.extent = this->sinf.extent;
     this->renderer = std::make_unique<Renderer>(this->device_context, this->area, this->sinf.attachment_description);
     this->swapchain.recreate(this->sinf, this->renderer->final_render_pass());
 }
 
 void Display::render() {
-    auto& device = this->device_context.device.get();
+    auto& device = this->device_context.logical.get();
 
     const auto fence = this->sync_objects[this->current_frame].fence.get();
     device.waitForFences(fence, true, std::numeric_limits<uint64_t>::max());

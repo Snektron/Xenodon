@@ -1,6 +1,8 @@
 #ifndef _XENODON_INTERACTIVE_INTERACTIVE_H
 #define _XENODON_INTERACTIVE_INTERACTIVE_H
 
-void interactive_main();
+#include <vulkan/vulkan.hpp>
+
+void interactive_main(const vk::ApplicationInfo& app_info);
 
 #endif

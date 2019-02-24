@@ -12,7 +12,7 @@ struct SurfaceInfo {
     vk::AttachmentDescription attachment_description;
     uint32_t image_count;
 
-    SurfaceInfo(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface, vk::Extent2D window_size);
+    SurfaceInfo(vk::PhysicalDevice physical, vk::SurfaceKHR surface, vk::Extent2D window_size);
 };
 
 #endif

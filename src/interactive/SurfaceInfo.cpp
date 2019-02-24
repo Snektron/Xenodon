@@ -5,8 +5,8 @@
 namespace {
     constexpr const auto PREFERRED_FORMAT = vk::SurfaceFormatKHR{vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
 
-    vk::SurfaceFormatKHR pick_surface_format(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface) {
-        auto formats = physical_device.getSurfaceFormatsKHR(surface);
+    vk::SurfaceFormatKHR pick_surface_format(vk::PhysicalDevice physical, vk::SurfaceKHR surface) {
+        auto formats = physical.getSurfaceFormatsKHR(surface);
 
         // Can we pick any format?
         if (formats.size() == 1 && formats[0].format == vk::Format::eUndefined)
@@ -20,8 +20,8 @@ namespace {
         return formats[0];
     }
 
-    vk::PresentModeKHR pick_present_mode(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface) {
-        auto present_modes = physical_device.getSurfacePresentModesKHR(surface);
+    vk::PresentModeKHR pick_present_mode(vk::PhysicalDevice physical, vk::SurfaceKHR surface) {
+        auto present_modes = physical.getSurfacePresentModesKHR(surface);
 
         // check for triple buffering support
         // if (std::find(present_modes.begin(), present_modes.end(), vk::PresentModeKHR::eMailbox) != present_modes.end())
@@ -47,10 +47,10 @@ namespace {
     }
 }
 
-SurfaceInfo::SurfaceInfo(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface, vk::Extent2D window_size):
-    caps(physical_device.getSurfaceCapabilitiesKHR(surface)),
-    surface_format(pick_surface_format(physical_device, surface)),
-    present_mode(pick_present_mode(physical_device, surface)),
+SurfaceInfo::SurfaceInfo(vk::PhysicalDevice physical, vk::SurfaceKHR surface, vk::Extent2D window_size):
+    caps(physical.getSurfaceCapabilitiesKHR(surface)),
+    surface_format(pick_surface_format(physical, surface)),
+    present_mode(pick_present_mode(physical, surface)),
     extent(pick_extent(this->caps, surface, window_size)) {
 
     this->attachment_description = vk::AttachmentDescription({}, this->surface_format.format);

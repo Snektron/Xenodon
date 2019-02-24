@@ -53,7 +53,7 @@ vk::RenderPass Renderer::final_render_pass() const {
 }
 
 void Renderer::init_render_pass(vk::AttachmentDescription& target) {
-    auto& device = this->device_context.device.get();
+    auto& device = this->device_context.logical.get();
     const auto vertex_shader = create_shader(device, resources::open("resources/test.vert"));
     const auto fragment_shader = create_shader(device, resources::open("resources/test.frag"));
 

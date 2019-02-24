@@ -3,40 +3,31 @@
 
 #include <limits>
 #include <cstdint>
+#include <array>
 #include <vulkan/vulkan.hpp>
 
 struct Queue {
     vk::Queue queue;
     uint32_t family_index;
-    uint32_t queue_index;
 
-    Queue(vk::Device device, uint32_t family_index, uint32_t queue_index = 0):
-        queue(device.getQueue(family_index, queue_index)),
-        family_index(family_index),
-        queue_index(queue_index) {
-    }
+    Queue(vk::Device device, uint32_t family_index);
+    Queue(std::nullptr_t);
 
-    static Queue invalid() {
-        return {
-            nullptr,
-            std::numeric_limits<uint32_t>::max(),
-            std::numeric_limits<uint32_t>::max()
-        };
-    }
+    static Queue invalid();
 
-    bool valid() const {
-        return this->queue != vk::Queue(nullptr);
-    }
+    bool is_valid() const;
 };
 
 struct DeviceContext {
-    vk::PhysicalDevice physical_device;
-    vk::UniqueDevice device;
+    vk::PhysicalDevice physical;
+    vk::UniqueDevice logical;
 
     Queue graphics;
     Queue present;
 
     vk::UniqueCommandPool graphics_command_pool;
+
+    DeviceContext(vk::PhysicalDevice physical, vk::ArrayProxy<const char* const> extensions, uint32_t graphics_queue, uint32_t present_queue);
 };
 
 #endif

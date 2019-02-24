@@ -25,9 +25,6 @@
 #include "resources.h"
 
 namespace {
-    constexpr const char* const APP_NAME = "Xenodon";
-    constexpr const uint32_t APP_VERSION = VK_MAKE_VERSION(0, 0, 0);
-
     constexpr const std::array INSTANCE_EXTENSIONS = {
         VK_KHR_SURFACE_EXTENSION_NAME,
         VK_KHR_XCB_SURFACE_EXTENSION_NAME
@@ -37,35 +34,14 @@ namespace {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
-    struct PickedDeviceInfo {
+    struct GpuInfo {
         vk::PhysicalDevice physical_device;
         uint32_t graphics_queue_index;
         uint32_t present_queue_index;
         uint32_t index;
     };
 
-    vk::UniqueInstance create_instance() {
-        auto app_info = vk::ApplicationInfo(
-            APP_NAME,
-            APP_VERSION,
-            nullptr,
-            0,
-            VK_API_VERSION_1_1
-        );
-
-        auto create_info = vk::InstanceCreateInfo(
-            {},
-            &app_info,
-            0,
-            nullptr,
-            INSTANCE_EXTENSIONS.size(),
-            INSTANCE_EXTENSIONS.data()
-        );
-
-        return vk::createInstanceUnique(create_info);
-    }
-
-    PickedDeviceInfo pick_physical_device(vk::Instance instance, vk::SurfaceKHR surface) {
+    GpuInfo pick_physical_device(vk::Instance instance, vk::SurfaceKHR surface) {
         auto physical_devices = instance.enumeratePhysicalDevices();
 
         auto graphics_supported = std::vector<uint32_t>();
@@ -120,46 +96,6 @@ namespace {
         throw std::runtime_error("Failed to find a suitable physical device");
     }
 
-    vk::UniqueDevice initialize_device(PickedDeviceInfo& picked) {
-        float priority = 1.0f;
-
-        auto queue_create_infos = std::array<vk::DeviceQueueCreateInfo, 2>();
-        uint32_t queues = 1;
-
-        queue_create_infos[0] = vk::DeviceQueueCreateInfo(
-            {},
-            picked.graphics_queue_index,
-            1,
-            &priority
-        );
-
-        if (picked.graphics_queue_index != picked.present_queue_index) {
-            queues = 2;
-            queue_create_infos[1] = vk::DeviceQueueCreateInfo(
-                {},
-                picked.present_queue_index,
-                1,
-                &priority
-            );
-        }
-        auto device_create_info = vk::DeviceCreateInfo(
-            {},
-            queues,
-            queue_create_infos.data(),
-            0,
-            nullptr,
-            static_cast<uint32_t>(DEVICE_EXTENSIONS.size()),
-            DEVICE_EXTENSIONS.data()
-        );
-
-        return picked.physical_device.createDeviceUnique(device_create_info);
-    }
-
-    vk::UniqueCommandPool create_command_pool(vk::Device device, uint32_t graphics_queue) {
-        auto command_pool_info = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, graphics_queue);
-        return device.createCommandPoolUnique(command_pool_info);
-    }
-
     std::vector<std::unique_ptr<Display>> initialize_displays(vk::Instance instance, WindowContext& window_context) {
         xcb_screen_iterator_t it = xcb_setup_roots_iterator(xcb_get_setup(window_context.connection));
         auto displays = std::vector<std::unique_ptr<Display>>();
@@ -170,24 +106,8 @@ namespace {
             auto surface = instance.createXcbSurfaceKHRUnique(window.surface_create_info());
             auto picked = pick_physical_device(instance, surface.get());
 
-            std::cout << "Screen " << i << " Picked device " << picked.index << " '" << picked.physical_device.getProperties().deviceName << '\'' << std::endl;
-            auto device = initialize_device(picked);
-
-            auto device_context = [&] {
-                auto device = initialize_device(picked);
-
-                auto graphics = Queue(device.get(), picked.graphics_queue_index);
-                auto present = Queue(device.get(), picked.present_queue_index);
-                auto command_pool = create_command_pool(device.get(), picked.graphics_queue_index);
-
-                return DeviceContext {
-                    .physical_device = picked.physical_device,
-                    .device = std::move(device),
-                    .graphics = graphics,
-                    .present = present,
-                    .graphics_command_pool = std::move(command_pool)
-                };
-            }();
+            std::cout << "Screen " << i << ": device " << picked.index << " (" << picked.physical_device.getProperties().deviceName << ')' << std::endl;
+            auto device_context = DeviceContext(picked.physical_device, DEVICE_EXTENSIONS, picked.graphics_queue_index, picked.present_queue_index);
 
             auto area = vk::Rect2D({0, 0}, window.geometry().extent);
 
@@ -198,9 +118,19 @@ namespace {
     }
 }
 
-void interactive_main() {
+void interactive_main(const vk::ApplicationInfo& app_info) {
     using namespace std::literals::chrono_literals;
-    auto instance = create_instance();
+
+    auto instance = vk::createInstanceUnique(
+        vk::InstanceCreateInfo(
+            {},
+            &app_info,
+            0,
+            nullptr,
+            INSTANCE_EXTENSIONS.size(),
+            INSTANCE_EXTENSIONS.data()
+        )
+    );
 
     auto window_context = WindowContext();
     auto display_array = DisplayArray(window_context, initialize_displays(instance.get(), window_context));

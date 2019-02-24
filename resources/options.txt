@@ -1,3 +1,2 @@
 Options:
---headless      Run the program in headless mode.
 --help -h       Show this text.

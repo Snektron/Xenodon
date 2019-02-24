@@ -12,7 +12,6 @@ project(
 # Project sources & resources
 
 sources = [
-    'src/headless/headless.cpp',
     'src/interactive/interactive.cpp',
     'src/interactive/Window.cpp',
     'src/interactive/Swapchain.cpp',
@@ -20,7 +19,9 @@ sources = [
     'src/interactive/Display.cpp',
     'src/interactive/SurfaceInfo.cpp',
     'src/render/PhysicalDeviceInfo.cpp',
+    'src/render/DeviceContext.cpp',
     'src/render/Renderer.cpp',
+    'src/render/RenderWorker.cpp',
     'src/main.cpp'
 ]
 
