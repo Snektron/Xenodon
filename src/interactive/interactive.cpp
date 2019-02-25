@@ -15,7 +15,6 @@
 #include <xcb/xcb.h>
 #include "render/DeviceContext.h"
 #include "render/PhysicalDeviceInfo.h"
-#include "render/Renderer.h"
 #include "interactive/Window.h"
 #include "interactive/Swapchain.h"
 #include "interactive/SurfaceInfo.h"
@@ -149,7 +148,7 @@ void interactive_main(const vk::ApplicationInfo& app_info) {
 
         total_frames++;
 
-        display_array.render();
+        display_array.present();
 
         auto now = std::chrono::high_resolution_clock::now();
         auto diff = std::chrono::duration<double>(now - start);

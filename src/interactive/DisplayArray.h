@@ -2,7 +2,6 @@
 #define _XENODON_INTERACTIVE_DISPLAYARRAY_H
 
 #include <vector>
-#include <memory>
 #include <xcb/xcb.h>
 #include <xcb/xcb_keysyms.h>
 #include "interactive/Display.h"
@@ -24,7 +23,7 @@ public:
 
     DisplayArray(WindowContext& window_context, std::vector<std::unique_ptr<Display>>&& displays);
     void event(const xcb_generic_event_t& event);
-    void render();
+    void present();
 };
 
 #endif

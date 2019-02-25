@@ -20,7 +20,7 @@ Display::Display(DeviceContext&& device_context, Window&& window, vk::UniqueSurf
     surface(std::move(surface)),
     sinf(this->device_context.physical, this->surface.get(), area.extent),
     area(area.offset, this->sinf.extent),
-    renderer(std::make_unique<Renderer>(this->device_context, area, this->sinf.attachment_description)),
+    renderer(std::make_unique<RenderWorker>(this->device_context, area, this->sinf.attachment_description)),
     swapchain(this->device_context, this->surface.get(), this->sinf, this->renderer->final_render_pass()),
     current_frame(0) {
 
@@ -46,11 +46,11 @@ void Display::recreate_swapchain(vk::Extent2D window_extent) {
     this->device_context.logical->waitIdle();
     this->sinf = SurfaceInfo(device_context.physical, this->surface.get(), window_extent);
     this->area.extent = this->sinf.extent;
-    this->renderer = std::make_unique<Renderer>(this->device_context, this->area, this->sinf.attachment_description);
+    this->renderer = std::make_unique<RenderWorker>(this->device_context, this->area, this->sinf.attachment_description);
     this->swapchain.recreate(this->sinf, this->renderer->final_render_pass());
 }
 
-void Display::render() {
+void Display::present() {
     auto& device = this->device_context.logical.get();
 
     const auto fence = this->sync_objects[this->current_frame].fence.get();
@@ -70,7 +70,7 @@ void Display::render() {
         throw std::runtime_error("Failed to acquire next image: " + vk::to_string(result));
     }
 
-    renderer->render(this->swapchain.active_frame().command_buffer.get(), this->swapchain.active_frame().framebuffer.get());
+    renderer->present(this->swapchain.active_frame().command_buffer.get(), this->swapchain.active_frame().framebuffer.get());
 
     auto wait_stages = std::array{vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)};
     auto submit_info = vk::SubmitInfo(

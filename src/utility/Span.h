@@ -5,6 +5,7 @@
 #include <array>
 #include <vector>
 #include <initializer_list>
+#include <vulkan/vulkan.hpp>
 
 template <typename T>
 class Span: std::random_access_iterator_tag {
@@ -45,6 +46,11 @@ public:
     constexpr Span(const std::array<typename std::remove_const<T>::type, N>& data):
         count(N),
         ptr(data.data()) {
+    }
+
+    Span(vk::ArrayProxy<T> proxy):
+        count(proxy.size()),
+        ptr(proxy.data()) {
     }
 
     template <class Allocator = std::allocator<typename std::remove_const<T>::type>>

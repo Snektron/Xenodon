@@ -20,7 +20,6 @@ sources = [
     'src/interactive/SurfaceInfo.cpp',
     'src/render/PhysicalDeviceInfo.cpp',
     'src/render/DeviceContext.cpp',
-    'src/render/Renderer.cpp',
     'src/render/RenderWorker.cpp',
     'src/render/RenderManager.cpp',
     'src/main.cpp'

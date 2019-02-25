@@ -9,7 +9,7 @@
 #include "interactive/Window.h"
 #include "interactive/Swapchain.h"
 #include "interactive/SurfaceInfo.h"
-#include "render/Renderer.h"
+#include "render/RenderWorker.h"
 #include "render/DeviceContext.h"
 
 class Display {
@@ -26,7 +26,7 @@ class Display {
     vk::UniqueSurfaceKHR surface;
     SurfaceInfo sinf;
     vk::Rect2D area;
-    std::unique_ptr<Renderer> renderer;
+    std::unique_ptr<RenderWorker> renderer;
     Swapchain swapchain;
 
     std::vector<FrameSync> sync_objects;
@@ -41,7 +41,7 @@ public:
 
     void reconfigure(vk::Rect2D area);
     void recreate_swapchain(vk::Extent2D window_extent);
-    void render();
+    void present();
 
     xcb_window_t xid() const {
         return window.xid;

@@ -55,8 +55,8 @@ void DisplayArray::event(const xcb_generic_event_t& event) {
     }
 }
 
-void DisplayArray::render() {
-    for (auto&& display : this->displays) {
-        display->render();
+void DisplayArray::present() {
+    for (auto& display : this->displays) {
+        display->present();
     }
 }
