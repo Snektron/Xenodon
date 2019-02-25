@@ -7,12 +7,20 @@
 #include <initializer_list>
 
 template <typename T>
-class Span {
+class Span: std::random_access_iterator_tag {
     size_t count;
     T* ptr;
 
 public:
-   constexpr Span(std::nullptr_t):
+    using value_type = T;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using reference = T&;
+    using const_reference = const T&;
+    using pointer = T*;
+    using const_pointer = const T*;
+
+    constexpr Span(std::nullptr_t):
         count(0),
         ptr(nullptr) {
     }
