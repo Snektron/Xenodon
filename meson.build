@@ -22,6 +22,7 @@ sources = [
     'src/render/DeviceContext.cpp',
     'src/render/Renderer.cpp',
     'src/render/RenderWorker.cpp',
+    'src/render/RenderManager.cpp',
     'src/main.cpp'
 ]
 

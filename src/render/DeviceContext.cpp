@@ -42,7 +42,7 @@ DeviceContext::DeviceContext(vk::PhysicalDevice physical, vk::ArrayProxy<const c
     }
 
     logical_info.pQueueCreateInfos = queue_infos.data();
-    logical_info.enabledExtensionCount = extensions.size();
+    logical_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     logical_info.ppEnabledExtensionNames = extensions.data();
 
     auto logical = this->physical.createDeviceUnique(logical_info);
