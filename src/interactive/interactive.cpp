@@ -29,7 +29,8 @@
 namespace {
     constexpr const std::array INSTANCE_EXTENSIONS = {
         VK_KHR_SURFACE_EXTENSION_NAME,
-        VK_KHR_XCB_SURFACE_EXTENSION_NAME
+        VK_KHR_XCB_SURFACE_EXTENSION_NAME,
+        VK_KHR_DISPLAY_EXTENSION_NAME
     };
 
     constexpr const std::array DEVICE_EXTENSIONS = {
@@ -120,7 +121,6 @@ namespace {
     }
 
     void dump_gpu_info(vk::Instance instance) {
-        // getDisplayPropertiesKHR
         auto display_name = [](auto& props) {
             if (props.displayName)
                 return props.displayName;
@@ -156,6 +156,56 @@ namespace {
 
         std::cout << std::endl;
     }
+
+    vk::UniqueSurfaceKHR create_display_surface(vk::Instance instance, vk::PhysicalDevice gpu) {
+        uint32_t count = 1;
+        vk::DisplayPropertiesKHR display_props;
+        auto res = gpu.getDisplayPropertiesKHR(&count, &display_props);
+        if ((res != vk::Result::eSuccess && res != vk::Result::eIncomplete) || count != 1) {
+            std::cout << vk::to_string(res) << " " << count << std::endl;
+            throw std::runtime_error("Failed to get display properties");
+        }
+
+        // auto display_props = gpu.getDisplayPropertiesKHR().front();
+        auto display = display_props.display;
+        auto mode_props = gpu.getDisplayModePropertiesKHR(display).front();
+        auto plane_props = gpu.getDisplayPlanePropertiesKHR();
+
+        uint32_t plane;
+        bool found = false;
+        for (plane = 0; plane < plane_props.size(); ++plane) {
+            if (plane_props[plane].currentDisplay != vk::DisplayKHR(nullptr) && plane_props[plane].currentDisplay != display)
+                continue;
+
+            auto supported_displays = gpu.getDisplayPlaneSupportedDisplaysKHR(plane);
+            if (supported_displays.size() == 0)
+                continue;
+
+            for (uint32_t i = 0; i < supported_displays.size(); ++i) {
+                if (supported_displays[i] == display) {
+                    found = true;
+                }
+            }
+
+            if (found)
+                break;
+        }
+
+        if (!found)
+            throw std::runtime_error("Failed to find compatible plane");
+
+        auto create_info = vk::DisplaySurfaceCreateInfoKHR();
+        create_info.flags = {};
+        create_info.displayMode = mode_props.displayMode;
+        create_info.planeIndex = plane;
+        create_info.planeStackIndex = plane_props[plane].currentStackIndex;
+        create_info.transform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
+        create_info.alphaMode = vk::DisplayPlaneAlphaFlagBitsKHR::eOpaque;
+        create_info.globalAlpha = 1.0f;
+        create_info.imageExtent = mode_props.parameters.visibleRegion;
+
+        return instance.createDisplayPlaneSurfaceKHRUnique(create_info);
+    }
 }
 
 void interactive_main(const vk::ApplicationInfo& app_info) {
@@ -173,6 +223,8 @@ void interactive_main(const vk::ApplicationInfo& app_info) {
     );
 
     dump_gpu_info(instance.get());
+
+    create_display_surface(instance.get(), instance->enumeratePhysicalDevices()[0]);
 
     auto window_context = WindowContext();
     auto event_loop = EventLoop(window_context);
