@@ -118,6 +118,44 @@ namespace {
 
         return displays;
     }
+
+    void dump_gpu_info(vk::Instance instance) {
+        // getDisplayPropertiesKHR
+        auto display_name = [](auto& props) {
+            if (props.displayName)
+                return props.displayName;
+            else
+                return "(null)";
+        };
+
+        auto physical_devices = instance.enumeratePhysicalDevices();
+        for (size_t i = 0; i < physical_devices.size(); ++i) {
+            std::cout << "GPU " << i << ":\n";
+            auto& gpu = physical_devices[i];
+            auto props = gpu.getProperties();
+            std::cout << "\tDevice name: " << props.deviceName << "\n";
+            auto display_props = gpu.getDisplayPropertiesKHR();
+            size_t skipped = 0;
+            for (size_t j = 0; j < display_props.size(); ++j) {
+                uint32_t w = display_props[j].physicalResolution.width;
+                uint32_t h = display_props[j].physicalResolution.height;
+
+                if (w == 0 && h == 0) {
+                    ++skipped;
+                    continue;
+                }
+
+                std::cout << "\tDisplay " << j << ":\n";
+                std::cout << "\t\tDisplay name: " << display_name(display_props[j]) << '\n';
+                std::cout << "\t\tResolution: " << w << "x" << h << '\n';
+            }
+
+            if (skipped > 0)
+                std::cout << "\t(Skipped " << skipped << " displays)\n";
+        }
+
+        std::cout << std::endl;
+    }
 }
 
 void interactive_main(const vk::ApplicationInfo& app_info) {
@@ -133,6 +171,8 @@ void interactive_main(const vk::ApplicationInfo& app_info) {
             INSTANCE_EXTENSIONS.data()
         )
     );
+
+    dump_gpu_info(instance.get());
 
     auto window_context = WindowContext();
     auto event_loop = EventLoop(window_context);
