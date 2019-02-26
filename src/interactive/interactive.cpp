@@ -136,7 +136,7 @@ void interactive_main(const vk::ApplicationInfo& app_info) {
 
     auto window_context = WindowContext();
     auto event_loop = EventLoop(window_context);
-    auto display_array = DisplayArray(window_context, initialize_displays(instance.get(), window_context));
+    auto display_array = DisplayArray(initialize_displays(instance.get(), window_context));
 
     bool run = true;
     auto quit = [&run] {
@@ -148,11 +148,10 @@ void interactive_main(const vk::ApplicationInfo& app_info) {
     event_loop.bind_reconfigure(bind_member(display_array, &DisplayArray::reconfigure));
 
     auto start = std::chrono::high_resolution_clock::now();
-    size_t start_frame = 0;
-    size_t total_frames = 0;
+    size_t frames = 0;
 
     while (run) {
-        total_frames++;
+        ++frames;
 
         display_array.present();
 
@@ -160,9 +159,8 @@ void interactive_main(const vk::ApplicationInfo& app_info) {
         auto diff = std::chrono::duration<double>(now - start);
 
         if (diff > 1s) {
-            size_t frames = total_frames - start_frame;
             std::cout << "FPS: " << static_cast<double>(frames) / diff.count() << std::endl;
-            start_frame = total_frames;
+            frames = 0;
             start = now;
         }
 

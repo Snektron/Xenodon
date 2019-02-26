@@ -1,4 +1,5 @@
 #include "interactive/EventLoop.h"
+#include <algorithm>
 
 EventLoop::EventLoop(WindowContext& window_context):
     window_context(window_context),

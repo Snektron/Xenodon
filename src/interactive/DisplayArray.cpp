@@ -1,14 +1,8 @@
 #include "interactive/DisplayArray.h"
 #include <algorithm>
-#include <iostream>
-#include <cstdint>
-#include <X11/keysym.h>
 
-DisplayArray::DisplayArray(WindowContext& window_context, std::vector<std::unique_ptr<Display>>&& displays):
-    window_context(window_context),
-    displays(std::move(displays)),
-    symbols(xcb_key_symbols_alloc(window_context.connection)),
-    close_requested(false) {
+DisplayArray::DisplayArray(std::vector<std::unique_ptr<Display>>&& displays):
+    displays(std::move(displays)) {
 }
 
 void DisplayArray::reconfigure(xcb_window_t xid, int16_t, int16_t, uint16_t width, uint16_t height) {

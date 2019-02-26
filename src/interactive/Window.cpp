@@ -1,7 +1,8 @@
 #include "interactive/Window.h"
 #include <string_view>
-#include <cstdint>
 #include <iostream>
+#include <stdexcept>
+#include <cstdint>
 
 namespace {
     constexpr const uint32_t EVENT_MASK =
@@ -12,11 +13,34 @@ namespace {
         | XCB_EVENT_MASK_POINTER_MOTION
         | XCB_EVENT_MASK_BUTTON_PRESS
         | XCB_EVENT_MASK_BUTTON_RELEASE;
+
+    const char* x_strerr(int err) {
+        switch (err) {
+            case XCB_CONN_ERROR:
+                return "Failed to open X connection: Socket, pipe or stream error";
+            case XCB_CONN_CLOSED_EXT_NOTSUPPORTED:
+                return "Failed to open X connection: Extension not supported";
+            case XCB_CONN_CLOSED_MEM_INSUFFICIENT:
+                return "Failed to open X connection: Insufficient memory";
+            case XCB_CONN_CLOSED_REQ_LEN_EXCEED:
+                return "Failed to open X connection: Exceeded server request length";
+            case XCB_CONN_CLOSED_PARSE_ERR:
+                return "Failed to open X connection: Display string parse error";
+            case XCB_CONN_CLOSED_INVALID_SCREEN:
+                return "Failed to open X connection: Display server does not have screen matching display string";
+            default:
+                return "";
+        }
+    }
 }
 
 WindowContext::WindowContext():
     connection(xcb_connect(nullptr, nullptr)),
     atom_wm_delete_window(this->atom(false, std::string_view{"WM_DELETE_WINDOW"})) {
+    int err = xcb_connection_has_error(this->connection);
+    if (err > 0) {
+        throw std::runtime_error(x_strerr(err));
+    }
 }
 
 WindowContext::~WindowContext() {
