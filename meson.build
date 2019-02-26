@@ -18,6 +18,7 @@ sources = [
     'src/interactive/DisplayArray.cpp',
     'src/interactive/Display.cpp',
     'src/interactive/SurfaceInfo.cpp',
+    'src/interactive/EventLoop.cpp',
     'src/render/PhysicalDeviceInfo.cpp',
     'src/render/DeviceContext.cpp',
     'src/render/RenderWorker.cpp',

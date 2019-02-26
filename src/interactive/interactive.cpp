@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <vulkan/vulkan.hpp>
 #include <xcb/xcb.h>
+#include <X11/keysym.h>
 #include "render/DeviceContext.h"
 #include "render/PhysicalDeviceInfo.h"
 #include "interactive/Window.h"
@@ -20,7 +21,9 @@
 #include "interactive/SurfaceInfo.h"
 #include "interactive/Display.h"
 #include "interactive/DisplayArray.h"
+#include "interactive/EventLoop.h"
 #include "utility/ScopeGuard.h"
+#include "utility/bind_member.h"
 #include "resources.h"
 
 namespace {
@@ -132,20 +135,23 @@ void interactive_main(const vk::ApplicationInfo& app_info) {
     );
 
     auto window_context = WindowContext();
+    auto event_loop = EventLoop(window_context);
     auto display_array = DisplayArray(window_context, initialize_displays(instance.get(), window_context));
+
+    bool run = true;
+    auto quit = [&run] {
+        run = false;
+    };
+
+    event_loop.bind(XK_Escape, std::bind(quit));
+    event_loop.bind_quit(quit);
+    event_loop.bind_reconfigure(bind_member(display_array, &DisplayArray::reconfigure));
 
     auto start = std::chrono::high_resolution_clock::now();
     size_t start_frame = 0;
     size_t total_frames = 0;
 
-    while (true) {
-        while (auto event = window_context.poll_event()) {
-            display_array.event(*event.get());
-        }
-
-        if (display_array.close_requested)
-            break;
-
+    while (run) {
         total_frames++;
 
         display_array.present();
@@ -159,5 +165,7 @@ void interactive_main(const vk::ApplicationInfo& app_info) {
             start_frame = total_frames;
             start = now;
         }
+
+        event_loop.poll_events();
     }
 }

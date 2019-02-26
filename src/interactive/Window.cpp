@@ -23,10 +23,6 @@ WindowContext::~WindowContext() {
     xcb_disconnect(this->connection);
 }
 
-XcbEvent WindowContext::poll_event() const {
-    return XcbEvent(xcb_poll_for_event(this->connection));
-}
-
 AtomReply WindowContext::atom(bool only_if_exists, const std::string_view& str) const {
     xcb_intern_atom_cookie_t cookie = xcb_intern_atom(
         this->connection,
@@ -37,10 +33,6 @@ AtomReply WindowContext::atom(bool only_if_exists, const std::string_view& str) 
 
     xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(this->connection, cookie, nullptr);
     return AtomReply(reply);
-}
-
-bool WindowContext::is_close_event(const xcb_client_message_event_t& event) const {
-    return event.data.data32[0] == this->atom_wm_delete_window->atom;
 }
 
 Window::Window(WindowContext& window_context, xcb_screen_t* screen, uint16_t width, uint16_t height, bool override_redirect):

@@ -23,6 +23,7 @@ public:
 
     DisplayArray(WindowContext& window_context, std::vector<std::unique_ptr<Display>>&& displays);
     void event(const xcb_generic_event_t& event);
+    void reconfigure(xcb_window_t xid, int16_t x, int16_t y, uint16_t width, uint16_t height);
     void present();
 };
 
