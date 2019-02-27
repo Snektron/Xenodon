@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <string_view>
 #include <vulkan/vulkan.hpp>
+#include "present/Display.h"
 #include "present/Event.h"
 #include "present/xorg/XorgDisplay.h"
 #include "resources.h"
@@ -55,14 +56,22 @@ int main(int argc, char* argv[]) {
     );
 
     auto dispatcher = EventDispatcher();
-    auto display = XorgDisplay(instance.get(), dispatcher, 800, 600);
+    auto display = std::unique_ptr<Display>(new XorgDisplay(instance.get(), dispatcher, 800, 600));
 
     bool quit = false;
     dispatcher.bind_close([&quit] {
         quit = true;
     });
 
+    dispatcher.bind(Key::Escape, [&quit](Action) {
+        quit = true;
+    });
+
+    dispatcher.bind(Key::A, [](Action a) {
+        std::cout << "oof " << (a == Action::Press ? "Press" : "Release") << std::endl;
+    });
+
     while (!quit) {
-        display.poll_events();
+        display->poll_events();
     }
 }

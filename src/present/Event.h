@@ -5,13 +5,13 @@
 #include <unordered_map>
 #include <algorithm>
 #include <cstdint>
+#include "present/Key.h"
 
 enum class Action {
     Press,
-    Release
+    Release,
+    Repeat
 };
-
-using Key = uint32_t;
 
 class EventDispatcher {
     using ActionCallback = std::function<void(Action)>;

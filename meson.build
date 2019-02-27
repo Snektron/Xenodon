@@ -9,6 +9,8 @@ project(
     ]
 )
 
+cxx = meson.get_compiler('cpp')
+
 # Project sources & resources
 
 sources = [
@@ -60,16 +62,22 @@ if (get_option('present-xorg').enabled())
     )
 
     sources += [
-        'src/present/xorg/XorgDisplay.cpp'
+        'src/present/xorg/XorgDisplay.cpp',
+        'src/present/xorg/Keyboard.cpp'
     ]
 
     dependencies += [
         dependency('xcb'),
-        dependency('xcb-keysyms')
+        dependency('xcb-keysyms'),
+        dependency('xcb-xkb')
     ]
-endif
 
-cxx = meson.get_compiler('cpp')
+    # Even though were not using X11 but XCB, we still need this header for the
+    # key symbol definitions.
+    if not cxx.has_header('X11/keysym.h')
+        error('X11 keysym header not found (X11/keysym.h)')
+    endif
+endif
 
 # Silence gcc warnings about vulkan-hpp's memcpy
 if cxx.get_id() == 'gcc'

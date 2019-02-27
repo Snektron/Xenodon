@@ -6,6 +6,7 @@
 #include <xcb/xcb.h>
 #include "present/Display.h"
 #include "present/Event.h"
+#include "present/xorg/Keyboard.h"
 #include "utility/MallocPtr.h"
 
 class XorgDisplay: public Display {
@@ -17,6 +18,7 @@ class XorgDisplay: public Display {
     int preferred_screen_index;
     AtomReply atom_wm_delete_window;
     xcb_window_t window;
+    Keyboard kbd;
 
 public:
     XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uint16_t width, uint16_t height);

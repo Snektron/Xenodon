@@ -4,6 +4,10 @@
 #include <utility>
 #include <iostream>
 
+#define explicit explicit_
+#include <xcb/xkb.h>
+#undef explicit
+
 namespace {
     constexpr const uint32_t EVENT_MASK =
           XCB_EVENT_MASK_KEY_RELEASE
@@ -32,17 +36,25 @@ namespace {
                 return "";
         }
     }
+
+    xcb_connection_t* connect_checked(int* preferred_screen_index) {
+        xcb_connection_t* connection = xcb_connect(nullptr, preferred_screen_index);
+
+        int err = xcb_connection_has_error(connection);
+        if (err > 0) {
+            throw std::runtime_error(x_strerr(err));
+        }
+
+        return connection;
+    }
 }
 
 XorgDisplay::XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uint16_t width, uint16_t height):
     instance(instance), dispatcher(&dispatcher),
-    connection(xcb_connect(nullptr, &this->preferred_screen_index)),
-    atom_wm_delete_window(this->atom(false, std::string_view{"WM_DELETE_WINDOW"})) {
-
-    int err = xcb_connection_has_error(this->connection);
-    if (err > 0) {
-        throw std::runtime_error(x_strerr(err));
-    }
+    connection(connect_checked(&this->preferred_screen_index)),
+    atom_wm_delete_window(this->atom(false, std::string_view{"WM_DELETE_WINDOW"})),
+    window(xcb_generate_id(this->connection)),
+    kbd(this->connection) {
 
     // Get the preferred X screen, to properly handle the $DISPLAY
     // environment variable
@@ -57,8 +69,6 @@ XorgDisplay::XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uin
 
     // Initialize the X window
     {
-        this->window = xcb_generate_id(this->connection);
-
         uint32_t value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
         uint32_t value_list[] = {
             screen->black_pixel,
@@ -100,6 +110,19 @@ XorgDisplay::XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uin
         );
     }
 
+    // Enable detectable key repeat. This will make a repeat appear as a single press 
+    // instead of a press and a release
+    {
+        xcb_xkb_use_extension(connection, 1, 0);
+        xcb_xkb_per_client_flags(
+            this->connection,
+            XCB_XKB_ID_USE_CORE_KBD,
+            XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
+            XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
+            0,0,0
+        );
+    }
+
     xcb_flush(this->connection);
 }
 
@@ -109,7 +132,8 @@ XorgDisplay::XorgDisplay(XorgDisplay&& other):
     connection(other.connection),
     preferred_screen_index(other.preferred_screen_index),
     atom_wm_delete_window(std::move(other.atom_wm_delete_window)),
-    window(other.window) {
+    window(other.window),
+    kbd(std::move(other.kbd)) {
     other.connection = nullptr;
 }
 
@@ -121,6 +145,7 @@ XorgDisplay& XorgDisplay::operator=(XorgDisplay&& other) {
     std::swap(this->preferred_screen_index, other.preferred_screen_index);
     std::swap(this->atom_wm_delete_window, other.atom_wm_delete_window);
     std::swap(this->window, other.window);
+    std::swap(this->kbd, other.kbd);
     return *this;
 }
 
@@ -145,6 +170,11 @@ void XorgDisplay::poll_events() {
 }
 
 void XorgDisplay::handle_event(const xcb_generic_event_t& event) {
+    auto dispatch_key_event = [this](Action action, xcb_keycode_t kc) {
+        Key key = this->kbd.translate(kc);
+        this->dispatcher->dispatch_key_event(key, action);
+    };
+
     switch (static_cast<int>(event.response_type) & ~0x80) {
         case XCB_CLIENT_MESSAGE: {
             const auto& event_args = reinterpret_cast<const xcb_client_message_event_t&>(event);
@@ -153,6 +183,16 @@ void XorgDisplay::handle_event(const xcb_generic_event_t& event) {
                 this->dispatcher->dispatch_close_event();
             }
 
+            break;
+        }
+        case XCB_KEY_PRESS: {
+            const auto& event_args = reinterpret_cast<const xcb_key_press_event_t&>(event);
+            dispatch_key_event(Action::Press, event_args.detail);
+            break;
+        }
+        case XCB_KEY_RELEASE: {
+            const auto& event_args = reinterpret_cast<const xcb_key_release_event_t&>(event);
+            dispatch_key_event(Action::Release, event_args.detail);
             break;
         }
     }
