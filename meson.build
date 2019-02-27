@@ -15,6 +15,7 @@ cxx = meson.get_compiler('cpp')
 
 sources = [
     'src/main.cpp',
+    'src/render/Device.cpp'
 ]
 
 shaders = [
@@ -63,7 +64,8 @@ if (get_option('present-xorg').enabled())
 
     sources += [
         'src/present/xorg/XorgDisplay.cpp',
-        'src/present/xorg/Keyboard.cpp'
+        'src/present/xorg/Keyboard.cpp',
+        'src/present/xorg/XorgSurface.cpp'
     ]
 
     dependencies += [
