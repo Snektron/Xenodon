@@ -1,6 +1,8 @@
 #include <iostream>
-#include <cstddef>
 #include <string_view>
+#include <chrono>
+#include <iomanip>
+#include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include "present/Display.h"
 #include "present/Event.h"
@@ -71,7 +73,25 @@ int main(int argc, char* argv[]) {
         std::cout << "oof " << (a == Action::Press ? "Press" : "Release") << std::endl;
     });
 
+    dispatcher.bind_resize([](uint16_t w, uint16_t h) {
+        std::cout << "resize: " << w << 'x' << h << std::endl;
+    });
+
+    auto start = std::chrono::high_resolution_clock::now();
+    size_t frames = 0;
+
     while (!quit) {
+        ++frames;
+
+        auto now = std::chrono::high_resolution_clock::now();
+        auto diff = std::chrono::duration<double>(now - start);
+
+        if (diff > std::chrono::seconds{1}) {
+            std::cout << "FPS: " << std::fixed << static_cast<double>(frames) / diff.count() << std::endl;
+            frames = 0;
+            start = now;
+        }
+
         display->poll_events();
     }
 }

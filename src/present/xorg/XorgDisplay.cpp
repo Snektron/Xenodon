@@ -4,6 +4,7 @@
 #include <utility>
 #include <iostream>
 
+// Thank you xcb-xkb devs, very cool!
 #define explicit explicit_
 #include <xcb/xkb.h>
 #undef explicit
@@ -54,7 +55,8 @@ XorgDisplay::XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uin
     connection(connect_checked(&this->preferred_screen_index)),
     atom_wm_delete_window(this->atom(false, std::string_view{"WM_DELETE_WINDOW"})),
     window(xcb_generate_id(this->connection)),
-    kbd(this->connection) {
+    kbd(this->connection),
+    window_size{static_cast<uint32_t>(width), static_cast<uint32_t>(height)} {
 
     // Get the preferred X screen, to properly handle the $DISPLAY
     // environment variable
@@ -156,6 +158,10 @@ XorgDisplay::~XorgDisplay() {
     }
 }
 
+vk::Extent2D XorgDisplay::size() {
+    return this->window_size;
+}
+
 void XorgDisplay::poll_events() {
     while (true) {
         auto event = MallocPtr<xcb_generic_event_t>(
@@ -193,6 +199,23 @@ void XorgDisplay::handle_event(const xcb_generic_event_t& event) {
         case XCB_KEY_RELEASE: {
             const auto& event_args = reinterpret_cast<const xcb_key_release_event_t&>(event);
             dispatch_key_event(Action::Release, event_args.detail);
+            break;
+        }
+        case XCB_CONFIGURE_NOTIFY: {
+            const auto& event_args = reinterpret_cast<const xcb_configure_notify_event_t&>(event);
+
+            auto new_window_size = vk::Extent2D {
+                static_cast<uint32_t>(event_args.width),
+                static_cast<uint32_t>(event_args.height)
+            };
+
+            if (new_window_size == this->window_size)
+                break;
+
+            this->window_size = new_window_size;
+
+            this->dispatcher->dispatch_resize_event(event_args.width, event_args.height);
+
             break;
         }
     }

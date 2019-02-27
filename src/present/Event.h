@@ -9,27 +9,31 @@
 
 enum class Action {
     Press,
-    Release,
-    Repeat
+    Release
 };
 
-class EventDispatcher {
+struct EventDispatcher {
     using ActionCallback = std::function<void(Action)>;
     using DigitalCallback = std::function<void(double)>;
     using DisplayClosedCallback = std::function<void()>;
+    using ResizeCallback = std::function<void(uint16_t width, uint16_t height)>;
 
+private:
     std::unordered_map<Key, ActionCallback> key_bindings;
     DisplayClosedCallback close_binding = nullptr;
+    ResizeCallback resize_binding = nullptr;
 
 public:
-    template <typename F>
-    void bind(Key key, F f) {
-        this->key_bindings[key] = ActionCallback(f);
+    void bind(Key key, ActionCallback f) {
+        this->key_bindings[key] = f;
     }
 
-    template <typename F>
-    void bind_close(F f) {
-        this->close_binding = DisplayClosedCallback(f);
+    void bind_close(DisplayClosedCallback f) {
+        this->close_binding = f;
+    }
+
+    void bind_resize(ResizeCallback f) {
+        this->resize_binding = f;
     }
 
     void dispatch_key_event(Key key, Action action) {
@@ -41,6 +45,11 @@ public:
     void dispatch_close_event() {
         if (this->close_binding)
             this->close_binding();
+    }
+
+    void dispatch_resize_event(uint16_t width, uint16_t height) {
+        if (this->resize_binding)
+            this->resize_binding(width, height);
     }
 };
 

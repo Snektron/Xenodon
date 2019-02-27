@@ -12,6 +12,8 @@ class BareDisplay: public Display {
 public:
     BareDisplay(vk::Instance instance, EventDispatcher& dispatcher);
     ~BareDisplay() override = default;
+
+    vk::Extent2D size() override;
     void poll_events() override;
 };
 

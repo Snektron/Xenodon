@@ -19,6 +19,7 @@ class XorgDisplay: public Display {
     AtomReply atom_wm_delete_window;
     xcb_window_t window;
     Keyboard kbd;
+    vk::Extent2D window_size;
 
 public:
     XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uint16_t width, uint16_t height);
@@ -29,6 +30,7 @@ public:
     XorgDisplay(const XorgDisplay&) = delete;
     XorgDisplay& operator=(const XorgDisplay&) = delete;
 
+    vk::Extent2D size() override;
     void poll_events() override;
 
 private:
