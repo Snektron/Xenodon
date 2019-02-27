@@ -2,12 +2,19 @@
 #include <cstddef>
 #include <string_view>
 #include <vulkan/vulkan.hpp>
-#include "interactive/interactive.h"
+#include "present/Event.h"
+#include "present/xorg/XorgDisplay.h"
 #include "resources.h"
 
 namespace {
     constexpr const char* const APP_NAME = "Xenodon";
     constexpr const uint32_t APP_VERSION = VK_MAKE_VERSION(0, 0, 0);
+
+    constexpr const std::array INSTANCE_EXTENSIONS = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+        VK_KHR_XCB_SURFACE_EXTENSION_NAME,
+        VK_KHR_DISPLAY_EXTENSION_NAME
+    };
 
     void print_help(const char* program_name) {
         std::cout << "Usage: " << program_name << " [options]\n\n"
@@ -36,5 +43,26 @@ int main(int argc, char* argv[]) {
         VK_API_VERSION_1_1
     );
 
-    interactive_main(app_info);
+    auto instance = vk::createInstanceUnique(
+        vk::InstanceCreateInfo(
+            {},
+            &app_info,
+            0,
+            nullptr,
+            INSTANCE_EXTENSIONS.size(),
+            INSTANCE_EXTENSIONS.data()
+        )
+    );
+
+    auto dispatcher = EventDispatcher();
+    auto display = XorgDisplay(instance.get(), dispatcher, 800, 600);
+
+    bool quit = false;
+    dispatcher.bind_close([&quit] {
+        quit = true;
+    });
+
+    while (!quit) {
+        display.poll_events();
+    }
 }

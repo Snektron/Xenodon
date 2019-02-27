@@ -12,18 +12,7 @@ project(
 # Project sources & resources
 
 sources = [
-    'src/interactive/interactive.cpp',
-    'src/interactive/Window.cpp',
-    'src/interactive/Swapchain.cpp',
-    'src/interactive/DisplayArray.cpp',
-    'src/interactive/Display.cpp',
-    'src/interactive/SurfaceInfo.cpp',
-    'src/interactive/EventLoop.cpp',
-    'src/render/PhysicalDeviceInfo.cpp',
-    'src/render/DeviceContext.cpp',
-    'src/render/RenderWorker.cpp',
-    'src/render/RenderManager.cpp',
-    'src/main.cpp'
+    'src/main.cpp',
 ]
 
 shaders = [
@@ -35,14 +24,50 @@ resources = [
     'resources/options.txt'
 ]
 
+vk_dep = dependency('vulkan', method: 'system')
+
+dependencies = [vk_dep]
+
 add_project_arguments(
     [
         '-march=native',
         '-Wconversion',
-        '-DVK_USE_PLATFORM_XCB_KHR'
     ],
     language: 'cpp'
 )
+
+# Add configuration for the bare presenting backend
+if (get_option('present-bare').enabled())
+    message('Building with bare presenting support')
+
+    add_project_arguments('-DXENODON_PRESENT_BARE', language: 'cpp')
+
+    sources += [
+        'src/present/bare/BareDisplay.cpp'
+    ]
+endif
+
+# Add configuration for the xorg presenting backend
+if (get_option('present-xorg').enabled())
+    message('Building with xorg presenting support')
+
+    add_project_arguments(
+        [
+            '-DXENODON_PRESENT_XORG',
+            '-DVK_USE_PLATFORM_XCB_KHR'
+        ],
+        language: 'cpp'
+    )
+
+    sources += [
+        'src/present/xorg/XorgDisplay.cpp'
+    ]
+
+    dependencies += [
+        dependency('xcb'),
+        dependency('xcb-keysyms')
+    ]
+endif
 
 cxx = meson.get_compiler('cpp')
 
@@ -50,10 +75,6 @@ cxx = meson.get_compiler('cpp')
 if cxx.get_id() == 'gcc'
     add_project_arguments(['-Wno-class-memaccess'], language: 'cpp')
 endif
-
-vk_dep = dependency('vulkan', method: 'system')
-xcb_dep = dependency('xcb')
-xcb_keysyms_dep = dependency('xcb-keysyms')
 
 if not cxx.has_header('vulkan/vulkan.h', dependencies: vk_dep)
     error('Vulkan C headers not found (vulkan/vulkan.h)')
@@ -64,7 +85,7 @@ if not cxx.has_header('vulkan/vulkan.hpp', dependencies: vk_dep)
     error('Vulkan C++ headers not found (vulkan/vulkan.hpp)')
 endif
 
-# GLSL compiler
+# GLSL -> SPIR-V compiler
 glslc = find_program('glslangValidator')
 spv_gen = generator(
     glslc,
@@ -94,17 +115,15 @@ resources_target = custom_target(
     command: resources_command
 )
 
-resources_dep = declare_dependency(
+dependencies += declare_dependency(
     sources: resources_target
 )
 
 # Main binary
-include = include_directories('src')
-
 executable('xenodon', sources,
     install: true,
     build_by_default: true,
-    dependencies: [vk_dep, xcb_dep, xcb_keysyms_dep, resources_dep],
-    include_directories: include,
+    dependencies: dependencies,
+    include_directories: include_directories('src'),
     link_args: '-g'
 )

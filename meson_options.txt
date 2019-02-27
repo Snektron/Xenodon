@@ -1,0 +1,2 @@
+option('present-bare', type: 'feature', value: 'enabled')
+option('present-xorg', type: 'feature', value: 'enabled')
