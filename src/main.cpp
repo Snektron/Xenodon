@@ -13,12 +13,6 @@ namespace {
     constexpr const char* const APP_NAME = "Xenodon";
     constexpr const uint32_t APP_VERSION = VK_MAKE_VERSION(0, 0, 0);
 
-    constexpr const std::array INSTANCE_EXTENSIONS = {
-        VK_KHR_SURFACE_EXTENSION_NAME,
-        VK_KHR_XCB_SURFACE_EXTENSION_NAME,
-        VK_KHR_DISPLAY_EXTENSION_NAME
-    };
-
     void print_help(const char* program_name) {
         std::cout << "Usage: " << program_name << " [options]\n\n"
             << resources::open("resources/options.txt") << std::endl;
@@ -52,8 +46,8 @@ int main(int argc, char* argv[]) {
             &app_info,
             0,
             nullptr,
-            INSTANCE_EXTENSIONS.size(),
-            INSTANCE_EXTENSIONS.data()
+            XorgDisplay::REQUIRED_INSTANCE_EXTENSIONS.size(),
+            XorgDisplay::REQUIRED_INSTANCE_EXTENSIONS.data()
         )
     );
 
