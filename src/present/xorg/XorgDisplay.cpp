@@ -126,6 +126,10 @@ XorgDisplay::XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uin
     }
 
     xcb_flush(this->connection);
+
+    {
+        this->surface = XorgSurface(this->instance, this->connection, this->window);
+    }
 }
 
 XorgDisplay::XorgDisplay(XorgDisplay&& other):

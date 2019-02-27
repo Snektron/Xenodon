@@ -8,6 +8,7 @@
 #include "present/Display.h"
 #include "present/Event.h"
 #include "present/xorg/Keyboard.h"
+#include "present/xorg/XorgSurface.h"
 #include "utility/MallocPtr.h"
 
 class XorgDisplay: public Display {
@@ -21,6 +22,7 @@ class XorgDisplay: public Display {
     xcb_window_t window;
     Keyboard kbd;
     vk::Extent2D window_size;
+    XorgSurface surface;
 
 public:
     static constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {
