@@ -1,7 +1,8 @@
 #include "present/xorg/XorgWindow.h"
 #include <stdexcept>
-#include "present/xorg/xorg_translate_key.h"
 #include <iostream>
+#include "present/xorg/XorgScreen.h"
+#include "present/xorg/xorg_translate_key.h"
 
 // Thank you xcb-xkb devs, very cool!
 #define explicit explicit_
@@ -132,7 +133,7 @@ XorgWindow::~XorgWindow() {
     }
 }
 
-void XorgWindow::poll_events(XorgSurface& surface) {
+void XorgWindow::poll_events(XorgScreen& screen) {
     while (true) {
         auto event = MallocPtr<xcb_generic_event_t>(
             xcb_poll_for_event(this->connection.get())
@@ -141,11 +142,11 @@ void XorgWindow::poll_events(XorgSurface& surface) {
         if (!event)
             break;
 
-        this->handle_event(surface, *event.get());
+        this->handle_event(screen, *event.get());
     }
 }
 
-void XorgWindow::handle_event(XorgSurface& surface, const xcb_generic_event_t& event) {
+void XorgWindow::handle_event(XorgScreen& screen, const xcb_generic_event_t& event) {
     auto dispatch_key_event = [this](Action action, xcb_keycode_t kc) {
         xcb_keysym_t keysym = xcb_key_symbols_get_keysym(this->key_symbols.get(), kc, 0);
         Key key = xorg_translate_key(keysym);
@@ -179,10 +180,7 @@ void XorgWindow::handle_event(XorgSurface& surface, const xcb_generic_event_t& e
             if (this->width == event_args.width && this->height == event_args.height)
                 break;
 
-            // TODO: notify the surface of change
-
-            this->width = event_args.width;
-            this->height = event_args.height;
+            screen.resize(event_args.width, event_args.height);
 
             this->dispatcher->dispatch_resize_event(event_args.width, event_args.height);
 

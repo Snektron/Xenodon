@@ -13,7 +13,7 @@ public:
     BareDisplay(vk::Instance instance, EventDispatcher& dispatcher);
     ~BareDisplay() override = default;
 
-    vk::Extent2D size() override;
+    vk::Extent2D size() const override;
     void poll_events() override;
 };
 

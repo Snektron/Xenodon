@@ -31,6 +31,12 @@ public:
         ptr(&ptr) {
     }
 
+    template <size_t N>
+    constexpr Span(T (&arr)[N]):
+        count(N),
+        ptr(arr) {
+    }
+
     constexpr Span(uint32_t count, T* ptr):
         count(count),
         ptr(ptr) {

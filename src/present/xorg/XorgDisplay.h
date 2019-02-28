@@ -7,12 +7,12 @@
 #include <xcb/xcb.h>
 #include "present/Display.h"
 #include "present/Event.h"
-#include "present/xorg/XorgSurface.h"
+#include "present/xorg/XorgScreen.h"
 #include "present/xorg/XorgWindow.h"
 
 class XorgDisplay: public Display {
     XorgWindow window;
-    XorgSurface surface;
+    XorgScreen screen;
 
 public:
     static constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {
@@ -28,7 +28,7 @@ public:
     XorgDisplay(XorgDisplay&& other) = default;
     XorgDisplay& operator=(XorgDisplay&& other) = default;
     
-    vk::Extent2D size() override;
+    vk::Extent2D size() const override;
     void poll_events() override;
 };
 

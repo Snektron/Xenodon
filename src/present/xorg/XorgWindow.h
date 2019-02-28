@@ -9,7 +9,7 @@
 #include "present/Event.h"
 #include "utility/MallocPtr.h"
 
-class XorgSurface;
+class XorgScreen;
 
 class XorgWindow {
     using AtomReply = MallocPtr<xcb_intern_atom_reply_t>;
@@ -47,8 +47,8 @@ public:
 
     ~XorgWindow();
 
-    void poll_events(XorgSurface& surface);
-    void handle_event(XorgSurface& surface, const xcb_generic_event_t& event);
+    void poll_events(XorgScreen& screen);
+    void handle_event(XorgScreen& screen, const xcb_generic_event_t& event);
 
     std::pair<xcb_connection_t*, xcb_window_t> x_handles();
 

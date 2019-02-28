@@ -1,4 +1,4 @@
-#include "present/xorg/XorgSurface.h"
+#include "present/xorg/XorgScreen.h"
 #include <stdexcept>
 #include <algorithm>
 #include <array>
@@ -124,7 +124,18 @@ namespace {
     }
 }
 
-XorgSurface::XorgSurface(vk::Instance instance, XorgWindow& window):
+XorgScreen::XorgScreen(vk::Instance instance, XorgWindow& window):
     surface(create_surface(instance, window)),
     device(create_device(instance, this->surface.get())) {
+}
+
+vk::Extent2D XorgScreen::size() const {
+    return this->extent;
+}
+
+void XorgScreen::resize(uint16_t width, uint16_t height) {
+    this->extent = vk::Extent2D{
+        static_cast<uint32_t>(width),
+        static_cast<uint32_t>(height)
+    };
 }
