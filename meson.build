@@ -15,7 +15,8 @@ cxx = meson.get_compiler('cpp')
 
 sources = [
     'src/main.cpp',
-    'src/graphics/Device.cpp'
+    'src/graphics/Device.cpp',
+    'src/graphics/support.cpp'
 ]
 
 shaders = [

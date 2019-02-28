@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include "present/xorg/XorgWindow.h"
+#include "graphics/support.h"
 
 namespace {
     constexpr const std::array DEVICE_EXTENSIONS = {
@@ -59,34 +60,9 @@ namespace {
                 props.deviceType != vk::PhysicalDeviceType::eIntegratedGpu)
                 break;
 
-            auto queue_family_properties = gpu.getQueueFamilyProperties();
-            auto extension_properties = gpu.enumerateDeviceExtensionProperties();
-
-            // Check if the GPU supports all required extensions
-            {
-                auto it = DEVICE_EXTENSIONS.begin();
-                bool valid = true;
-                for (; it != DEVICE_EXTENSIONS.end() && valid; ++it) {
-                    auto cmp_ext = [&](auto& ext) {
-                        return std::strcmp(*it, ext.extensionName) == 0;
-                    };
-
-                    valid = std::find_if(extension_properties.begin(), extension_properties.end(), cmp_ext) != extension_properties.end();
-                }
-
-                if (!valid)
-                    continue;
-            }
-
-            // Check if the GPU supports the surface at all
-            {
-                uint32_t format_count, present_mode_count;
-                vk::createResultValue(gpu.getSurfaceFormatsKHR(surface, &format_count, static_cast<vk::SurfaceFormatKHR*>(nullptr)), __PRETTY_FUNCTION__);
-                vk::createResultValue(gpu.getSurfacePresentModesKHR(surface, &present_mode_count, static_cast<vk::PresentModeKHR*>(nullptr)), __PRETTY_FUNCTION__);
-
-                if (format_count == 0 || present_mode_count == 0)
-                    continue;
-            }
+            if (!check_extension_support(gpu, DEVICE_EXTENSIONS)
+                || !check_surface_support(gpu, surface))
+                continue;
 
             // Find a compute and present queue for of the gpu
             {
