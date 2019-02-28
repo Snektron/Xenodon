@@ -132,7 +132,7 @@ XorgWindow::~XorgWindow() {
     }
 }
 
-void XorgWindow::poll_events() {
+void XorgWindow::poll_events(XorgSurface& surface) {
     while (true) {
         auto event = MallocPtr<xcb_generic_event_t>(
             xcb_poll_for_event(this->connection.get())
@@ -141,11 +141,11 @@ void XorgWindow::poll_events() {
         if (!event)
             break;
 
-        this->handle_event(*event.get());
+        this->handle_event(surface, *event.get());
     }
 }
 
-void XorgWindow::handle_event(const xcb_generic_event_t& event) {
+void XorgWindow::handle_event(XorgSurface& surface, const xcb_generic_event_t& event) {
     auto dispatch_key_event = [this](Action action, xcb_keycode_t kc) {
         xcb_keysym_t keysym = xcb_key_symbols_get_keysym(this->key_symbols.get(), kc, 0);
         Key key = xorg_translate_key(keysym);
@@ -179,6 +179,8 @@ void XorgWindow::handle_event(const xcb_generic_event_t& event) {
             if (this->width == event_args.width && this->height == event_args.height)
                 break;
 
+            // TODO: notify the surface of change
+
             this->width = event_args.width;
             this->height = event_args.height;
 
@@ -187,6 +189,13 @@ void XorgWindow::handle_event(const xcb_generic_event_t& event) {
             break;
         }
     }
+}
+
+std::pair<xcb_connection_t*, xcb_window_t> XorgWindow::x_handles() {
+    return {
+        this->connection.get(),
+        this->window
+    };
 }
 
 XorgWindow::AtomReply XorgWindow::atom(bool only_if_exists, const std::string_view& str) const {

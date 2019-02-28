@@ -3,16 +3,16 @@
 
 #include <vulkan/vulkan.hpp>
 #include <xcb/xcb.h>
-#include "present/Surface.h"
-#include "render/Device.h"
+#include "graphics/Device.h"
+
+class XorgWindow;
 
 class XorgSurface {
     vk::UniqueSurfaceKHR surface;
     Device device;
 
 public:
-    XorgSurface() = default;
-    XorgSurface(vk::Instance instance, xcb_connection_t* connection, xcb_window_t window);
+    XorgSurface(vk::Instance instance, XorgWindow& window);
 };
 
 #endif

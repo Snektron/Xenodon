@@ -1,5 +1,5 @@
-#ifndef _XENODON_RENDER_DEVICE_CPP
-#define _XENODON_RENDER_DEVICE_CPP
+#ifndef _XENODON_GRAPHICS_DEVICE_CPP
+#define _XENODON_GRAPHICS_DEVICE_CPP
 
 #include <limits>
 #include <cstdint>
@@ -10,7 +10,6 @@ struct Queue {
     vk::Queue queue;
     uint32_t family_index;
 
-    Queue() = default;
     Queue(vk::Device device, uint32_t family_index);
     Queue(std::nullptr_t);
 
@@ -28,7 +27,6 @@ struct Device {
 
     vk::UniqueCommandPool graphics_command_pool;
 
-    Device() = default;
     Device(vk::PhysicalDevice physical, vk::ArrayProxy<const char* const> extensions, uint32_t graphics_queue, uint32_t present_queue);
 };
 

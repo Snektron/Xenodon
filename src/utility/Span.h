@@ -1,10 +1,10 @@
 #ifndef _XENODON_UTILITY_SPAN_H
 #define _XENODON_UTILITY_SPAN_H
 
-#include <cstddef>
 #include <array>
 #include <vector>
 #include <initializer_list>
+#include <cstddef>
 #include <vulkan/vulkan.hpp>
 
 template <typename T>

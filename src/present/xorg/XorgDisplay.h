@@ -11,8 +11,8 @@
 #include "present/xorg/XorgWindow.h"
 
 class XorgDisplay: public Display {
-    vk::Instance instance;
     XorgWindow window;
+    XorgSurface surface;
 
 public:
     static constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {

@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstring>
 #include <iostream>
+#include "present/xorg/XorgWindow.h"
 
 namespace {
     constexpr const std::array DEVICE_EXTENSIONS = {
@@ -30,6 +31,8 @@ namespace {
             };
         });
 
+        // Make sure discrete GPUs are appearing before integrated GPUs, because
+        // we always want to chose discrete over integrated.
         std::sort(gpu_infos.begin(), gpu_infos.end(), [](const auto& l, const auto& r) {
             auto rate = [](const auto& gpu) {
                 switch (gpu.second.deviceType) {
@@ -126,22 +129,26 @@ namespace {
 
         throw std::runtime_error("Failed to find a suitable physical device");
     }
-}
 
-XorgSurface::XorgSurface(vk::Instance instance, xcb_connection_t* connection, xcb_window_t window) {
-    {
+    vk::UniqueSurfaceKHR create_surface(vk::Instance instance, XorgWindow& window) {
+        auto [connection, xid] = window.x_handles();
         auto create_info = vk::XcbSurfaceCreateInfoKHR(
             {},
             connection,
-            window
+            xid
         );
 
-        this->surface = instance.createXcbSurfaceKHRUnique(create_info);
+        return instance.createXcbSurfaceKHRUnique(create_info);
     }
 
-    {
-        auto [gpu, name, gqi, pqi, index] = pick_gpu(instance, this->surface.get());
+    Device create_device(vk::Instance instance, vk::SurfaceKHR surface) {
+        auto [gpu, name, gqi, pqi, index] = pick_gpu(instance, surface);
         std::cout << "Picked GPU " << index << ": " << name << std::endl;
-        this->device = Device(gpu, DEVICE_EXTENSIONS, gqi, pqi);
+        return Device(gpu, DEVICE_EXTENSIONS, gqi, pqi);
     }
+}
+
+XorgSurface::XorgSurface(vk::Instance instance, XorgWindow& window):
+    surface(create_surface(instance, window)),
+    device(create_device(instance, this->surface.get())) {
 }
