@@ -7,22 +7,12 @@
 #include <xcb/xcb.h>
 #include "present/Display.h"
 #include "present/Event.h"
-#include "present/xorg/Keyboard.h"
 #include "present/xorg/XorgSurface.h"
-#include "utility/MallocPtr.h"
+#include "present/xorg/XorgWindow.h"
 
 class XorgDisplay: public Display {
-    using AtomReply = MallocPtr<xcb_intern_atom_reply_t>;
-
     vk::Instance instance;
-    EventDispatcher* dispatcher;
-    xcb_connection_t* connection;
-    int preferred_screen_index;
-    AtomReply atom_wm_delete_window;
-    xcb_window_t window;
-    Keyboard kbd;
-    vk::Extent2D window_size;
-    XorgSurface surface;
+    XorgWindow window;
 
 public:
     static constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {
@@ -31,19 +21,15 @@ public:
     };
 
     XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uint16_t width, uint16_t height);
-    XorgDisplay(XorgDisplay&& other);
-    XorgDisplay& operator=(XorgDisplay&& other);
-    ~XorgDisplay() override;
 
     XorgDisplay(const XorgDisplay&) = delete;
     XorgDisplay& operator=(const XorgDisplay&) = delete;
-
+    
+    XorgDisplay(XorgDisplay&& other) = default;
+    XorgDisplay& operator=(XorgDisplay&& other) = default;
+    
     vk::Extent2D size() override;
     void poll_events() override;
-
-private:
-    void handle_event(const xcb_generic_event_t& event);
-    AtomReply atom(bool only_if_exists, const std::string_view& str) const;
 };
 
 #endif

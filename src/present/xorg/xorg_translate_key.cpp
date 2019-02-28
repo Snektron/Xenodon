@@ -1,13 +1,7 @@
-#include "present/xorg/Keyboard.h"
+#include "present/xorg/xorg_translate_key.h"
 #include <X11/keysym.h>
 
-Keyboard::Keyboard(xcb_connection_t* connection):
-    key_symbols(xcb_key_symbols_alloc(connection)) {
-}
-
-Key Keyboard::translate(xcb_keycode_t kc) {
-    xcb_keysym_t key = xcb_key_symbols_get_keysym(this->key_symbols.get(), kc, 0);
-
+Key xorg_translate_key(xcb_keysym_t key) {
     switch (key) {
         case XK_space: return Key::Space;
         case XK_apostrophe: return Key::Apostrophe;

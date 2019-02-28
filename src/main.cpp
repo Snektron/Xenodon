@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
     );
 
     auto dispatcher = EventDispatcher();
-    auto display = std::unique_ptr<Display>(new XorgDisplay(instance.get(), dispatcher, 800, 600));
+    auto display = std::make_unique<XorgDisplay>(instance.get(), dispatcher, 800, 600);
 
     bool quit = false;
     dispatcher.bind_close([&quit] {

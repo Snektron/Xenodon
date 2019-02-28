@@ -65,7 +65,9 @@ if (get_option('present-xorg').enabled())
     sources += [
         'src/present/xorg/XorgDisplay.cpp',
         'src/present/xorg/Keyboard.cpp',
-        'src/present/xorg/XorgSurface.cpp'
+        'src/present/xorg/XorgSurface.cpp',
+        'src/present/xorg/XorgWindow.cpp',
+        'src/present/xorg/xorg_translate_key.cpp'
     ]
 
     dependencies += [
