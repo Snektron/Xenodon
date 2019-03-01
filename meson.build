@@ -29,7 +29,6 @@ resources = [
 ]
 
 vk_dep = dependency('vulkan', method: 'system')
-
 dependencies = [vk_dep]
 
 add_project_arguments(
@@ -41,19 +40,39 @@ add_project_arguments(
 )
 
 # Add configuration for the bare presenting backend
-if (get_option('present-bare').enabled())
-    message('Building with bare presenting support')
+if (get_option('present-direct').enabled())
+    message('Building with direct presenting support')
 
-    add_project_arguments('-DXENODON_PRESENT_BARE', language: 'cpp')
+    # Direct presenting requires raw linux input, and is thus
+    # not supported on other platforms
+    if target_machine.system() != 'linux'
+        error('Direct display system requires linux')
+    endif
+
+    add_project_arguments('-DXENODON_PRESENT_DIRECT', language: 'cpp')
 
     sources += [
-        'src/present/bare/BareDisplay.cpp'
+        'src/present/direct/DirectDisplay.cpp',
+        'src/present/direct/DirectScreen.cpp',
+        'src/present/direct/DirectScreenGroup.cpp',
+        'src/present/direct/LinuxInput.cpp',
+        'src/present/direct/linux_translate_key.cpp'
+    ]
+
+    dependencies += [
+        dependency('threads')
     ]
 endif
 
 # Add configuration for the xorg presenting backend
 if (get_option('present-xorg').enabled())
     message('Building with xorg presenting support')
+
+    # Even though were not using X11 but XCB, we still need this header for the
+    # key symbol definitions.
+    if not cxx.has_header('X11/keysym.h')
+        error('X11 keysym header not found (X11/keysym.h)')
+    endif
 
     add_project_arguments(
         [
@@ -75,12 +94,6 @@ if (get_option('present-xorg').enabled())
         dependency('xcb-keysyms'),
         dependency('xcb-xkb')
     ]
-
-    # Even though were not using X11 but XCB, we still need this header for the
-    # key symbol definitions.
-    if not cxx.has_header('X11/keysym.h')
-        error('X11 keysym header not found (X11/keysym.h)')
-    endif
 endif
 
 # Silence gcc warnings about vulkan-hpp's memcpy

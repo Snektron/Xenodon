@@ -7,6 +7,7 @@
 #include "present/Display.h"
 #include "present/Event.h"
 #include "present/xorg/XorgDisplay.h"
+#include "present/direct/LinuxInput.h"
 #include "resources.h"
 
 namespace {
@@ -52,7 +53,11 @@ int main(int argc, char* argv[]) {
     );
 
     auto dispatcher = EventDispatcher();
-    auto display = std::make_unique<XorgDisplay>(instance.get(), dispatcher, 800, 600);
+    auto display = static_cast<std::unique_ptr<Display>>(
+        std::make_unique<XorgDisplay>(instance.get(), dispatcher, 800, 600)
+    );
+
+    auto inp = LinuxInput(dispatcher, "/dev/input/event3");
 
     bool quit = false;
     dispatcher.bind_close([&quit] {
@@ -87,5 +92,6 @@ int main(int argc, char* argv[]) {
         }
 
         display->poll_events();
+        inp.poll_events();
     }
 }

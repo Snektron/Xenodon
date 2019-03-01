@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.hpp>
 #include <xcb/xcb.h>
 #include "graphics/Device.h"
-#include "present/Surface.h"
 
 class XorgWindow;
 
@@ -12,7 +11,6 @@ class XorgScreen {
     vk::UniqueSurfaceKHR surface;
     Device device;
     vk::Extent2D extent;
-    Surface surface;
 
 public:
     XorgScreen(vk::Instance instance, XorgWindow& window);

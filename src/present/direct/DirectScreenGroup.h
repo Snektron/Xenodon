@@ -1,0 +1,8 @@
+#ifndef _XENODON_PRESENT_DIRECT_DIRECTSCREENGROUP_H
+#define _XENODON_PRESENT_DIRECT_DIRECTSCREENGROUP_H
+
+class DirectScreenGroup {
+
+};
+
+#endif

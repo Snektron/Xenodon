@@ -104,11 +104,9 @@ Key xorg_translate_key(xcb_keysym_t key) {
         case XK_Shift_L: return Key::LeftShift;
         case XK_Control_L: return Key::LeftControl;
         case XK_Alt_L: return Key::LeftAlt;
-        case XK_Super_L: return Key::LeftSuper;
         case XK_Shift_R: return Key::RightShift;
         case XK_Control_R: return Key::RightControl;
         case XK_Alt_R: return Key::RightAlt;
-        case XK_Super_R: return Key::RightSuper;
         case XK_Menu: return Key::Menu;
         default: return Key::Unknown;
     }
