@@ -30,6 +30,7 @@ public:
     
     vk::Extent2D size() const override;
     void poll_events() override;
+    void swap_buffers() override;
 };
 
 #endif

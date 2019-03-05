@@ -8,6 +8,7 @@ struct Display {
     virtual ~Display() = default;
     virtual vk::Extent2D size() const = 0;
     virtual void poll_events() = 0;
+    virtual void swap_buffers() = 0;
 };
 
 #endif

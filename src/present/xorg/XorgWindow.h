@@ -51,11 +51,8 @@ public:
     void handle_event(XorgScreen& screen, const xcb_generic_event_t& event);
 
     std::pair<xcb_connection_t*, xcb_window_t> x_handles();
-
 private:
     AtomReply atom(bool only_if_exists, const std::string_view& str) const;
-
-    friend class XorgDisplay;
 };
 
 #endif

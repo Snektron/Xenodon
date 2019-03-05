@@ -4,20 +4,22 @@
 #include <vulkan/vulkan.hpp>
 #include <xcb/xcb.h>
 #include "graphics/Device.h"
+#include "graphics/Swapchain.h"
 
 class XorgWindow;
 
 class XorgScreen {
     vk::UniqueSurfaceKHR surface;
     Device device;
-    vk::Extent2D extent;
+    Swapchain swapchain;
 
 public:
-    XorgScreen(vk::Instance instance, XorgWindow& window);
-    vk::Extent2D size() const;
-    void resize(uint16_t width, uint16_t height);
+    XorgScreen(vk::Instance instance, XorgWindow& window, vk::Extent2D window_extent);
+    ~XorgScreen();
 
-    friend class XorgDisplay;
+    vk::Extent2D size() const;
+    void resize(vk::Extent2D window_extent);
+    void swap_buffers();
 };
 
 #endif

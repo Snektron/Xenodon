@@ -124,18 +124,27 @@ namespace {
     }
 }
 
-XorgScreen::XorgScreen(vk::Instance instance, XorgWindow& window):
+XorgScreen::XorgScreen(vk::Instance instance, XorgWindow& window, vk::Extent2D window_extent):
     surface(create_surface(instance, window)),
-    device(create_device(instance, this->surface.get())) {
+    device(create_device(instance, this->surface.get())),
+    swapchain(this->device, this->surface.get(), window_extent) {
+}
+
+XorgScreen::~XorgScreen() {
+    this->device.logical->waitIdle();
 }
 
 vk::Extent2D XorgScreen::size() const {
-    return this->extent;
+    return this->swapchain.surface_extent();
 }
 
-void XorgScreen::resize(uint16_t width, uint16_t height) {
-    this->extent = vk::Extent2D{
-        static_cast<uint32_t>(width),
-        static_cast<uint32_t>(height)
-    };
+void XorgScreen::resize(vk::Extent2D window_extent) {
+    this->swapchain.recreate(window_extent);
+}
+
+void XorgScreen::swap_buffers() {
+    vk::Result res = this->swapchain.swap_buffers();
+    if (res != vk::Result::eSuccess) {
+        std::cout << "Failed to swap; frame dropped" << std::endl;
+    }
 }

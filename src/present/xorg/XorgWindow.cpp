@@ -180,7 +180,12 @@ void XorgWindow::handle_event(XorgScreen& screen, const xcb_generic_event_t& eve
             if (this->width == event_args.width && this->height == event_args.height)
                 break;
 
-            screen.resize(event_args.width, event_args.height);
+            auto extent = vk::Extent2D{
+                static_cast<uint32_t>(event_args.width),
+                static_cast<uint32_t>(event_args.height)
+            };
+
+            screen.resize(extent);
 
             this->dispatcher->dispatch_resize_event(event_args.width, event_args.height);
 
