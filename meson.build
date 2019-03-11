@@ -27,7 +27,7 @@ shaders = [
 ]
 
 resources = [
-    'resources/options.txt'
+    'resources/help.txt'
 ]
 
 vk_dep = dependency('vulkan', method: 'system')

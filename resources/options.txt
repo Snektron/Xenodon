@@ -1,2 +1,0 @@
-Options:
---help -h       Show this text.
