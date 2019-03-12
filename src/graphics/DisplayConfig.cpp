@@ -97,7 +97,7 @@ std::ostream& operator<<(std::ostream& os, const DisplayConfig& dc) {
             << r.offset.x << ", " << r.offset.y << " to "
             << (r.offset.x + static_cast<int32_t>(r.extent.width)) << ", " 
             << (r.offset.y + static_cast<int32_t>(r.extent.height)) << " ("
-            << r.extent.width << 'x' << r.extent.height << ')';
+            << r.extent.width << " by " << r.extent.height << ')';
     };
 
     auto str = [&](const char* s) -> std::ostream& {

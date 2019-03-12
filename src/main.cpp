@@ -1,7 +1,5 @@
 #include <iostream>
 #include <string_view>
-#include <chrono>
-#include <iomanip>
 #include <array>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
@@ -9,23 +7,14 @@
 #include "present/Display.h"
 #include "present/Event.h"
 #include "resources.h"
+#include "main_loop.h"
+#include "version.h"
 
 #if defined(XENODON_PRESENT_XORG)
-    #include "present/xorg/XorgDisplay.h"
+    #include "present/xorg/xorg_main.h"
 #endif
 
 namespace {
-    constexpr const char* const APP_NAME = "Xenodon";
-    constexpr const uint32_t APP_VERSION = VK_MAKE_VERSION(0, 0, 0);
-
-    const auto APP_INFO = vk::ApplicationInfo(
-        APP_NAME,
-        APP_VERSION,
-        nullptr,
-        0,
-        VK_API_VERSION_1_1
-    );
-
     void print_help(const char* program_name) {
         std::cout
             << "Usage:\n    " << program_name << " [subcommand] [flags]\n\n"
@@ -40,7 +29,7 @@ namespace {
         auto instance = vk::createInstanceUnique(
             vk::InstanceCreateInfo(
                 {},
-                &APP_INFO,
+                &version::APP_INFO,
                 0,
                 nullptr,
                 required_instance_extensions.size(),
@@ -55,70 +44,6 @@ namespace {
         } else {
             std::cout << dc << std::endl;
         }
-    }
-
-    void run(EventDispatcher& dispatcher, Display* display) {
-        bool quit = false;
-        dispatcher.bind_close([&quit] {
-            quit = true;
-        });
-
-        dispatcher.bind(Key::Escape, [&quit](Action) {
-            quit = true;
-        });
-
-        dispatcher.bind(Key::A, [](Action a) {
-            std::cout << "oof " << (a == Action::Press ? "Press" : "Release") << std::endl;
-        });
-
-        auto start = std::chrono::high_resolution_clock::now();
-        size_t frames = 0;
-
-        while (!quit) {
-            ++frames;
-
-            auto now = std::chrono::high_resolution_clock::now();
-            auto diff = std::chrono::duration<double>(now - start);
-
-            if (diff > std::chrono::seconds{1}) {
-                std::cout << "FPS: " << std::fixed << static_cast<double>(frames) / diff.count() << std::endl;
-                frames = 0;
-                start = now;
-            }
-
-            display->swap_buffers();
-            display->poll_events();
-        }
-    }
-
-    void run_xorg() {
-        #if defined(XENODON_PRESENT_XORG)
-            auto instance = vk::createInstanceUnique(
-                vk::InstanceCreateInfo(
-                    {},
-                    &APP_INFO,
-                    0,
-                    nullptr,
-                    XorgDisplay::REQUIRED_INSTANCE_EXTENSIONS.size(),
-                    XorgDisplay::REQUIRED_INSTANCE_EXTENSIONS.data()
-                )
-            );
-
-            auto dispatcher = EventDispatcher();
-            auto display = XorgDisplay(instance.get(), dispatcher, 800, 600);
-
-            run(dispatcher, &display);
-        #else
-            std::cout << "Xorg support was disabled" << std::endl;
-        #endif
-    }
-
-    void run_direct() {
-        #if defined(XEODON_PRESENT_DIRECT)
-            std::cout << "Direct rendering is WIP" << std::endl;
-        #else
-            std::cout << "Direct support was disabled" << std::endl;
-        #endif
     }
 }
 
@@ -135,9 +60,17 @@ int main(int argc, char* argv[]) {
     } else if (subcommand == "detect") {
         detect();
     } else if (subcommand == "xorg") {
-        run_xorg();
+        #if defined(XENODON_PRESENT_XORG)
+            xorg_main(argc - 2, &argv[2]);
+        #else
+            std::cout << "Error: Xorg support was disabled" << std::endl;
+        #endif
     } else if (subcommand == "direct") {
-        run_direct();
+        #if defined(XENODON_PRESENT_DIRECT)
+            std::cout << "Direct support is WIP" << std::endl;
+        #else
+            std::cout << "Error: Direct support was disabled" << std::endl;
+        #endif
     } else {
         std::cout << "Error: Invalid subcommand '" << subcommand << "', see `" << argv[0] << " help`" << std::endl;
     }

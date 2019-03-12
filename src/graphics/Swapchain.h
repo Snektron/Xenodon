@@ -65,18 +65,6 @@ public:
     const SwapchainImage& image(uint32_t index) const {
         return this->images[index];
     }
-
-    vk::CommandBuffer current_cmd_buf() const {
-        return this->current_image().command_buffer.get();
-    }
-
-    vk::ImageView current_image_view() const {
-        return this->current_image().image_view.get();
-    }
-
-    vk::Semaphore current_image_acquired() const {
-        return this->current_image_acquired_sem.get();
-    }
 };
 
 #endif

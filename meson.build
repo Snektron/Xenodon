@@ -15,6 +15,7 @@ cxx = meson.get_compiler('cpp')
 
 sources = [
     'src/main.cpp',
+    'src/main_loop.cpp',
     'src/graphics/Device.cpp',
     'src/graphics/support.cpp',
     'src/graphics/Swapchain.cpp',
@@ -30,15 +31,30 @@ resources = [
     'resources/help.txt'
 ]
 
-vk_dep = dependency('vulkan', method: 'system')
-dependencies = [vk_dep]
-
 add_project_arguments(
     [
         '-march=native',
         '-Wconversion',
     ],
     language: 'cpp'
+)
+
+# Project-wide dependencies
+vk_dep = dependency('vulkan', method: 'system')
+dependencies = [vk_dep]
+
+# Generate version.h
+versions = meson.project_version().split('.')
+conf = configuration_data()
+conf.set_quoted('NAME', meson.project_name())
+conf.set('MAJOR', versions[0])
+conf.set('MINOR', versions[1])
+conf.set('PATCH', versions[2])
+
+configure_file(
+    input: 'version.in.h',
+    output: 'version.h',
+    configuration: conf
 )
 
 # Add configuration for the bare presenting backend
@@ -85,6 +101,7 @@ if (get_option('present-xorg').enabled())
     )
 
     sources += [
+        'src/present/xorg/xorg_main.cpp',
         'src/present/xorg/XorgDisplay.cpp',
         'src/present/xorg/XorgScreen.cpp',
         'src/present/xorg/XorgWindow.cpp',
