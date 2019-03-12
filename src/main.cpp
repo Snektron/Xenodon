@@ -23,6 +23,7 @@ namespace {
 
     void detect() {
         constexpr const std::array required_instance_extensions = {
+            VK_KHR_SURFACE_EXTENSION_NAME,
             VK_KHR_DISPLAY_EXTENSION_NAME
         };
 
