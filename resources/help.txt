@@ -1,3 +1,9 @@
 Subcommands:
-    help        Show this message or the help of the given subcommand
+    help        Show this message
     detect      Detect displays and their attached GPUs
+
+Subcommand `detect`:
+    -h          Assume monitors connected to a single GPU are placed in
+                horizontal rows, and rows are placed vertically.
+    -v          Assume monitors connected to a single GPU are placed in
+                vertical columns, and columns are placed horizontally.

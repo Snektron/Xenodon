@@ -15,10 +15,6 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
         quit = true;
     });
 
-    dispatcher.bind(Key::A, [](Action a) {
-        std::cout << "oof " << (a == Action::Press ? "Press" : "Release") << std::endl;
-    });
-
     auto start = std::chrono::high_resolution_clock::now();
     size_t frames = 0;
 

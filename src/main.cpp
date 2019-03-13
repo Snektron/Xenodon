@@ -21,7 +21,22 @@ namespace {
             << resources::open("resources/help.txt") << std::endl;
     }
 
-    void detect() {
+    void detect(int argc, char* argv[]) {
+        auto dir = DisplayConfig::Direction::Horizontal;
+
+        for (int i = 0; i < argc; ++i) {
+            auto arg = std::string_view(argv[i]);
+
+            if (arg == "-h") {
+                dir = DisplayConfig::Direction::Horizontal;
+            } else if (arg == "-v") {
+                dir = DisplayConfig::Direction::Vertical;
+            } else {
+                std::cout << "Error: unknown argument '" << arg << "'" << std::endl;
+                return;
+            }
+        }
+
         constexpr const std::array required_instance_extensions = {
             VK_KHR_SURFACE_EXTENSION_NAME,
             VK_KHR_DISPLAY_EXTENSION_NAME
@@ -38,10 +53,10 @@ namespace {
             )
         );
 
-        auto dc = DisplayConfig::auto_detect(instance.get());
+        auto dc = DisplayConfig::auto_detect(instance.get(), dir);
 
         if (dc.gpus.empty()) {
-            std::cout << "No displays detected" << std::endl;
+            std::cout << "No screens detected" << std::endl;
         } else {
             std::cout << dc << std::endl;
         }
@@ -59,7 +74,7 @@ int main(int argc, char* argv[]) {
     if (subcommand == "help") {
         print_help(argv[0]);
     } else if (subcommand == "detect") {
-        detect();
+        detect(argc - 2, &argv[2]);
     } else if (subcommand == "xorg") {
         #if defined(XENODON_PRESENT_XORG)
             xorg_main(argc - 2, &argv[2]);

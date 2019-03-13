@@ -8,7 +8,7 @@
 #include <vulkan/vulkan.hpp>
 
 struct DisplayConfig {
-    struct DisplayInfo {
+    struct ScreenInfo {
         uint32_t index;
         const char* name;
         vk::Rect2D region;
@@ -23,7 +23,12 @@ struct DisplayConfig {
         const char* name;
         vk::Rect2D region;
         vk::PhysicalDevice gpu;
-        std::vector<DisplayInfo> displays;
+        std::vector<ScreenInfo> screens;
+    };
+
+    enum class Direction {
+        Horizontal,
+        Vertical
     };
 
     vk::Extent2D extent;
@@ -33,8 +38,8 @@ private:
     DisplayConfig() = default;
 
 public:
-    static DisplayConfig auto_detect(vk::Instance instance);
-    static DisplayConfig parse_from_config(vk::Instance instance, std::istream& config);
+    static DisplayConfig auto_detect(vk::Instance instance, Direction dir = Direction::Horizontal);
+    static DisplayConfig parse_config(vk::Instance instance, std::istream& input);
 };
 
 std::ostream& operator<<(std::ostream& os, const DisplayConfig& dc);
