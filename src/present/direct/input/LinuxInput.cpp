@@ -1,4 +1,4 @@
-#include "present/direct/LinuxInput.h"
+#include "present/direct/input/LinuxInput.h"
 #include <stdexcept>
 #include <linux/input.h>
 #include <sys/types.h>
@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <poll.h>
-#include "present/direct/linux_translate_key.h"
+#include "present/direct/input/linux_translate_key.h"
 
 FileDescriptor::FileDescriptor(const char* path):
     fd(open(path, O_RDONLY)) {

@@ -73,9 +73,9 @@ if (get_option('present-direct').enabled())
         'src/present/direct/DirectDisplay.cpp',
         'src/present/direct/DirectScreen.cpp',
         'src/present/direct/DirectScreenGroup.cpp',
-        'src/present/direct/LinuxInput.cpp',
-        'src/present/direct/linux_translate_key.cpp',
-        'src/present/direct/DisplayConfig.cpp'
+        'src/present/direct/DisplayConfig.cpp',
+        'src/present/direct/input/LinuxInput.cpp',
+        'src/present/direct/input/linux_translate_key.cpp'
     ]
 
     dependencies += [

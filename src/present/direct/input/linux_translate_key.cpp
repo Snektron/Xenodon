@@ -1,5 +1,5 @@
-#include "present/direct/linux_translate_key.h"
-#include "linux/input-event-codes.h"
+#include "present/direct/input/linux_translate_key.h"
+#include <linux/input-event-codes.h>
 
 Key linux_translate_key(int key) {
     switch (key) {
