@@ -22,7 +22,6 @@ struct DisplayConfig {
 
     struct Device {
         uint32_t vulkan_index;
-        vk::Offset2D offset;
         std::vector<Screen> screens;
     };
 

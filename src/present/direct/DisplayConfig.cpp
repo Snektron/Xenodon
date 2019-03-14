@@ -135,10 +135,6 @@ namespace {
         whitespace(p);
         size_t index = parse_int(p);
         whitespace(p);
-        match_word(p, "at");
-        whitespace(p);
-        vk::Offset2D offset = parse_offset(p);
-        whitespace(p);
         p.expect('{');
         skip_whitespace(p);
         if (p.peek() == '}') {
@@ -150,7 +146,6 @@ namespace {
 
         auto device = DisplayConfig::Device{
             static_cast<uint32_t>(index),
-            offset,
             {parse_screen(p)}
         };
 

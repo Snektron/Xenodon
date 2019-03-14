@@ -1,9 +1,27 @@
 Subcommands:
-    help        Show this message
-    sysinfo     Detect system information such as connected monitors and video
-                cards.
-    direct      Run the program in direct-mode. This requires there to be no
-                x-server running and is able to run on a multi-gpu setup.
-    xorg        Run the program in xorg-mode. This makes the program behave
-                as if it were a normal program, but it is not able to use
-                multiple video cards.
+help
+    Show this message
+
+sysinfo
+    Detect system information such as connected monitors and video cards.
+
+direct <config file>
+    Run the program in direct-mode. This requires there to be no x-server
+    running and is able to run on a multi-gpu setup.
+    <config file> is a path to a configuration file specifying the
+    system setup. Entries in this file have the following format:
+    
+    device <index> {
+        screen <index> at (<offset x>, <offset y>),
+        screen <index> at (<offset x>, <offset y>)
+    }
+
+    The config file must have at least one device entry, and each device
+    entry must have at least one screen entry. The indices of the devices
+    and the screens are the vulkan indices and can be queried with the
+    sysinfo subcommand. <offset>s are relative to (0, 0) and must be positive,
+    with the origin at the top-left.
+
+xorg
+    Run the program in xorg-mode. This makes the program behave as if it were
+    a normal program, but it is not able to use multiple video cards.

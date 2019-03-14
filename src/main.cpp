@@ -19,7 +19,7 @@
 namespace {
     void print_help(const char* program_name) {
         std::cout
-            << "Usage:\n    " << program_name << " [subcommand] [flags]\n\n"
+            << "Usage:\n    " << program_name << " [subcommand]\n\n"
             << resources::open("resources/help.txt") << std::endl;
     }
 
