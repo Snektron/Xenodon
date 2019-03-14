@@ -46,6 +46,11 @@ namespace {
 
         std::cout << "System setup information:"; 
         auto gpus = instance->enumeratePhysicalDevices();
+        if (gpus.empty()) {
+            std::cout << "\nno gpus detected" << std::endl;
+            return;
+        }
+
         for (size_t i = 0; i < gpus.size(); ++i) {
             auto props = gpus[i].getProperties();
             std::cout << "\ngpu " << i << ":\n\tname: ";
@@ -53,6 +58,12 @@ namespace {
             std::cout << "\n\ttype: " << vk::to_string(props.deviceType);
 
             auto display_props = gpus[i].getDisplayPropertiesKHR();
+
+            if (display_props.empty()) {
+                std::cout << "\n\tno displays detected";
+                continue;
+            }
+
             for (size_t j = 0; j < display_props.size(); ++j) {
                 std::cout << "\n\tdisplay " << j << ":\n\t\tname: ";
                 str(display_props[j].displayName);
