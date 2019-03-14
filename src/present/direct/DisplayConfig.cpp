@@ -8,7 +8,7 @@ using ParseError = DisplayConfig::ParseError;
 namespace {
     struct Parser {
         std::istream& input;
-        size_t line;
+        size_t line, col;
 
         int peek();
         int consume();
@@ -22,20 +22,23 @@ namespace {
 
     int Parser::consume() {
         int c = this->input.get();
-        if (c == '\n')
+        if (c == '\n') {
             ++this->line;
-        else if (this->input.eof()) {
+            this->col = 0;
+        } else if (this->input.eof()) {
             auto msg = this->error();
             msg << "Unexpected end of file";
             throw ParseError(msg.str());
         }
+
+        ++this->col;        
 
         return c;
     }
 
     std::stringstream Parser::error() {
         auto ss = std::stringstream();
-        ss << "Parse error at line " << this->line << ": ";
+        ss << "Parse error at " << this->line << ':' << this->col << ": ";
         return ss;
     }
 
@@ -58,7 +61,7 @@ namespace {
     void whitespace(Parser& p) {
         if (!isspace(p.peek())) {
             auto msg = p.error();
-            msg << "Unexpected character '" << p.consume() << "', expected whitespace";
+            msg << "Unexpected character '" << static_cast<char>(p.consume()) << "', expected whitespace";
             throw ParseError(msg.str()); 
         }
 
@@ -75,11 +78,12 @@ namespace {
 
         size_t value = static_cast<size_t>(c - '0');
 
-        c = p.consume();
+        c = p.peek();
         while (c >= '0' && c <= '9') {
             value *= 10;
             value += static_cast<size_t>(c - '0');
-            c = p.consume();
+            p.consume();
+            c = p.peek();
         }
 
         return value;
