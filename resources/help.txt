@@ -18,9 +18,9 @@ direct <config file>
 
     The config file must have at least one device entry, and each device
     entry must have at least one screen entry. The indices of the devices
-    and the screens are the vulkan indices and can be queried with the
-    sysinfo subcommand. <offset>s are relative to (0, 0) and must be positive,
-    with the origin at the top-left.
+    and the screens are the vulkan indices and must be unique. They can be 
+    ueried with the sysinfo subcommand. <offset>s are relative to (0, 0)
+    and must be positive, with the origin at the top-left.
 
 xorg
     Run the program in xorg-mode. This makes the program behave as if it were

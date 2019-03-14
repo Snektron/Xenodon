@@ -130,6 +130,17 @@ namespace {
         };
     }
 
+    template <typename T>
+    bool check_unique(const std::vector<T>& items, uint32_t vulkan_index) {
+        for (auto&& item : items) {
+            if (item.vulkan_index == vulkan_index) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     DisplayConfig::Device parse_device(Parser& p) {
         match_word(p, "device");
         whitespace(p);
@@ -156,7 +167,15 @@ namespace {
 
             p.expect(',');
             skip_whitespace(p);
-            device.screens.push_back(parse_screen(p));
+            auto screen = parse_screen(p);
+
+            if (!check_unique(device.screens, screen.vulkan_index)) {
+                auto msg = p.error();
+                msg << "Screen index " << screen.vulkan_index << " is not unique";
+                throw ParseError(msg.str());
+            }
+
+            device.screens.push_back(screen);
         }
 
         p.expect('}');
@@ -169,7 +188,15 @@ DisplayConfig::DisplayConfig(std::istream& input) {
     Parser p{input, 1};
     skip_whitespace(p);
     while (p.peek() >= 0) {
-        this->gpus.push_back(parse_device(p));
+        auto gpu = parse_device(p);
+
+        if (!check_unique(this->gpus, gpu.vulkan_index)) {
+            auto msg = p.error();
+            msg << "Device index " << gpu.vulkan_index << " is not unique";
+            throw ParseError(msg.str());
+        }
+
+        this->gpus.push_back(gpu);
         skip_whitespace(p);
     }
 
