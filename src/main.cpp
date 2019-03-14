@@ -12,6 +12,10 @@
     #include "present/xorg/xorg_main.h"
 #endif
 
+#if defined(XENODON_PRESENT_DIRECT)
+    #include "present/direct/direct_main.h"
+#endif
+
 namespace {
     void print_help(const char* program_name) {
         std::cout
@@ -96,7 +100,7 @@ int main(int argc, char* argv[]) {
         #endif
     } else if (subcommand == "direct") {
         #if defined(XENODON_PRESENT_DIRECT)
-            std::cout << "Direct support is WIP" << std::endl;
+            direct_main(argc - 2, &argv[2]);
         #else
             std::cout << "Error: Direct support was disabled" << std::endl;
         #endif

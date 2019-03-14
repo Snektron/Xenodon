@@ -19,7 +19,6 @@ sources = [
     'src/graphics/Device.cpp',
     'src/graphics/support.cpp',
     'src/graphics/Swapchain.cpp',
-    'src/graphics/DisplayConfig.cpp'
 ]
 
 shaders = [
@@ -70,11 +69,13 @@ if (get_option('present-direct').enabled())
     add_project_arguments('-DXENODON_PRESENT_DIRECT', language: 'cpp')
 
     sources += [
+        'src/present/direct/direct_main.cpp',
         'src/present/direct/DirectDisplay.cpp',
         'src/present/direct/DirectScreen.cpp',
         'src/present/direct/DirectScreenGroup.cpp',
         'src/present/direct/LinuxInput.cpp',
-        'src/present/direct/linux_translate_key.cpp'
+        'src/present/direct/linux_translate_key.cpp',
+        'src/present/direct/DisplayConfig.cpp'
     ]
 
     dependencies += [
