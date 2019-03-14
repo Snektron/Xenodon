@@ -1,9 +1,5 @@
 Subcommands:
     help        Show this message
-    detect      Detect displays and their attached GPUs
+    sysinfo     Detect system information such as connected monitors and video
+                cards.
 
-Subcommand `detect`:
-    -h          Assume monitors connected to a single GPU are placed in
-                horizontal rows, and rows are placed vertically.
-    -v          Assume monitors connected to a single GPU are placed in
-                vertical columns, and columns are placed horizontally.

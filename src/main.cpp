@@ -3,11 +3,9 @@
 #include <array>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
-#include "graphics/DisplayConfig.h"
 #include "present/Display.h"
 #include "present/Event.h"
 #include "resources.h"
-#include "main_loop.h"
 #include "version.h"
 
 #if defined(XENODON_PRESENT_XORG)
@@ -21,22 +19,7 @@ namespace {
             << resources::open("resources/help.txt") << std::endl;
     }
 
-    void detect(int argc, char* argv[]) {
-        auto dir = DisplayConfig::Direction::Horizontal;
-
-        for (int i = 0; i < argc; ++i) {
-            auto arg = std::string_view(argv[i]);
-
-            if (arg == "-h") {
-                dir = DisplayConfig::Direction::Horizontal;
-            } else if (arg == "-v") {
-                dir = DisplayConfig::Direction::Vertical;
-            } else {
-                std::cout << "Error: unknown argument '" << arg << "'" << std::endl;
-                return;
-            }
-        }
-
+    void system_info(int argc, char* argv[]) {
         constexpr const std::array required_instance_extensions = {
             VK_KHR_SURFACE_EXTENSION_NAME,
             VK_KHR_DISPLAY_EXTENSION_NAME
@@ -53,13 +36,32 @@ namespace {
             )
         );
 
-        auto dc = DisplayConfig::auto_detect(instance.get(), dir);
+        auto str = [](const char* s) {
+            if (s) {
+                std::cout << '\'' << s << '\'';
+            } else {
+                std::cout << "(null)";
+            }
+        };
 
-        if (dc.gpus.empty()) {
-            std::cout << "No screens detected" << std::endl;
-        } else {
-            std::cout << dc << std::endl;
+        std::cout << "System setup information:"; 
+        auto gpus = instance->enumeratePhysicalDevices();
+        for (size_t i = 0; i < gpus.size(); ++i) {
+            auto props = gpus[i].getProperties();
+            std::cout << "\ngpu " << i << ":\n\tname: ";
+            str(props.deviceName);
+            std::cout << "\n\ttype: " << vk::to_string(props.deviceType);
+
+            auto display_props = gpus[i].getDisplayPropertiesKHR();
+            for (size_t j = 0; j < display_props.size(); ++j) {
+                std::cout << "\n\tdisplay " << j << ":\n\t\tname: ";
+                str(display_props[j].displayName);
+                auto res = display_props[j].physicalResolution;
+                std::cout << "\n\t\tresolution: " << res.width << 'x' << res.height;
+            }
         }
+
+        std::cout << std::endl;
     }
 }
 
@@ -73,8 +75,8 @@ int main(int argc, char* argv[]) {
 
     if (subcommand == "help") {
         print_help(argv[0]);
-    } else if (subcommand == "detect") {
-        detect(argc - 2, &argv[2]);
+    } else if (subcommand == "sysinfo") {
+        system_info(argc - 2, &argv[2]);
     } else if (subcommand == "xorg") {
         #if defined(XENODON_PRESENT_XORG)
             xorg_main(argc - 2, &argv[2]);
