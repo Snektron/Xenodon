@@ -4,19 +4,21 @@
 #include <vector>
 #include <vulkan/vulkan.hpp>
 #include "present/Display.h"
-#include "present/Event.h"
 #include "present/direct/DisplayConfig.h"
-#include "present/direct/DirectScreenGroup.h"
+#include "present/direct/ScreenGroup.h"
 
-class DirectDisplay: public Display {
-    std::vector<DirectScreenGroup> screen_groups;
+class DirectDisplay final: public Display {
+    std::vector<ScreenGroup> screen_groups;
 
 public:
-    DirectDisplay(vk::Instance instance, EventDispatcher& dispatcher, const DisplayConfig& display_config);
+    DirectDisplay(vk::Instance instance, const DisplayConfig& display_config);
     ~DirectDisplay() override = default;
 
-    vk::Extent2D size() const override;
+    Setup setup() override;
+    Device& device_at(size_t gpu_index) override;
+    Screen* screen_at(size_t gpu_index, size_t screen_index) override;
     void poll_events() override;
+    void swap_buffers() override;
 };
 
 #endif

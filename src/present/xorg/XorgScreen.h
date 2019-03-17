@@ -5,10 +5,11 @@
 #include <xcb/xcb.h>
 #include "graphics/Device.h"
 #include "graphics/Swapchain.h"
+#include "present/Screen.h"
 
 class XorgWindow;
 
-class XorgScreen {
+class XorgScreen final: public Screen {
     vk::UniqueSurfaceKHR surface;
     Device device;
     Swapchain swapchain;
@@ -20,6 +21,8 @@ public:
     vk::Extent2D size() const;
     void resize(vk::Extent2D window_extent);
     void swap_buffers();
+
+    friend class XorgDisplay;
 };
 
 #endif
