@@ -5,10 +5,10 @@ help
 sysinfo
     Detect system information such as connected monitors and video cards.
 
-direct <config file>
+direct <display config>
     Run the program in direct-mode. This requires there to be no x-server
     running and is able to run on a multi-gpu setup.
-    <config file> is a path to a configuration file specifying the
+    <display config> is a path to a configuration file specifying the
     system setup. Entries in this file have the following format:
     
     device <index> {

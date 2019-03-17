@@ -19,6 +19,7 @@ sources = [
     'src/graphics/Device.cpp',
     'src/graphics/support.cpp',
     'src/graphics/Swapchain.cpp',
+    'src/render/Renderer.cpp'
 ]
 
 shaders = [

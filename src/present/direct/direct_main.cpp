@@ -2,16 +2,17 @@
 #include <iostream>
 #include <fstream>
 #include "present/direct/DisplayConfig.h"
+#include "main_loop.h"
 
 void direct_main(int argc, char* argv[]) {
     if (argc == 0) {
-        std::cout << "Error: Missing argument <config file>" << std::endl;
+        std::cout << "Error: Missing argument <display config>" << std::endl;
         return;
     }
 
     auto in = std::ifstream(argv[0]);
     if (!in) {
-        std::cout << "Error: Failed to open config file '" << argv[0] << '\'' << std::endl;
+        std::cout << "Error: Failed to open display config file '" << argv[0] << '\'' << std::endl;
         return;
     }
 

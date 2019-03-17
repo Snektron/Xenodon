@@ -15,11 +15,6 @@ class XorgDisplay: public Display {
     XorgScreen screen;
 
 public:
-    static constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {
-        VK_KHR_SURFACE_EXTENSION_NAME,
-        VK_KHR_XCB_SURFACE_EXTENSION_NAME,
-    };
-
     XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uint16_t width, uint16_t height);
 
     XorgDisplay(const XorgDisplay&) = delete;
