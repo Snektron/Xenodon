@@ -7,8 +7,18 @@ XorgDisplay::XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uin
     screen(instance, this->window, {static_cast<uint32_t>(width), static_cast<uint32_t>(height)}) {
 }
 
-vk::Extent2D XorgDisplay::size() const {
-    return this->screen.size();
+Setup XorgDisplay::setup() {
+    return {1};
+}
+
+Device& XorgDisplay::device_at(size_t gpu_index) {
+    // gpu_index should be 0.
+    return this->screen.device;
+}
+
+Screen* XorgDisplay::screen_at(size_t gpu_index, size_t screen_index) {
+    // gpu_index and screen_index should be 0.
+    return &this->screen;
 }
 
 void XorgDisplay::poll_events() {

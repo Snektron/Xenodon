@@ -1,9 +1,9 @@
 #include "present/xorg/xorg_main.h"
 #include <array>
 #include <vulkan/vulkan.hpp>
+#include "present/xorg/XorgDisplay.h"
 #include "main_loop.h"
 #include "version.h"
-#include "present/xorg/XorgDisplay.h"
 
 namespace {
     constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {

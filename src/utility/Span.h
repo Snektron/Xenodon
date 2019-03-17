@@ -37,7 +37,7 @@ public:
         ptr(arr) {
     }
 
-    constexpr Span(uint32_t count, T* ptr):
+    constexpr Span(size_t count, T* ptr):
         count(count),
         ptr(ptr) {
     }

@@ -73,7 +73,7 @@ if (get_option('present-direct').enabled())
         'src/present/direct/direct_main.cpp',
         'src/present/direct/DirectDisplay.cpp',
         'src/present/direct/DirectScreen.cpp',
-        'src/present/direct/DirectScreenGroup.cpp',
+        'src/present/direct/ScreenGroup.cpp',
         'src/present/direct/DisplayConfig.cpp',
         'src/present/direct/input/LinuxInput.cpp',
         'src/present/direct/input/linux_translate_key.cpp'
