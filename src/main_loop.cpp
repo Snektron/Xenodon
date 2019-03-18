@@ -9,7 +9,7 @@ namespace {
     void report_setup(const Setup& setup) {
         size_t ngpus = setup.size();
 
-        std::cout << "setup: " << ngpus << (ngpus > 1 ? " gpus" : " gpu") << ", with " << setup[0];
+        std::cout << "Setup: " << ngpus << (ngpus > 1 ? " gpus" : " gpu") << ", with " << setup[0];
 
         for (size_t i = 1; i < setup.size(); ++i) {
             std::cout << ", " << setup[i];

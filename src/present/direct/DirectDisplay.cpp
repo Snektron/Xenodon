@@ -1,11 +1,16 @@
 #include "present/direct/DirectDisplay.h"
 
-DirectDisplay::DirectDisplay(vk::Instance instance, const DirectConfig& display_config) {
+DirectDisplay::DirectDisplay(vk::Instance instance, EventDispatcher& dispatcher, const DirectConfig& display_config):
+    input(dispatcher, display_config.input) {
     this->screen_groups.reserve(display_config.gpus.size());
 
     auto gpus = instance.enumeratePhysicalDevices();
     for (const auto& device : display_config.gpus) {
-        this->screen_groups.emplace_back(instance, gpus.at(device.vulkan_index), device.screens);
+        if (device.vulkan_index >= gpus.size()) {
+            throw std::runtime_error("Vulkan screen index out of range");
+        }
+
+        this->screen_groups.emplace_back(instance, gpus[device.vulkan_index], device.screens);
     }
 }
 
@@ -29,7 +34,7 @@ Screen* DirectDisplay::screen_at(size_t gpu_index, size_t screen_index) {
 }
 
 void DirectDisplay::poll_events() {
-
+    this->input.poll_events();
 }
 
 void DirectDisplay::swap_buffers() {

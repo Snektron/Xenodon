@@ -64,12 +64,11 @@ Device cfg::FromConfig<Device>::operator()(cfg::Config& cfg) {
 }
 
 Input cfg::FromConfig<Input>::operator()(cfg::Config& cfg) {
-    auto [kbd_dev, mouse_dev] = cfg.get(
-        Value<std::string>("keyboard"),
-        Value<std::string>("mouse")
+    auto [kbd_dev] = cfg.get(
+        Value<std::string>("keyboard")
     );
 
-    return {kbd_dev, mouse_dev};
+    return {kbd_dev};
 }
 
 DirectConfig cfg::FromConfig<DirectConfig>::operator()(cfg::Config& cfg) {

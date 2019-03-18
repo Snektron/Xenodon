@@ -4,14 +4,17 @@
 #include <vector>
 #include <vulkan/vulkan.hpp>
 #include "present/Display.h"
+#include "present/Event.h"
 #include "present/direct/DirectConfig.h"
 #include "present/direct/ScreenGroup.h"
+#include "present/direct/input/LinuxInput.h"
 
 class DirectDisplay final: public Display {
     std::vector<ScreenGroup> screen_groups;
+    LinuxInput input;
 
 public:
-    DirectDisplay(vk::Instance instance, const DirectConfig& display_config);
+    DirectDisplay(vk::Instance instance, EventDispatcher& dispatcher, const DirectConfig& display_config);
     ~DirectDisplay() override = default;
 
     Setup setup() override;

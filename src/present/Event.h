@@ -16,12 +16,12 @@ struct EventDispatcher {
     using ActionCallback = std::function<void(Action)>;
     using DigitalCallback = std::function<void(double)>;
     using DisplayClosedCallback = std::function<void()>;
-    using ResizeCallback = std::function<void(uint16_t width, uint16_t height)>;
+    using SwapchainRecreateCallback = std::function<void(size_t, size_t)>;
 
 private:
     std::unordered_map<Key, ActionCallback> key_bindings;
     DisplayClosedCallback close_binding = nullptr;
-    ResizeCallback resize_binding = nullptr;
+    SwapchainRecreateCallback swapchain_recreate_binding = nullptr;
 
 public:
     void bind(Key key, ActionCallback f) {
@@ -32,8 +32,8 @@ public:
         this->close_binding = f;
     }
 
-    void bind_resize(ResizeCallback f) {
-        this->resize_binding = f;
+    void bind_swapchain_recreate(SwapchainRecreateCallback f) {
+        this->swapchain_recreate_binding = f;
     }
 
     void dispatch_key_event(Key key, Action action) {
@@ -47,9 +47,9 @@ public:
             this->close_binding();
     }
 
-    void dispatch_resize_event(uint16_t width, uint16_t height) {
-        if (this->resize_binding)
-            this->resize_binding(width, height);
+    void dispatch_swapchain_recreate_event(size_t gpu_index, size_t screen_index) {
+        if (this->swapchain_recreate_binding)
+            this->swapchain_recreate_binding(gpu_index, screen_index);
     }
 };
 

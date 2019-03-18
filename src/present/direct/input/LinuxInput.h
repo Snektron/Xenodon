@@ -2,6 +2,7 @@
 #define _XENODON_PRESENT_DIRECT_INPUT_LINUXINPUT_H
 
 #include "present/Event.h"
+#include "present/direct/DirectConfig.h"
 
 struct FileDescriptor {
     int fd;
@@ -22,7 +23,7 @@ class LinuxInput {
     FileDescriptor kbd_fd;
 
 public:
-    LinuxInput(EventDispatcher& dispatcher, const char* kbd_dev);
+    LinuxInput(EventDispatcher& dispatcher, const DirectConfig::Input& cfg);
 
     void poll_events();
     void handle_event(struct input_event& event);

@@ -6,8 +6,11 @@
 #include "graphics/Device.h"
 #include "present/Display.h"
 
-struct Renderer {
-    Renderer();
+class Renderer {
+    Display* display;
+
+public:
+    Renderer(Display* display);
 };
 
 #endif

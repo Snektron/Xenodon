@@ -22,6 +22,10 @@ public:
     void resize(vk::Extent2D window_extent);
     void swap_buffers();
 
+    uint32_t active_index() const override;
+    SwapImage swap_image(uint32_t index) const override;
+    vk::Rect2D region() const override;
+
     friend class XorgDisplay;
 };
 

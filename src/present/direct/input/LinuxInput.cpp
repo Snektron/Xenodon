@@ -12,7 +12,7 @@ FileDescriptor::FileDescriptor(const char* path):
     fd(open(path, O_RDONLY)) {
 
     if (this->fd == -1) {
-        throw std::runtime_error(std::string{"Failed to open file '"} + path + "'");
+        throw std::runtime_error("Failed to open file descriptor");
     }
 }
 
@@ -31,10 +31,10 @@ FileDescriptor::~FileDescriptor() {
         close(this->fd);
 }
 
-LinuxInput::LinuxInput(EventDispatcher& dispatcher, const char* kbd_dev):
+LinuxInput::LinuxInput(EventDispatcher& dispatcher, const DirectConfig::Input& cfg):
     dispatcher(&dispatcher),
-    kbd_fd(kbd_dev) {
-    // ioctl(this->kbd_fd.fd, EVIOCGRAB, 1);
+    kbd_fd(cfg.kbd_dev.c_str()) {
+    ioctl(this->kbd_fd.fd, EVIOCGRAB, 1);
 }
 
 void LinuxInput::poll_events() {

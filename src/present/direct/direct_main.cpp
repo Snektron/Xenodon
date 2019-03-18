@@ -43,7 +43,7 @@ void direct_main(int argc, char* argv[]) {
         auto direct_config = config.as<DirectConfig>();
 
         auto dispatcher = EventDispatcher();
-        auto display = DirectDisplay(instance.get(), direct_config);
+        auto display = DirectDisplay(instance.get(), dispatcher, direct_config);
 
         main_loop(dispatcher, &display);
     } catch (const cfg::ParseError& err) {

@@ -14,6 +14,9 @@ class ScreenGroup {
 
 public:
     ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const std::vector<DirectConfig::Screen>& screens);
+    ScreenGroup(ScreenGroup&&) = default;
+    ScreenGroup& operator=(ScreenGroup&&) = default;
+    ~ScreenGroup();
     void swap_buffers();
 
     friend class DirectDisplay;

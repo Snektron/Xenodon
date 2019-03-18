@@ -1,4 +1,5 @@
 #include "render/Renderer.h"
 
-Renderer::Renderer() {
+Renderer::Renderer(Display* display):
+    display(display) {
 }

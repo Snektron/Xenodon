@@ -187,7 +187,8 @@ void XorgWindow::handle_event(XorgScreen& screen, const xcb_generic_event_t& eve
 
             screen.resize(extent);
 
-            this->dispatcher->dispatch_resize_event(event_args.width, event_args.height);
+            // Theres only a single gpu and screen at all times
+            this->dispatcher->dispatch_swapchain_recreate_event(0, 0);
 
             break;
         }

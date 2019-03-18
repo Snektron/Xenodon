@@ -65,13 +65,16 @@ namespace {
         auto displays = gpu.getDisplayPropertiesKHR();
         surfaces.reserve(screens.size());
         for (size_t i = 0; i < screens.size(); ++i) {
-            auto display_props = displays.at(screens[i].vulkan_index);
+            if (screens[i].vulkan_index >= displays.size()) {
+                throw std::runtime_error("Vulkan screen index out of range");
+            }
+
+            auto display_props = displays[screens[i].vulkan_index];
             surfaces.push_back(create_surface(instance, gpu, display_props.display));
         }
 
         return surfaces;
     }
-
 
     std::pair<uint32_t, uint32_t> pick_queues(vk::PhysicalDevice gpu, const std::vector<vk::UniqueSurfaceKHR>& surfaces) {
         auto surfaces_supported = [gpu, &surfaces](uint32_t i) {
@@ -140,6 +143,11 @@ ScreenGroup::ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const st
     for (size_t i = 0; i < screens.size(); ++i) {
         this->screens.emplace_back(this->device, this->surfaces[i].get(), screens[i].offset);
     }
+}
+
+ScreenGroup::~ScreenGroup() {
+    if (this->device.logical)
+        this->device.logical->waitIdle();
 }
 
 void ScreenGroup::swap_buffers() {

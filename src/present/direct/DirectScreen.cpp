@@ -1,6 +1,7 @@
 #include "present/direct/DirectScreen.h"
 #include <stdexcept>
 #include <vector>
+#include <iostream>
 
 DirectScreen::DirectScreen(Device& device, vk::SurfaceKHR surface, vk::Offset2D offset):
     offset(offset),
@@ -8,5 +9,26 @@ DirectScreen::DirectScreen(Device& device, vk::SurfaceKHR surface, vk::Offset2D 
 }
 
 void DirectScreen::swap_buffers() {
-    this->swapchain.swap_buffers();
+    vk::Result res = this->swapchain.swap_buffers();
+    if (res != vk::Result::eSuccess) {
+        std::cout << "Failed to swap; frame dropped" << std::endl;
+    }
+}
+
+uint32_t DirectScreen::active_index() const {
+    return this->swapchain.current_index();
+}
+
+SwapImage DirectScreen::swap_image(uint32_t index) const {
+    const auto& image = this->swapchain.image(index);
+
+    return {
+        image.image,
+        image.image_view.get(),
+        image.command_buffer.get()
+    };
+}
+
+vk::Rect2D DirectScreen::region() const {
+    return {this->offset, this->swapchain.surface_extent()};
 }

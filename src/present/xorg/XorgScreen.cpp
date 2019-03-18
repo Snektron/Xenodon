@@ -148,3 +148,21 @@ void XorgScreen::swap_buffers() {
         std::cout << "Failed to swap; frame dropped" << std::endl;
     }
 }
+
+uint32_t XorgScreen::active_index() const {
+    return this->swapchain.current_index();
+}
+
+SwapImage XorgScreen::swap_image(uint32_t index) const {
+    const auto& image = this->swapchain.image(index);
+
+    return {
+        image.image,
+        image.image_view.get(),
+        image.command_buffer.get()
+    };
+}
+
+vk::Rect2D XorgScreen::region() const {
+    return {{0, 0}, this->swapchain.surface_extent()};
+}

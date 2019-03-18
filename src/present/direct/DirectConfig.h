@@ -19,7 +19,6 @@ struct DirectConfig {
 
     struct Input {
         std::string kbd_dev;
-        std::string mouse_dev;
     };
 
     std::vector<Device> gpus;
