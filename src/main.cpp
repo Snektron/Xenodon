@@ -5,9 +5,9 @@
 #include <vulkan/vulkan.hpp>
 #include "present/Display.h"
 #include "present/Event.h"
+#include "Config.h"
 #include "resources.h"
 #include "version.h"
-#include "config/Config.h"
 
 #if defined(XENODON_PRESENT_XORG)
     #include "present/xorg/xorg_main.h"
@@ -86,8 +86,8 @@ struct Test {
 };
 
 template <>
-struct FromConfig<Test> {
-    Test operator()(Config& cfg) {
+struct cfg::FromConfig<Test> {
+    Test operator()(cfg::Config& cfg) {
         auto [x, y] = cfg.get(
             Value<size_t>("x"),
             Value<size_t>("y")
@@ -112,8 +112,8 @@ test {
 }
 )";
 
-    Config cfg(ss);
-    auto [oof, test] = cfg.root(Value<std::string>("oof"), Vector<Test>("test"));
+    cfg::Config cfg(ss);
+    auto [oof, test] = cfg.root(cfg::Value<std::string>("oof"), cfg::Vector<Test>("test"));
     std::cout << "oof: " << oof << std::endl;
 
     for (auto& t : test) {

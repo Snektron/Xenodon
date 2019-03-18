@@ -20,7 +20,7 @@ sources = [
     'src/graphics/support.cpp',
     'src/graphics/Swapchain.cpp',
     'src/render/Renderer.cpp',
-    'src/config/Config.cpp'
+    'src/Config.cpp'
 ]
 
 shaders = [
