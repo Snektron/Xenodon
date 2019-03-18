@@ -20,6 +20,7 @@ sources = [
     'src/graphics/support.cpp',
     'src/graphics/Swapchain.cpp',
     'src/render/Renderer.cpp',
+    'src/render/DeviceRenderer.cpp',
     'src/Config.cpp'
 ]
 

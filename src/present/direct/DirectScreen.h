@@ -16,8 +16,10 @@ public:
     void swap_buffers();
 
     uint32_t active_index() const override;
+    uint32_t num_swap_images() const override;
     SwapImage swap_image(uint32_t index) const override;
     vk::Rect2D region() const override;
+    vk::AttachmentDescription color_attachment_descr() const override;
 };
 
 #endif

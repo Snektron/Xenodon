@@ -153,6 +153,10 @@ uint32_t XorgScreen::active_index() const {
     return this->swapchain.current_index();
 }
 
+uint32_t XorgScreen::num_swap_images() const {
+    return this->swapchain.num_images();
+}
+
 SwapImage XorgScreen::swap_image(uint32_t index) const {
     const auto& image = this->swapchain.image(index);
 
@@ -165,4 +169,12 @@ SwapImage XorgScreen::swap_image(uint32_t index) const {
 
 vk::Rect2D XorgScreen::region() const {
     return {{0, 0}, this->swapchain.surface_extent()};
+}
+
+vk::AttachmentDescription XorgScreen::color_attachment_descr() const {
+    auto descr = vk::AttachmentDescription();
+    descr.format = this->swapchain.surface_format();
+    descr.loadOp = vk::AttachmentLoadOp::eClear;
+    descr.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+    return descr;
 }
