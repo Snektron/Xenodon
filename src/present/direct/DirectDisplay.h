@@ -4,14 +4,14 @@
 #include <vector>
 #include <vulkan/vulkan.hpp>
 #include "present/Display.h"
-#include "present/direct/DisplayConfig.h"
+#include "present/direct/DirectConfig.h"
 #include "present/direct/ScreenGroup.h"
 
 class DirectDisplay final: public Display {
     std::vector<ScreenGroup> screen_groups;
 
 public:
-    DirectDisplay(vk::Instance instance, const DisplayConfig& display_config);
+    DirectDisplay(vk::Instance instance, const DirectConfig& display_config);
     ~DirectDisplay() override = default;
 
     Setup setup() override;

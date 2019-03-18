@@ -1,6 +1,6 @@
 #include "present/direct/DirectDisplay.h"
 
-DirectDisplay::DirectDisplay(vk::Instance instance, const DisplayConfig& display_config) {
+DirectDisplay::DirectDisplay(vk::Instance instance, const DirectConfig& display_config) {
     this->screen_groups.reserve(display_config.gpus.size());
 
     auto gpus = instance.enumeratePhysicalDevices();

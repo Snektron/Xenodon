@@ -5,7 +5,7 @@
 #include <vulkan/vulkan.hpp>
 #include "graphics/Device.h"
 #include "present/direct/DirectScreen.h"
-#include "present/direct/DisplayConfig.h"
+#include "present/direct/DirectConfig.h"
 
 class ScreenGroup {
     std::vector<vk::UniqueSurfaceKHR> surfaces;
@@ -13,7 +13,7 @@ class ScreenGroup {
     std::vector<DirectScreen> screens;
 
 public:
-    ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const std::vector<DisplayConfig::Screen>& screens);
+    ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const std::vector<DirectConfig::Screen>& screens);
     void swap_buffers();
 
     friend class DirectDisplay;

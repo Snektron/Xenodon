@@ -176,6 +176,18 @@ namespace cfg {
             parser(input) {
         }
 
+        template <typename T>
+        T as() {
+            auto result = FromConfig<T>{}(*this);
+            int c = this->parser.peek();
+            if (c != -1) {
+                throw ParseError(this->parser.fmt_error([c](auto& ss) {
+                    ss << "Expected end of input, found '" << static_cast<char>(c) << "'";
+                }));
+            }
+            return result;
+        }
+
         template <typename... Items>
         std::tuple<typename Items::Output...> get(Items&&... items) {
             return this->parse(std::index_sequence_for<Items...>{}, std::forward<Items>(items)...);

@@ -59,7 +59,7 @@ namespace {
         return instance.createDisplayPlaneSurfaceKHRUnique(create_info);
     }
 
-    std::vector<vk::UniqueSurfaceKHR> create_surfaces(vk::Instance instance, vk::PhysicalDevice gpu, const std::vector<DisplayConfig::Screen>& screens) {
+    std::vector<vk::UniqueSurfaceKHR> create_surfaces(vk::Instance instance, vk::PhysicalDevice gpu, const std::vector<DirectConfig::Screen>& screens) {
         auto surfaces = std::vector<vk::UniqueSurfaceKHR>();
 
         auto displays = gpu.getDisplayPropertiesKHR();
@@ -132,7 +132,7 @@ namespace {
     }
 }
 
-ScreenGroup::ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const std::vector<DisplayConfig::Screen>& screens):
+ScreenGroup::ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const std::vector<DirectConfig::Screen>& screens):
     surfaces(create_surfaces(instance, gpu, screens)),
     device(create_device(gpu, this->surfaces)) {
 

@@ -5,15 +5,23 @@ help
 sysinfo
     Detect system information such as connected monitors and video cards.
 
-direct <display config>
+direct <config>
     Run the program in direct-mode. This requires there to be no x-server
     running and is able to run on a multi-gpu setup.
-    <display config> is a path to a configuration file specifying the
+    <config> is a path to a configuration file specifying the
     system setup. Entries in this file have the following format:
     
-    device <index> {
-        screen <index> at (<offset x>, <offset y>),
-        screen <index> at (<offset x>, <offset y>)
+    device {
+        vkindex = <number>
+        screen {
+            vkindex = <number>
+            offset = (<offset x>, <offset y>)
+        }
+    }
+
+    input {
+        keyboard = "/dev/input/path/to/keyboard"
+        mouse = "/dev/input/mouse0"
     }
 
     The config file must have at least one device entry, and each device
@@ -21,6 +29,8 @@ direct <display config>
     and the screens are the vulkan indices and must be unique. They can be 
     ueried with the sysinfo subcommand. <offset>s are relative to (0, 0)
     and must be positive, with the origin at the top-left.
+    The input paths are paths to the linux event files of the keyboard and
+    mouse.
 
 xorg
     Run the program in xorg-mode. This makes the program behave as if it were
