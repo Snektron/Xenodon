@@ -43,7 +43,6 @@ void Parser::expect(int expected) {
                 << "', found '" << static_cast<char>(actual) << "'";
         }));
     }
-    this->consume();
 }
 
 void Parser::optws() {
@@ -100,4 +99,46 @@ size_t Parse<size_t>::operator()(Parser& p) {
     }
 
     return value;
+}
+
+std::string Parse<std::string>::operator()(Parser& p) {
+    p.expect('"');
+    auto ss = std::stringstream();
+
+    auto escape = [&p](int c) {
+        switch (c) {
+            case 'a': return '\a';
+            case 'b': return '\b';
+            case 'e': return '\e';
+            case 'f': return '\f';
+            case 'n': return '\n';
+            case 'r': return '\r';
+            case 't': return '\t';
+            case 'v': return '\v';
+            case '\\': return '\\';
+            case '\'': return '\'';
+            case '"': return '"';
+            default:
+            throw ParseError(p.fmt_error([c](auto& ss) {
+                ss << "Faulty escape character '" << c << '\'';
+            }));
+        }
+    };
+
+    int c = p.peek();
+    while (c > 0 && c != '"') {
+        if (c == '\\') {
+            p.consume();
+            ss << escape(p.peek());
+        } else {
+            ss << static_cast<char>(c);
+        }
+
+        p.consume();
+        c = p.peek();
+    }
+
+    p.expect('"');
+
+    return ss.str();
 }

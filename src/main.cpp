@@ -100,7 +100,7 @@ struct FromConfig<Test> {
 int main(int argc, char* argv[]) {
     std::stringstream ss;
     ss << R"(
-oof = 10
+oof = "ik heb aids"
 test {
     x = 20
     y = 40
@@ -113,7 +113,7 @@ test {
 )";
 
     Config cfg(ss);
-    auto [oof, test] = cfg.root(Value<size_t>("oof"), Vector<Test>("test"));
+    auto [oof, test] = cfg.root(Value<std::string>("oof"), Vector<Test>("test"));
     std::cout << "oof: " << oof << std::endl;
 
     for (auto& t : test) {

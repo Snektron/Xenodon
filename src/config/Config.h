@@ -10,7 +10,6 @@
 #include <tuple>
 #include <array>
 #include <optional>
-#include <iostream>
 #include <cstddef>
 #include <cctype>
 
@@ -222,11 +221,11 @@ private:
             }
 
             c = this->parser.peek();
-            if (!std::isspace(c) && !std::isalpha(c)) {
+            if (!std::isspace(c)) {
                 break;
             }
 
-            this->parser.expectws();
+            this->parser.optws();
             c = this->parser.peek();
         }
 
@@ -271,6 +270,11 @@ T Vector<T>::parse(Config& cfg) const {
 template<>
 struct Parse<size_t> {
     size_t operator()(Parser& p);
+};
+
+template<>
+struct Parse<std::string> {
+    std::string operator()(Parser& p);
 };
 
 #endif
