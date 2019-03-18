@@ -1,5 +1,4 @@
 #include "config/Config.h"
-#include <cctype>
 
 Parser::Parser(std::istream& input):
     input(input),
@@ -37,13 +36,31 @@ int Parser::consume() {
 }
 
 void Parser::expect(int expected) {
-    int actual = this->peek();
+    int actual = this->consume();
     if (actual != expected) {
         throw ParseError(this->fmt_error([expected, actual](auto& ss) {
-            ss << "Expected character '" << expected << "', found '" << actual << "'";
+            ss << "Expected character '" << static_cast<char>(expected)
+                << "', found '" << static_cast<char>(actual) << "'";
         }));
     }
     this->consume();
+}
+
+void Parser::optws() {
+    while (std::isspace(this->peek())) {
+        this->consume();
+    }
+}
+
+void Parser::expectws() {
+    int c = this->peek();
+    if (!std::isspace(c)) {
+        throw ParseError(this->fmt_error([c](auto& ss) {
+            ss << "Expected whitespace character, found '" << static_cast<char>(c) << "'";
+        }));
+    }
+
+    this->optws();
 }
 
 std::string Parser::parse_key() {
@@ -62,4 +79,25 @@ std::string Parser::parse_key() {
     }
 
     return key.str();
+}
+
+size_t Parse<size_t>::operator()(Parser& p) {
+    int c = p.consume();
+    if (c < '0' || c > '9') {
+        throw ParseError(p.fmt_error([c](auto& ss) {
+            ss << "Expected number value, found '" << c << '\'';
+        }));
+    }
+
+    size_t value = static_cast<size_t>(c - '0');
+
+    c = p.peek();
+    while (c >= '0' && c <= '9') {
+        value *= 10;
+        value += static_cast<size_t>(c - '0');
+        p.consume();
+        c = p.peek();
+    }
+
+    return value;
 }

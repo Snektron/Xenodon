@@ -81,12 +81,44 @@ namespace {
     }
 }
 
+struct Test {
+    size_t x, y;
+};
+
+template <>
+struct FromConfig<Test> {
+    Test operator()(Config& cfg) {
+        auto [x, y] = cfg.get(
+            Value<size_t>("x"),
+            Value<size_t>("y")
+        );
+
+        return {x, y};
+    }
+};
+
 int main(int argc, char* argv[]) {
     std::stringstream ss;
-    ss << "oof";
+    ss << R"(
+oof = 10
+test {
+    x = 20
+    y = 40
+}
+
+test {
+    x = 30
+    y = 50
+}
+)";
 
     Config cfg(ss);
-    auto [text] = cfg.root(Value<size_t>("oof"));
+    auto [oof, test] = cfg.root(Value<size_t>("oof"), Vector<Test>("test"));
+    std::cout << "oof: " << oof << std::endl;
+
+    for (auto& t : test) {
+        std::cout << "test: {" << t.x << ", " << t.y << "}" << std::endl;
+    }
 
     if (argc <= 1) {
         std::cout << "Error: Subcommand required, see `" << argv[0] << " help`" << std::endl;
