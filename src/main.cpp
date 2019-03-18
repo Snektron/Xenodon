@@ -7,6 +7,7 @@
 #include "present/Event.h"
 #include "resources.h"
 #include "version.h"
+#include "config/Config.h"
 
 #if defined(XENODON_PRESENT_XORG)
     #include "present/xorg/xorg_main.h"
@@ -81,6 +82,12 @@ namespace {
 }
 
 int main(int argc, char* argv[]) {
+    std::stringstream ss;
+    ss << "oof";
+
+    Config cfg(ss);
+    auto [text] = cfg.root(Value<size_t>("oof"));
+
     if (argc <= 1) {
         std::cout << "Error: Subcommand required, see `" << argv[0] << " help`" << std::endl;
         return 0;
