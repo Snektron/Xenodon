@@ -140,7 +140,9 @@ ScreenGroup::ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const st
     surfaces(create_surfaces(instance, gpu, screens)),
     device(create_device(gpu, this->surfaces)) {
 
-    auto power_info = vk::DisplayPowerInfoEXT(vk::DisplayPowerStateEXT::eOn);
+    auto power_info = static_cast<VkDisplayPowerInfoEXT>(vk::DisplayPowerInfoEXT(vk::DisplayPowerStateEXT::eOn));
+
+    auto displayPowerControlEXT = PFN_vkDisplayPowerControlEXT(instance.getProcAddr("vkDisplayPowerControlEXT"));
 
     auto displays = gpu.getDisplayPropertiesKHR();
     for (size_t i = 0; i < screens.size(); ++i) {
@@ -150,7 +152,7 @@ ScreenGroup::ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const st
 
         auto display_props = displays[screens[i].vulkan_index];
 
-        this->device.logical->displayPowerControlEXT(display_props.display, power_info);
+        displayPowerControlEXT(device.logical.get(), display_props.display, &power_info);
     }
 
     this->screens.reserve(screens.size());
