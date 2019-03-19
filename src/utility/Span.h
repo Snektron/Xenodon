@@ -8,18 +8,19 @@
 #include <vulkan/vulkan.hpp>
 
 template <typename T>
-class Span: std::random_access_iterator_tag {
+class Span {
     size_t count;
     T* ptr;
 
 public:
     using value_type = T;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
+    using size_type = size_t;
     using reference = T&;
     using const_reference = const T&;
     using pointer = T*;
     using const_pointer = const T*;
+    using iterator = T*;
+    using const_iterator = const T*;
 
     constexpr Span(std::nullptr_t):
         count(0),
