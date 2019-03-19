@@ -11,7 +11,7 @@
 namespace {
     constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {
         VK_KHR_SURFACE_EXTENSION_NAME,
-        VK_KHR_DISPLAY_EXTENSION_NAME,
+        VK_KHR_DISPLAY_EXTENSION_NAME
     };
 }
 

@@ -5,6 +5,7 @@
 namespace {
     constexpr const std::array DEVICE_EXTENSIONS = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME
     };
 
     vk::UniqueSurfaceKHR create_surface(vk::Instance instance, vk::PhysicalDevice gpu, vk::DisplayKHR display) {
@@ -138,6 +139,19 @@ namespace {
 ScreenGroup::ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const std::vector<DirectConfig::Screen>& screens):
     surfaces(create_surfaces(instance, gpu, screens)),
     device(create_device(gpu, this->surfaces)) {
+
+    auto power_info = vk::DisplayPowerInfoEXT(vk::DisplayPowerStateEXT::eOn);
+
+    auto displays = gpu.getDisplayPropertiesKHR();
+    for (size_t i = 0; i < screens.size(); ++i) {
+        if (screens[i].vulkan_index >= displays.size()) {
+            throw std::runtime_error("Vulkan screen index out of range");
+        }
+
+        auto display_props = displays[screens[i].vulkan_index];
+
+        this->device.logical->displayPowerControlEXT(display_props.display, power_info);
+    }
 
     this->screens.reserve(screens.size());
     for (size_t i = 0; i < screens.size(); ++i) {
