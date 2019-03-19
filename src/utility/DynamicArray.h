@@ -34,7 +34,7 @@ public:
     explicit DynamicArray(size_t count, const T value = T(), const Allocator& alloc = Allocator()):
         Allocator(alloc),
         count(count),
-        items(this->allocate(this->count)) {
+        items(this->allocate_or_null(this->count)) {
 
         std::uninitialized_fill(this->begin(), this->end(), value);
     }
@@ -43,7 +43,7 @@ public:
     DynamicArray(std::initializer_list<T> init, const Allocator& alloc = Allocator()):
         Allocator(alloc),
         count(init.size()),
-        items(this->allocate(this->count)) {
+        items(this->allocate_or_null(this->count)) {
 
         std::uninitialized_move(init.begin(), init.end(), this->begin());
     }
@@ -51,7 +51,7 @@ public:
     DynamicArray(const DynamicArray& other):
         Allocator(other.get_allocator()),
         count(other.size()),
-        items(this->allocate(this->count)) {
+        items(this->allocate_or_null(this->count)) {
 
         std::uninitialized_copy(other.begin(), other.end(), this->begin());
     }
@@ -59,7 +59,7 @@ public:
     DynamicArray& operator=(const DynamicArray& other) {
         this->clear();
         this->get_allocator() = other.get_allocator();
-        this->items = this->allocate(other.size());
+        this->items = this->allocate_or_null(other.size());
         this->count = other.size();
         std::uninitialized_copy(other.begin(), other.end(), this->begin());
     }
@@ -82,6 +82,7 @@ public:
 
     ~DynamicArray() {
         if (this->items != nullptr) {
+            std::destroy(this->begin(), this->end());
             this->deallocate(this->items, this->count);
         }
     }
@@ -168,7 +169,7 @@ public:
     // Requires T is default (optional) and copy constructable
     void fill(size_t count, const T& value = T()) {
         this->clear();
-        this->items = this->allocate(count);
+        this->items = this->allocate_or_null(count);
         this->count = count;
 
         std::uninitialized_fill(this->begin(), this->end(), value);
@@ -177,7 +178,7 @@ public:
     template <typename F>
     void generate_in_place(size_t count, F f) {
         this->clear();
-        this->items = this->allocate(count);
+        this->items = this->allocate_or_null(count);
         this->count = count;
 
         for (size_t i = 0; i < this->count; ++i) {
@@ -196,6 +197,10 @@ public:
     }
 
 private:
+    T* allocate_or_null(size_t count) {
+        return count > 0 ? this->allocate(count) : nullptr;
+    }
+
     Allocator& get_allocator() {
         return *static_cast<Allocator*>(this);
     }
