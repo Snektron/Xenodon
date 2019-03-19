@@ -50,3 +50,7 @@ void DeviceRenderer::recreate(size_t screen) {
     auto it = this->outputs.begin() + static_cast<std::vector<RenderOutput>::difference_type>(screen);
     this->outputs.emplace(it, this->device, this->outputs[screen].screen);
 }
+
+DeviceRenderer::~DeviceRenderer() {
+    this->device.logical->waitIdle();
+}
