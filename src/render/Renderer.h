@@ -9,7 +9,6 @@
 #include "render/DeviceRenderer.h"
 
 class Renderer {
-    Display* display;
     std::vector<DeviceRenderer> devices;
 
 public:

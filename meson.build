@@ -21,6 +21,7 @@ sources = [
     'src/graphics/Swapchain.cpp',
     'src/render/Renderer.cpp',
     'src/render/DeviceRenderer.cpp',
+    'src/render/TestRenderer.cpp',
     'src/Config.cpp'
 ]
 

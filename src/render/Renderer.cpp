@@ -1,8 +1,6 @@
 #include "render/Renderer.h"
 
-Renderer::Renderer(Display* display):
-    display(display) {
-
+Renderer::Renderer(Display* display) {
     auto setup = display->setup();
     this->devices.reserve(setup.size());
 

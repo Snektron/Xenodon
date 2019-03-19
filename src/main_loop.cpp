@@ -4,6 +4,7 @@
 #include <iomanip>
 #include "present/Event.h"
 #include "present/Display.h"
+#include "render/Renderer.h"
 
 namespace {
     void report_setup(const Setup& setup) {
@@ -33,6 +34,8 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
 
     report_setup(setup);
 
+    auto renderer = Renderer(display);
+
     bool quit = false;
     dispatcher.bind_close([&quit] {
         quit = true;
@@ -42,11 +45,18 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
         quit = true;
     });
 
+    dispatcher.bind_swapchain_recreate([&renderer](size_t gpu, size_t screen) {
+        std::cout << "Resizing gpu " << gpu << ", screen " << screen << std::endl;
+        renderer.recreate(gpu, screen);
+    });
+
     auto start = std::chrono::high_resolution_clock::now();
     size_t frames = 0;
 
     while (!quit) {
         ++frames;
+
+        renderer.render();
 
         auto now = std::chrono::high_resolution_clock::now();
         auto diff = std::chrono::duration<double>(now - start);

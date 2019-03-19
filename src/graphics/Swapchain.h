@@ -42,8 +42,8 @@ public:
         return this->format;
     }
 
-    size_t num_images() const {
-        return this->images.size();
+    uint32_t num_images() const {
+        return static_cast<uint32_t>(this->images.size());
     }
 
     uint32_t current_index() const {

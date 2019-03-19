@@ -7,13 +7,19 @@
 #include "graphics/Device.h"
 #include "present/Display.h"
 #include "present/Screen.h"
+#include "render/TestRenderer.h"
 
 struct RenderOutput {
     Screen* screen;
     vk::Rect2D region;
+    TestRenderer renderer;
     std::vector<vk::UniqueFramebuffer> framebuffers;
 
-    RenderOutput(Device& device, vk::RenderPass render_pass, Screen* screen);
+    RenderOutput(Device& device, Screen* screen);
+    RenderOutput(RenderOutput&&) = default;
+    RenderOutput& operator=(RenderOutput&&) = default;
+
+    void render();
 };
 
 struct DeviceRenderer {

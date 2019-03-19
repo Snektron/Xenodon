@@ -180,11 +180,12 @@ vk::Result Swapchain::swap_buffers() {
 
     this->device->logical->waitForFences(current_image.fence.get(), true, std::numeric_limits<uint64_t>::max());
     this->device->logical->resetFences(current_image.fence.get());
+    this->device->logical->waitIdle();
 
     // Temporary to avoid crashing my GPU
-    const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-    current_image.command_buffer->begin(&begin_info);
-    current_image.command_buffer->end();
+    // const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+    // current_image.command_buffer->begin(&begin_info);
+    // current_image.command_buffer->end();
     //
 
     auto wait_stages = std::array{
