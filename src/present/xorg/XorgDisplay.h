@@ -17,9 +17,6 @@ class XorgDisplay final: public Display {
 public:
     XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uint16_t width, uint16_t height);
 
-    XorgDisplay(const XorgDisplay&) = delete;
-    XorgDisplay& operator=(const XorgDisplay&) = delete;
-    
     XorgDisplay(XorgDisplay&& other) = default;
     XorgDisplay& operator=(XorgDisplay&& other) = default;
     

@@ -40,7 +40,7 @@ namespace {
 }
 
 XorgWindow::XorgWindow(EventDispatcher& dispatcher, uint16_t width, uint16_t height):
-    dispatcher(&dispatcher),
+    dispatcher(dispatcher),
     width(width), height(height) {
     int preferred_screen_index;
 
@@ -150,7 +150,7 @@ void XorgWindow::handle_event(XorgScreen& screen, const xcb_generic_event_t& eve
     auto dispatch_key_event = [this](Action action, xcb_keycode_t kc) {
         xcb_keysym_t keysym = xcb_key_symbols_get_keysym(this->key_symbols.get(), kc, 0);
         Key key = xorg_translate_key(keysym);
-        this->dispatcher->dispatch_key_event(key, action);
+        this->dispatcher.dispatch_key_event(key, action);
     };
 
     switch (static_cast<int>(event.response_type) & ~0x80) {
@@ -158,7 +158,7 @@ void XorgWindow::handle_event(XorgScreen& screen, const xcb_generic_event_t& eve
             const auto& event_args = reinterpret_cast<const xcb_client_message_event_t&>(event);
 
             if (event_args.data.data32[0] == this->atom_wm_delete_window->atom) {
-                this->dispatcher->dispatch_close_event();
+                this->dispatcher.dispatch_close_event();
             }
 
             break;
@@ -188,7 +188,7 @@ void XorgWindow::handle_event(XorgScreen& screen, const xcb_generic_event_t& eve
             screen.resize(extent);
 
             // Theres only a single gpu and screen at all times
-            this->dispatcher->dispatch_swapchain_recreate_event(0, 0);
+            this->dispatcher.dispatch_swapchain_recreate_event(0, 0);
 
             break;
         }

@@ -81,17 +81,5 @@ DirectConfig cfg::FromConfig<DirectConfig>::operator()(cfg::Config& cfg) {
         throw cfg::ConfigError("Config error: The config must have at least one device entry");
     }
 
-    std::sort(devices.begin(), devices.end(), [](auto& a, auto& b) {
-        return a.vulkan_index < b.vulkan_index;
-    });
-
-    auto it = adjacent_find(devices.begin(), devices.end(), [](auto& a, auto& b) {
-        return a.vulkan_index == b.vulkan_index;
-    });
-
-    if (it != devices.end()) {
-        throw cfg::ConfigError("Config error: Device vulkan indices must be unique");
-    }
-
     return {devices, input};
 }
