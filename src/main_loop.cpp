@@ -1,7 +1,6 @@
 #include "main_loop.h"
-#include <iostream>
 #include <chrono>
-#include <iomanip>
+#include <fmt/format.h>
 #include "present/Event.h"
 #include "present/Display.h"
 #include "render/Renderer.h"
@@ -10,25 +9,25 @@ namespace {
     void report_setup(const Setup& setup) {
         size_t ngpus = setup.size();
 
-        std::cout << "Setup: " << ngpus << (ngpus > 1 ? " gpus" : " gpu") << ", with " << setup[0];
+        fmt::print("Setup: {}{}, with {}", ngpus, ngpus > 1 ? " gpus" : " gpu", setup[0]);
 
         for (size_t i = 1; i < setup.size(); ++i) {
-            std::cout << ", " << setup[i];
+            fmt::print(", {}", setup[i]);
         }
 
-        std::cout << (ngpus > 1 || setup[0] > 1 ? " screens" : " screen") << std::endl;
+        fmt::print(" {}\n", ngpus > 1 || setup[0] > 1 ? " screens" : " screen");
     }
 }
 
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     auto setup = display->setup();
     if (setup.empty()) {
-        std::cout << "Error: Invalid setup (no gpus)" << std::endl;
+        fmt::print("Error: Invalid setup (no gpus)\n");
     }
 
     for (size_t num_screens : setup) {
         if (num_screens == 0) {
-            std::cout << "Error: Invalid setup (no screens)" << std::endl;
+            fmt::print("Error: Invalid setup (no screens)\n");
         }
     }
 
@@ -46,7 +45,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
     });
 
     dispatcher.bind_swapchain_recreate([&renderer](size_t gpu, size_t screen) {
-        std::cout << "Resizing gpu " << gpu << ", screen " << screen << std::endl;
+        fmt::print("Resizing gpu {}, screen {}\n", gpu, screen);
         renderer.recreate(gpu, screen);
     });
 
@@ -62,7 +61,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
         auto diff = std::chrono::duration<double>(now - start);
 
         if (diff > std::chrono::seconds{1}) {
-            std::cout << "FPS: " << std::fixed << static_cast<double>(frames) / diff.count() << std::endl;
+            fmt::print("FPS: {}\n", static_cast<double>(frames) / diff.count());
             frames = 0;
             start = now;
         }

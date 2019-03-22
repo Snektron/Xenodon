@@ -1,6 +1,6 @@
 #include "present/direct/direct_main.h"
-#include <iostream>
 #include <fstream>
+#include <fmt/format.h>
 #include "present/direct/DirectConfig.h"
 #include "present/direct/DirectDisplay.h"
 #include "present/Event.h"
@@ -18,13 +18,13 @@ namespace {
 
 void direct_main(int argc, char* argv[]) {
     if (argc == 0) {
-        std::cout << "Error: Missing argument <config>" << std::endl;
+        fmt::print("Error: Missing argument <config>\n");
         return;
     }
 
     auto in = std::ifstream(argv[0]);
     if (!in) {
-        std::cout << "Error: Failed to open config file '" << argv[0] << '\'' << std::endl;
+        fmt::print("Error: Failed to open config file '{}'\n", argv[0]);
         return;
     }
 
@@ -47,11 +47,7 @@ void direct_main(int argc, char* argv[]) {
         auto display = DirectDisplay(instance.get(), dispatcher, direct_config);
 
         main_loop(dispatcher, &display);
-    } catch (const cfg::ParseError& err) {
-        std::cout << "Error: Failed to parse config file '" << argv[0] << "':\n"
-            << err.what() << std::endl;
-    } catch (const cfg::ConfigError& err) {
-        std::cout << "Error: Failed to parse config file '" << argv[0] << "':\n"
-            << err.what() << std::endl;
+    } catch (const std::runtime_error& err) {
+        fmt::print("Failed to read config file '{}':\n{}\n", argv[0], err.what());
     }
 }

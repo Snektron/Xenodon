@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 #include <cstring>
-#include <iostream>
+#include <fmt/format.h>
 #include "present/xorg/XorgWindow.h"
 #include "graphics/support.h"
 
@@ -119,7 +119,7 @@ namespace {
 
     Device create_device(vk::Instance instance, vk::SurfaceKHR surface) {
         auto [gpu, name, gqi, pqi, index] = pick_gpu(instance, surface);
-        std::cout << "Picked GPU " << index << ": " << name << std::endl;
+        fmt::print("Picked GPU {}: '{}'", index, name);
         return Device(gpu, DEVICE_EXTENSIONS, gqi, pqi);
     }
 }
@@ -145,7 +145,7 @@ void XorgScreen::resize(vk::Extent2D window_extent) {
 void XorgScreen::swap_buffers() {
     vk::Result res = this->swapchain.swap_buffers();
     if (res != vk::Result::eSuccess) {
-        std::cout << "Failed to swap; frame dropped" << std::endl;
+        fmt::print("Failed to swap; frame dropped\n");
     }
 }
 
