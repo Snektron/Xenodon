@@ -14,21 +14,6 @@
 #include <fmt/format.h>
 
 namespace cfg {
-    struct ConfigError: public std::runtime_error {
-        template <typename... Args>
-        std::string format_error(std::string_view fmt, const Args&... args) {
-            auto buf = fmt::memory_buffer();
-            fmt::format_to(buf, "Configuration error: ");
-            fmt::format_to(buf, fmt, args...);
-            return fmt::to_string(buf);
-        }
-
-        template <typename... Args>
-        ConfigError(std::string_view fmt, const Args&... args):
-            runtime_error(format_error(fmt, args...)) {
-        }
-    };
-
     class Parser {
         std::istream& input;
         size_t line;
@@ -50,16 +35,31 @@ namespace cfg {
 
     struct ParseError: public std::runtime_error {
         template <typename... Args>
-        std::string format_error(const Parser& parser, std::string_view fmt, const Args&... args) {
-            auto buf = fmt::memory_buffer();
-            fmt::format_to(buf, "Parse error at {}, {}: ", parser.line, parser.column);
-            fmt::format_to(buf, fmt, args...);
-            return fmt::to_string(buf);
+        ParseError(const Parser& parser, std::string_view fmt, const Args&... args):
+            runtime_error(format_error(parser, fmt, fmt::make_format_args(args...))) {
         }
 
+    private:
+        std::string format_error(const Parser& parser, std::string_view fmt, fmt::format_args args) {
+            auto buf = fmt::memory_buffer();
+            fmt::format_to(buf, "Parse error at {}, {}: ", parser.line, parser.column);
+            fmt::vformat_to(buf, fmt, args);
+            return fmt::to_string(buf);
+        }
+    };
+
+    struct ConfigError: public std::runtime_error {
         template <typename... Args>
-        ParseError(const Parser& parser, std::string_view fmt, const Args&... args):
-            runtime_error(format_error(parser, fmt, args...)) {
+        ConfigError(std::string_view fmt, const Args&... args):
+            runtime_error(format_error(fmt, fmt::make_format_args(args...))) {
+        }
+
+    private:
+        std::string format_error(std::string_view fmt, fmt::format_args args) {
+            auto buf = fmt::memory_buffer();
+            fmt::format_to(buf, "Configuration error: ");
+            fmt::vformat_to(buf, fmt, args);
+            return fmt::to_string(buf);
         }
     };
 
