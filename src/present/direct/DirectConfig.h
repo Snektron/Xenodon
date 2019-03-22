@@ -4,7 +4,7 @@
 #include <string>
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
-#include "Config.h"
+#include "core/Config.h"
 
 struct DirectConfig {
     struct Screen {

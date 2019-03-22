@@ -1,5 +1,5 @@
-#ifndef _XENODON_CONFIG_H
-#define _XENODON_CONFIG_H
+#ifndef _XENODON_CORE_CONFIG_H
+#define _XENODON_CORE_CONFIG_H
 
 #include <istream>
 #include <string>

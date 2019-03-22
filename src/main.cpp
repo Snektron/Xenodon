@@ -5,7 +5,6 @@
 #include <fmt/format.h>
 #include "present/Display.h"
 #include "present/Event.h"
-#include "Config.h"
 #include "resources.h"
 #include "version.h"
 

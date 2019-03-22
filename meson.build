@@ -16,7 +16,7 @@ cxx = meson.get_compiler('cpp')
 sources = [
     'src/main.cpp',
     'src/main_loop.cpp',
-    'src/Config.cpp',
+    'src/core/Config.cpp',
     'src/graphics/Device.cpp',
     'src/graphics/support.cpp',
     'src/graphics/Swapchain.cpp',

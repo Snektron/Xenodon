@@ -1,10 +1,10 @@
 #include "present/direct/direct_main.h"
 #include <fstream>
 #include <fmt/format.h>
+#include "core/Config.h"
 #include "present/direct/DirectConfig.h"
 #include "present/direct/DirectDisplay.h"
 #include "present/Event.h"
-#include "Config.h"
 #include "main_loop.h"
 #include "version.h"
 
