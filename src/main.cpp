@@ -72,7 +72,7 @@ namespace {
                 }
 
                 auto res = display_props[j].physicalResolution;
-                fmt::print("\n\t\tresolution: {}x{}", res.width, res.height);
+                fmt::print("\n\t\tresolution: {}x{}\n", res.width, res.height);
             }
         }
     }
