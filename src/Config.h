@@ -2,27 +2,30 @@
 #define _XENODON_CONFIG_H
 
 #include <istream>
+#include <string>
 #include <string_view>
 #include <vector>
 #include <stdexcept>
-#include <string>
-#include <sstream>
 #include <tuple>
 #include <array>
 #include <optional>
 #include <cstddef>
 #include <cctype>
+#include <fmt/format.h>
 
 namespace cfg {
-    struct ParseError: public std::runtime_error {
-        ParseError(const std::string& msg):
-            runtime_error(msg) {
-        }
-    };
-
     struct ConfigError: public std::runtime_error {
-        ConfigError(const std::string& msg):
-            runtime_error(msg) {
+        template <typename... Args>
+        std::string format_error(std::string_view fmt, const Args&... args) {
+            auto buf = fmt::memory_buffer();
+            fmt::format_to(buf, "Configuration error: ");
+            fmt::format_to(buf, fmt, args...);
+            return fmt::to_string(buf);
+        }
+
+        template <typename... Args>
+        ConfigError(std::string_view fmt, const Args&... args):
+            runtime_error(format_error(fmt, args...)) {
         }
     };
 
@@ -40,19 +43,24 @@ namespace cfg {
         void optws();
         void expectws();
 
-        template <typename F>
-        std::string fmt_error(F f) {
-            auto ss = std::stringstream();
-            ss << "Parse error at " << this->line << ", " << this->column << ": ";
-            f(ss);
-            return ss.str();
-        }
-
-        std::string error(std::string_view msg) {
-            return this->fmt_error([msg](auto& ss){ ss << msg; });
-        }
-
         std::string parse_key();
+
+        friend struct ParseError;
+    };
+
+    struct ParseError: public std::runtime_error {
+        template <typename... Args>
+        std::string format_error(const Parser& parser, std::string_view fmt, const Args&... args) {
+            auto buf = fmt::memory_buffer();
+            fmt::format_to(buf, "Parse error at {}, {}: ", parser.line, parser.column);
+            fmt::format_to(buf, fmt, args...);
+            return fmt::to_string(buf);
+        }
+
+        template <typename... Args>
+        ParseError(const Parser& parser, std::string_view fmt, const Args&... args):
+            runtime_error(format_error(parser, fmt, args...)) {
+        }
     };
 
     template <typename T>
@@ -85,9 +93,7 @@ namespace cfg {
 
         void operator()(std::string_view key, const T& value) {
             if (this->value) {
-                auto ss = std::stringstream();
-                ss << "Config error: Ambiguous key '" << key << '\'';
-                throw ConfigError(ss.str());
+                throw ConfigError("Ambiguous key '{}'", key);
             } else {
                 this->value = value;
             }
@@ -97,9 +103,7 @@ namespace cfg {
             if (this->value) {
                 return this->value.value();
             } else {
-                auto ss = std::stringstream();
-                ss << "Config error: Missing key '" << key << '\'';
-                throw ConfigError(ss.str());
+                throw ConfigError("Missing key '{}'", key);
             }
         }
     };
@@ -123,9 +127,7 @@ namespace cfg {
 
         void operator()(std::string_view key, const T& value) {
             if (this->value) {
-                auto ss = std::stringstream();
-                ss << "Config error: Ambiguous key '" << key << '\'';
-                throw ConfigError(ss.str());
+                throw ConfigError("Ambiguous key '{}'", key);
             } else {
                 this->value = value;
             }
@@ -135,9 +137,7 @@ namespace cfg {
             if (this->value) {
                 return this->value.value();
             } else {
-                auto ss = std::stringstream();
-                ss << "Config error: Missing key '" << key << '\'';
-                throw ConfigError(ss.str());
+                throw ConfigError("Missing key '{}'", key);
             }
         }
     };
@@ -181,9 +181,7 @@ namespace cfg {
             auto result = FromConfig<T>{}(*this);
             int c = this->parser.peek();
             if (c != -1) {
-                throw ParseError(this->parser.fmt_error([c](auto& ss) {
-                    ss << "Expected end of input, found '" << static_cast<char>(c) << "'";
-                }));
+                throw ParseError(parser, "Expected end of input, found '{}'", static_cast<char>(c));
             }
             return result;
         }
@@ -198,9 +196,7 @@ namespace cfg {
             auto result = this->parse(std::index_sequence_for<Items...>{}, std::forward<Items>(items)...);
             int c = this->parser.peek();
             if (c != -1) {
-                throw ParseError(this->parser.fmt_error([c](auto& ss) {
-                    ss << "Expected end of input, found '" << static_cast<char>(c) << "'";
-                }));
+                throw ParseError(parser, "Expected end of input, found '{}'", static_cast<char>(c));
             }
             return result;
         }
@@ -228,9 +224,7 @@ namespace cfg {
 
                 bool parsed = (parse_item(key, items, std::get<Indices>(accumulators)) || ...);
                 if (!parsed) {
-                    throw ParseError(parser.fmt_error([&key](auto& ss) {
-                        ss << "Unexpected key '" << key << '\'';
-                    }));
+                    throw ParseError(parser, "Unexpected key '{}'", key);
                 }
 
                 c = this->parser.peek();

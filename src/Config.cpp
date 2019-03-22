@@ -1,4 +1,5 @@
 #include "Config.h"
+#include <sstream>
 
 namespace cfg {
     Parser::Parser(std::istream& input):
@@ -13,7 +14,8 @@ namespace cfg {
         // skip comments
         if (c == '#') {
             while (c != '\n' && c > 0) {
-                c = this->input.get();
+                this->input.get();
+                c = this->input.peek();
             }
         }
 
@@ -22,7 +24,7 @@ namespace cfg {
 
     int Parser::consume() {
         if (this->input.eof()) {
-            throw ParseError(this->error("Unexpected end of file"));
+            throw ParseError(*this, "Unexpected end of file");
         }
 
         int c = this->input.get();
@@ -39,10 +41,12 @@ namespace cfg {
     void Parser::expect(int expected) {
         int actual = this->consume();
         if (actual != expected) {
-            throw ParseError(this->fmt_error([expected, actual](auto& ss) {
-                ss << "Expected character '" << static_cast<char>(expected)
-                    << "', found '" << static_cast<char>(actual) << "'";
-            }));
+            throw ParseError(
+                *this,
+                "Expected character '{}', found '{}'",
+                static_cast<char>(expected),
+                static_cast<char>(actual)
+            );
         }
     }
 
@@ -55,9 +59,7 @@ namespace cfg {
     void Parser::expectws() {
         int c = this->peek();
         if (!std::isspace(c)) {
-            throw ParseError(this->fmt_error([c](auto& ss) {
-                ss << "Expected whitespace character, found '" << static_cast<char>(c) << "'";
-            }));
+            throw ParseError(*this, "Expected whitespace character, found '{}'", static_cast<char>(c));
         }
 
         this->optws();
@@ -67,9 +69,7 @@ namespace cfg {
         int c = this->consume();
 
         if (!std::isalpha(c)) {
-            throw ParseError(this->fmt_error([c](auto& ss) {
-                ss << "Expected alphabetic key, found '" << c << '\'';
-            }));
+            throw ParseError(*this, "Expected alphabetic key, found '{}'", static_cast<char>(c));
         }
 
         auto key = std::stringstream();
@@ -84,9 +84,7 @@ namespace cfg {
     size_t Parse<size_t>::operator()(Parser& p) {
         int c = p.consume();
         if (c < '0' || c > '9') {
-            throw ParseError(p.fmt_error([c](auto& ss) {
-                ss << "Expected number value, found '" << c << '\'';
-            }));
+            throw ParseError(p, "Expected numeric character, found '{}'", static_cast<char>(c));
         }
 
         size_t value = static_cast<size_t>(c - '0');
@@ -120,9 +118,7 @@ namespace cfg {
                 case '\'': return '\'';
                 case '"': return '"';
                 default:
-                throw ParseError(p.fmt_error([c](auto& ss) {
-                    ss << "Faulty escape character '" << c << '\'';
-                }));
+                    throw ParseError(p, "Faulty escape character '{}'", static_cast<char>(c));
             }
         };
 
