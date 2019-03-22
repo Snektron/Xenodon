@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
+#include <fmt/format.h>
 #include "present/Display.h"
 #include "present/Event.h"
 #include "Config.h"
@@ -19,9 +20,7 @@
 
 namespace {
     void print_help(const char* program_name) {
-        std::cout
-            << "Usage:\n    " << program_name << " [subcommand]\n\n"
-            << resources::open("resources/help.txt") << std::endl;
+        fmt::print(resources::open("resources/help.txt"), program_name);
     }
 
     void system_info(int argc, char* argv[]) {
@@ -41,49 +40,48 @@ namespace {
             )
         );
 
-        auto str = [](const char* s) {
-            if (s) {
-                std::cout << '\'' << s << '\'';
-            } else {
-                std::cout << "(null)";
-            }
-        };
-
-        std::cout << "System setup information:"; 
+        fmt::print("System setup information\n");
         auto gpus = instance->enumeratePhysicalDevices();
         if (gpus.empty()) {
-            std::cout << "\nno gpus detected" << std::endl;
+            fmt::print("No GPUs detected\n");
             return;
         }
 
         for (size_t i = 0; i < gpus.size(); ++i) {
             auto props = gpus[i].getProperties();
-            std::cout << "\ngpu " << i << ":\n\tname: ";
-            str(props.deviceName);
-            std::cout << "\n\ttype: " << vk::to_string(props.deviceType);
+            fmt::print(
+                "GPU {}:\n\tname: '{}'\n\ttype: {}\n",
+                i,
+                props.deviceName,
+                vk::to_string(props.deviceType)
+            );
 
             auto display_props = gpus[i].getDisplayPropertiesKHR();
 
             if (display_props.empty()) {
-                std::cout << "\n\tno displays detected";
+                fmt::print("\tNo displays detected\n");
                 continue;
             }
 
             for (size_t j = 0; j < display_props.size(); ++j) {
-                std::cout << "\n\tdisplay " << j << ":\n\t\tname: ";
-                str(display_props[j].displayName);
+                fmt::print("\tDisplay {}:\n\t\tname: ", j);
+
+                if (display_props[j].displayName) {
+                    fmt::print("'{}'", display_props[j].displayName);
+                } else {
+                    fmt::print("(null)");
+                }
+
                 auto res = display_props[j].physicalResolution;
-                std::cout << "\n\t\tresolution: " << res.width << 'x' << res.height;
+                fmt::print("\n\t\tresolution: {}x{}", res.width, res.height);
             }
         }
-
-        std::cout << std::endl;
     }
 }
 
 int main(int argc, char* argv[]) {
     if (argc <= 1) {
-        std::cout << "Error: Subcommand required, see `" << argv[0] << " help`" << std::endl;
+        fmt::print("Error: Subccommand required, see `{} help`\n", argv[0]);
         return 0;
     }
 
@@ -97,16 +95,16 @@ int main(int argc, char* argv[]) {
         #if defined(XENODON_PRESENT_XORG)
             xorg_main(argc - 2, &argv[2]);
         #else
-            std::cout << "Error: Xorg support was disabled" << std::endl;
+            fmt::print("Error: Xorg support was disabled\n");
         #endif
     } else if (subcommand == "direct") {
         #if defined(XENODON_PRESENT_DIRECT)
             direct_main(argc - 2, &argv[2]);
         #else
-            std::cout << "Error: Direct support was disabled" << std::endl;
+            fmt::print("Error: Direct support was disabled\n");
         #endif
     } else {
-        std::cout << "Error: Invalid subcommand '" << subcommand << "', see `" << argv[0] << " help`" << std::endl;
+        fmt::print("Error: Invalid subcommand '{}', see `{} help`\n", subcommand, argv[0]);
     }
 
     return 0;

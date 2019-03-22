@@ -1,3 +1,6 @@
+Usage:
+    {} [subcommand]
+
 Subcommands:
 help
     Show this message
@@ -11,18 +14,18 @@ direct <config>
     <config> is a path to a configuration file specifying the
     system setup. Entries in this file have the following format:
     
-    device {
+    device {{
         vkindex = <number>
-        screen {
+        screen {{
             vkindex = <number>
             offset = (<offset x>, <offset y>)
-        }
-    }
+        }}
+    }}
 
-    input {
+    input {{
         keyboard = "/dev/input/path/to/keyboard"
         mouse = "/dev/input/mouse0"
-    }
+    }}
 
     The config file must have at least one device entry, and each device
     entry must have at least one screen entry. The indices of the devices
