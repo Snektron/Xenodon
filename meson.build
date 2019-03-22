@@ -17,6 +17,7 @@ sources = [
     'src/main.cpp',
     'src/main_loop.cpp',
     'src/core/Config.cpp',
+    'src/core/Logger.cpp',
     'src/graphics/Device.cpp',
     'src/graphics/support.cpp',
     'src/graphics/Swapchain.cpp',
