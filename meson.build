@@ -16,13 +16,13 @@ cxx = meson.get_compiler('cpp')
 sources = [
     'src/main.cpp',
     'src/main_loop.cpp',
+    'src/Config.cpp',
     'src/graphics/Device.cpp',
     'src/graphics/support.cpp',
     'src/graphics/Swapchain.cpp',
     'src/render/Renderer.cpp',
     'src/render/DeviceRenderer.cpp',
-    'src/render/TestRenderer.cpp',
-    'src/Config.cpp'
+    'src/render/TestRenderer.cpp'
 ]
 
 shaders = [
@@ -45,6 +45,7 @@ add_project_arguments(
 # Project-wide dependencies
 vk_dep = dependency('vulkan', method: 'system')
 dependencies = [vk_dep]
+dependencies += subproject('fmt').get_variable('fmt_dep')
 
 # Generate version.h
 versions = meson.project_version().split('.')
