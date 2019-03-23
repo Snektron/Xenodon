@@ -4,6 +4,7 @@
 #include "present/Event.h"
 #include "present/Display.h"
 #include "render/Renderer.h"
+#include "core/Logger.h"
 
 namespace {
     void report_setup(const Setup& setup) {
@@ -19,7 +20,7 @@ namespace {
     }
 }
 
-void main_loop(EventDispatcher& dispatcher, Display* display) {
+void main_loop(Logger& logger, EventDispatcher& dispatcher, Display* display) {
     auto setup = display->setup();
     if (setup.empty()) {
         fmt::print("Error: Invalid setup (no gpus)\n");

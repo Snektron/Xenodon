@@ -110,10 +110,10 @@ public:
     }
 
     constexpr bool empty() const {
-        return (this->count == 0);
+        return this->count == 0;
     }
 
-    constexpr uint32_t size() const {
+    constexpr size_t size() const {
         return this->count;
     }
 
@@ -131,6 +131,14 @@ public:
 
     constexpr const T& operator[](size_t i) const {
         return this->ptr[i];
+    }
+
+    constexpr Span<T> sub(size_t begin) const {
+        return Span<T>(this->count - begin, &this->ptr[begin]);
+    }
+
+    constexpr Span<T> sub(size_t begin, size_t end) const {
+        return Span<T>(end - begin - 1, &this->ptr[begin]);
     }
 };
 

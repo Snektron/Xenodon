@@ -22,7 +22,6 @@ vk::Offset2D cfg::Parse<vk::Offset2D>::operator()(cfg::Parser& p) {
     };
 }
 
-
 Screen cfg::FromConfig<Screen>::operator()(cfg::Config& cfg) {
     auto [index, offset] = cfg.get(
         Value<size_t>("vkindex"),

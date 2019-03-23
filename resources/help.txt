@@ -8,33 +8,44 @@ help
 sysinfo
     Detect system information such as connected monitors and video cards.
 
-direct <config>
-    Run the program in direct-mode. This requires there to be no x-server
-    running and is able to run on a multi-gpu setup.
-    <config> is a path to a configuration file specifying the
-    system setup. Entries in this file have the following format:
-    
-    device {{
-        vkindex = <number>
-        screen {{
+render [flags] <mode> [mode parameters]
+    Run the program in render mode. <mode> is one of the available presenting
+    modes, see below.
+
+    Flags:
+    -q --quiet
+        Dont output logs to console
+
+    --log <file>
+        Output logs to <file>
+
+    Presenting modes:
+    direct <config>
+        Direct presenting mode. This requires there to be no x-server
+        running and is able to run on a multi-gpu setup. <config> is a path to
+        a configuration file specifying the system setup. Entries in this file
+        have the following format:
+
+        device {{
             vkindex = <number>
-            offset = (<offset x>, <offset y>)
+            screen {{
+                vkindex = <number>
+                offset = (<offset x>, <offset y>)
+            }}
         }}
-    }}
 
-    input {{
-        keyboard = "/dev/input/path/to/keyboard"
-        mouse = "/dev/input/mouse0"
-    }}
+        input {{
+            keyboard = "/dev/input/path/to/keyboard"
+            mouse = "/dev/input/mouse0"
+        }}
 
-    The config file must have at least one device entry, and each device
-    entry must have at least one screen entry. The indices of the devices
-    and the screens are the vulkan indices and must be unique. They can be 
-    ueried with the sysinfo subcommand. <offset>s are relative to (0, 0)
-    and must be positive, with the origin at the top-left.
-    The input paths are paths to the linux event files of the keyboard and
-    mouse.
+        The config file must have at least one device entry, and each device
+        entry must have at least one screen entry. The indices of the devices
+        and the screens are the vulkan indices and must be unique. They can be 
+        ueried with the sysinfo subcommand. <offset>s are relative to (0, 0)
+        and must be positive, with the origin at the top-left. The input paths
+        are paths to the linux event files of the keyboard and mouse.
 
-xorg
-    Run the program in xorg-mode. This makes the program behave as if it were
-    a normal program, but it is not able to use multiple video cards.
+    xorg
+        X11 presenting mode. This makes the program behave as if it were
+        a normal program, but it is not able to use multiple video cards.

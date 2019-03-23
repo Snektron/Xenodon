@@ -75,7 +75,7 @@ if (get_option('present-direct').enabled())
     add_project_arguments('-DXENODON_PRESENT_DIRECT', language: 'cpp')
 
     sources += [
-        'src/present/direct/direct_main.cpp',
+        'src/present/direct/direct.cpp',
         'src/present/direct/DirectDisplay.cpp',
         'src/present/direct/DirectScreen.cpp',
         'src/present/direct/ScreenGroup.cpp',
@@ -108,7 +108,7 @@ if (get_option('present-xorg').enabled())
     )
 
     sources += [
-        'src/present/xorg/xorg_main.cpp',
+        'src/present/xorg/xorg.cpp',
         'src/present/xorg/XorgDisplay.cpp',
         'src/present/xorg/XorgScreen.cpp',
         'src/present/xorg/XorgWindow.cpp',

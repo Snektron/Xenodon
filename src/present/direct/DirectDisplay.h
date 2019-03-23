@@ -10,11 +10,12 @@
 #include "present/direct/input/LinuxInput.h"
 
 class DirectDisplay final: public Display {
+    vk::UniqueInstance instance;
     std::vector<ScreenGroup> screen_groups;
     LinuxInput input;
 
 public:
-    DirectDisplay(vk::Instance instance, EventDispatcher& dispatcher, const DirectConfig& display_config);
+    DirectDisplay(EventDispatcher& dispatcher, const DirectConfig& display_config);
     ~DirectDisplay() override = default;
 
     Setup setup() override;

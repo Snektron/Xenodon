@@ -8,8 +8,8 @@ void ConsoleSink::write(std::string_view line) {
     std::cout << line << '\n';
 }
 
-FileSink::FileSink(std::string_view path):
-    file(std::string(path).c_str()) {
+FileSink::FileSink(const char* path):
+    file(path) {
 }
 
 void FileSink::write(std::string_view line) {

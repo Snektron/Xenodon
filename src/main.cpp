@@ -5,15 +5,18 @@
 #include <fmt/format.h>
 #include "present/Display.h"
 #include "present/Event.h"
+#include "core/Logger.h"
+#include "utility/Span.h"
 #include "resources.h"
 #include "version.h"
+#include "main_loop.h"
 
 #if defined(XENODON_PRESENT_XORG)
-    #include "present/xorg/xorg_main.h"
+    #include "present/xorg/xorg.h"
 #endif
 
 #if defined(XENODON_PRESENT_DIRECT)
-    #include "present/direct/direct_main.h"
+    #include "present/direct/direct.h"
 #endif
 
 namespace {
@@ -21,7 +24,7 @@ namespace {
         fmt::print(resources::open("resources/help.txt"), program_name);
     }
 
-    void system_info(int argc, char* argv[]) {
+    void subcommand_sysinfo(Span<const char*> args) {
         constexpr const std::array required_instance_extensions = {
             VK_KHR_SURFACE_EXTENSION_NAME,
             VK_KHR_DISPLAY_EXTENSION_NAME
@@ -75,32 +78,92 @@ namespace {
             }
         }
     }
+
+    std::unique_ptr<Display> make_display(Span<const char*> args, Logger& logger, EventDispatcher& dispatcher) {
+        auto backend = std::string_view(args[0]);
+        if (backend == "xorg") {
+            #if defined(XENODON_PRESENT_XORG)
+                return make_xorg_display(args.sub(1), logger, dispatcher);
+            #else
+                fmt::print("Error: Xorg support was disabled\n");
+                return nullptr;
+            #endif
+        } else if (backend == "direct") {
+            #if defined(XENODON_PRESENT_DIRECT)
+                return make_direct_display(args.sub(1), logger, dispatcher);
+            #else
+                fmt::print("Error: Direct support was disabled\n");
+                return nullptr;
+            #endif
+        } else {
+            fmt::print("Error: no such presenting backend '{}'", backend);
+            return nullptr;
+        }
+    }
+
+    void subcommand_render(Span<const char*> args) {
+        bool quiet = false;
+        const char* log_output = nullptr;
+
+        size_t i = 0;
+        for (; i < args.size(); ++i) {
+            auto arg = std::string_view(args[i]);
+
+            if (arg.size() == 0 || arg[0] != '-') {
+                break;
+            } else if (arg == "-q" || arg == "--quiet") {
+                quiet = true;
+            } else if (arg == "--log") {
+                if (++i >= args.size()) {
+                    fmt::print("Error: --log expects parameter <file>\n");
+                    return;
+                } else {
+                    log_output = args[i];
+                }
+            }
+        }
+
+        if (i == args.size()) {
+            fmt::print("Error: expected argument <present backend>\n");
+            return;
+        }
+
+        auto logger = Logger();
+
+        if (!quiet) {
+            logger.add_sink<ConsoleSink>();
+        }
+
+        if (log_output) {
+            logger.add_sink<FileSink>(log_output);
+        }
+
+        auto dispatcher = EventDispatcher();
+        auto display = make_display(args.sub(i), logger, dispatcher);
+
+        if (!display) {
+            return;
+        }
+
+        main_loop(logger, dispatcher, display.get());
+    }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, const char* argv[]) {
     if (argc <= 1) {
-        fmt::print("Error: Subccommand required, see `{} help`\n", argv[0]);
+        fmt::print("Error: Subcommand required, see `{} help`\n", argv[0]);
         return 0;
     }
 
+    auto args = Span<const char*>(static_cast<size_t>(argc - 2), &argv[2]);
     auto subcommand = std::string_view(argv[1]);
 
     if (subcommand == "help") {
         print_help(argv[0]);
     } else if (subcommand == "sysinfo") {
-        system_info(argc - 2, &argv[2]);
-    } else if (subcommand == "xorg") {
-        #if defined(XENODON_PRESENT_XORG)
-            xorg_main(argc - 2, &argv[2]);
-        #else
-            fmt::print("Error: Xorg support was disabled\n");
-        #endif
-    } else if (subcommand == "direct") {
-        #if defined(XENODON_PRESENT_DIRECT)
-            direct_main(argc - 2, &argv[2]);
-        #else
-            fmt::print("Error: Direct support was disabled\n");
-        #endif
+        subcommand_sysinfo(args);
+    } else if (subcommand == "render") {
+        subcommand_render(args);
     } else {
         fmt::print("Error: Invalid subcommand '{}', see `{} help`\n", subcommand, argv[0]);
     }

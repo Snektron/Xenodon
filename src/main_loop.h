@@ -3,7 +3,8 @@
 
 struct EventDispatcher;
 struct Display;
+class Logger;
 
-void main_loop(EventDispatcher& dispatcher, Display* display);
+void main_loop(Logger& logger, EventDispatcher& dispatcher, Display* display);
 
 #endif

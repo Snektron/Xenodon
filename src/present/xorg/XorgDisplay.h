@@ -11,11 +11,12 @@
 #include "present/xorg/XorgWindow.h"
 
 class XorgDisplay final: public Display {
+    vk::UniqueInstance instance;
     XorgWindow window;
     XorgScreen screen;
 
 public:
-    XorgDisplay(vk::Instance instance, EventDispatcher& dispatcher, uint16_t width, uint16_t height);
+    XorgDisplay(EventDispatcher& dispatcher, uint16_t width, uint16_t height);
 
     XorgDisplay(XorgDisplay&& other) = default;
     XorgDisplay& operator=(XorgDisplay&& other) = default;

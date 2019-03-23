@@ -23,7 +23,7 @@ class FileSink final: public Sink {
     std::ofstream file;
 
 public:
-    FileSink(std::string_view path);
+    FileSink(const char* path);
     void write(std::string_view line) override;
 };
 

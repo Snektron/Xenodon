@@ -1,16 +1,36 @@
 #include "present/direct/DirectDisplay.h"
+#include <array>
+#include "version.h"
 
-DirectDisplay::DirectDisplay(vk::Instance instance, EventDispatcher& dispatcher, const DirectConfig& display_config):
+namespace {
+    constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+        VK_KHR_DISPLAY_EXTENSION_NAME,
+        VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME
+    };
+
+    const auto INSTANCE_CREATE_INFO = vk::InstanceCreateInfo{
+        {},
+        &version::APP_INFO,
+        0,
+        nullptr,
+        REQUIRED_INSTANCE_EXTENSIONS.size(),
+        REQUIRED_INSTANCE_EXTENSIONS.data()
+    };
+}
+
+DirectDisplay::DirectDisplay(EventDispatcher& dispatcher, const DirectConfig& display_config):
+    instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)),
     input(dispatcher, display_config.input) {
     this->screen_groups.reserve(display_config.gpus.size());
 
-    auto gpus = instance.enumeratePhysicalDevices();
+    auto gpus = this->instance->enumeratePhysicalDevices();
     for (const auto& device : display_config.gpus) {
         if (device.vulkan_index >= gpus.size()) {
             throw std::runtime_error("Vulkan screen index out of range");
         }
 
-        this->screen_groups.emplace_back(instance, gpus[device.vulkan_index], device.screens);
+        this->screen_groups.emplace_back(this->instance.get(), gpus[device.vulkan_index], device.screens);
     }
 }
 
