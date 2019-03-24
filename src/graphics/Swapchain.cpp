@@ -25,8 +25,8 @@ namespace {
         auto present_modes = physical.getSurfacePresentModesKHR(surface);
 
         // check for triple buffering support
-        // if (std::find(present_modes.begin(), present_modes.end(), vk::PresentModeKHR::eMailbox) != present_modes.end())
-            // return vk::PresentModeKHR::eMailbox;
+        if (std::find(present_modes.begin(), present_modes.end(), vk::PresentModeKHR::eMailbox) != present_modes.end())
+            return vk::PresentModeKHR::eMailbox;
 
         // Immediate mode
         if (std::find(present_modes.begin(), present_modes.end(), vk::PresentModeKHR::eImmediate) != present_modes.end())

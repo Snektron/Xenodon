@@ -20,6 +20,8 @@ public:
     SwapImage swap_image(uint32_t index) const override;
     vk::Rect2D region() const override;
     vk::AttachmentDescription color_attachment_descr() const override;
+
+    friend class DirectDisplay;
 };
 
 #endif

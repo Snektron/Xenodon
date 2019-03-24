@@ -128,13 +128,14 @@ XorgScreen::XorgScreen(vk::Instance instance, XorgWindow& window, vk::Extent2D w
     surface(create_surface(instance, window)),
     device(create_device(instance, this->surface.get())),
     swapchain(this->device, this->surface.get(), window_extent) {
-    LOGGER.log("Surface present mode: {}", vk::to_string(this->swapchain.surface_present_mode()));
+    LOGGER.log("Screen info:");
+    LOGGER.log("\tPresent mode: {}", vk::to_string(this->swapchain.surface_present_mode()));
     auto extent = this->swapchain.surface_extent();
-    LOGGER.log("Surface extent: {}x{}", extent.width, extent.height);
+    LOGGER.log("\tExtent: {}x{}", extent.width, extent.height);
     auto surface_format = this->swapchain.surface_format();
-    LOGGER.log("Surface format: {}", vk::to_string(surface_format.format));
-    LOGGER.log("Surface colorspace: {}", vk::to_string(surface_format.colorSpace));
-    LOGGER.log("Swapchain images: {}", this->swapchain.num_images());
+    LOGGER.log("\tFormat: {}", vk::to_string(surface_format.format));
+    LOGGER.log("\tColorspace: {}", vk::to_string(surface_format.colorSpace));
+    LOGGER.log("\tSwapchain images: {}", this->swapchain.num_images());
 }
 
 XorgScreen::~XorgScreen() {
