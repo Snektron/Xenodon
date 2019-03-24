@@ -26,13 +26,11 @@ namespace {
     }
 }
 
-std::unique_ptr<DirectDisplay> make_direct_display(Span<const char*> args, Logger& logger, EventDispatcher& dispatcher) {
+std::unique_ptr<DirectDisplay> make_direct_display(Span<const char*> args, EventDispatcher& dispatcher) {
     if (args.empty()) {
         fmt::print("Error: Missing argument <config>\n");
         return nullptr;
     }
-
-    fmt::print("{}\n", args.size());
 
     auto config = read_config(args[0]);
 
@@ -40,5 +38,6 @@ std::unique_ptr<DirectDisplay> make_direct_display(Span<const char*> args, Logge
         return nullptr;
     }
 
+    LOGGER.log("Using direct presenting backend");
     return std::make_unique<DirectDisplay>(dispatcher, config.value());
 }

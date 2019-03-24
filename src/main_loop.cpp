@@ -10,25 +10,28 @@ namespace {
     void report_setup(const Setup& setup) {
         size_t ngpus = setup.size();
 
-        fmt::print("Setup: {}{}, with {}", ngpus, ngpus > 1 ? " gpus" : " gpu", setup[0]);
+        auto buf = fmt::memory_buffer();
+
+        fmt::format_to(buf, "Setup: {}{}, with {}", ngpus, ngpus > 1 ? " gpus" : " gpu", setup[0]);
 
         for (size_t i = 1; i < setup.size(); ++i) {
-            fmt::print(", {}", setup[i]);
+            fmt::format_to(buf, ", {}", setup[i]);
         }
 
-        fmt::print(" {}\n", ngpus > 1 || setup[0] > 1 ? " screens" : " screen");
+        fmt::format_to(buf, " {}", ngpus > 1 || setup[0] > 1 ? "screens" : "screen");
+        LOGGER.log(fmt::to_string(buf));
     }
 }
 
-void main_loop(Logger& logger, EventDispatcher& dispatcher, Display* display) {
+void main_loop(EventDispatcher& dispatcher, Display* display) {
     auto setup = display->setup();
     if (setup.empty()) {
-        fmt::print("Error: Invalid setup (no gpus)\n");
+        LOGGER.log("Error: Invalid setup (no gpus)");
     }
 
     for (size_t num_screens : setup) {
         if (num_screens == 0) {
-            fmt::print("Error: Invalid setup (no screens)\n");
+            LOGGER.log("Error: Invalid setup (no screens)");
         }
     }
 
@@ -46,7 +49,7 @@ void main_loop(Logger& logger, EventDispatcher& dispatcher, Display* display) {
     });
 
     dispatcher.bind_swapchain_recreate([&renderer](size_t gpu, size_t screen) {
-        fmt::print("Resizing gpu {}, screen {}\n", gpu, screen);
+        LOGGER.log("Resizing gpu {}, screen {}\n", gpu, screen);
         renderer.recreate(gpu, screen);
     });
 
@@ -61,8 +64,8 @@ void main_loop(Logger& logger, EventDispatcher& dispatcher, Display* display) {
         auto now = std::chrono::high_resolution_clock::now();
         auto diff = std::chrono::duration<double>(now - start);
 
-        if (diff > std::chrono::seconds{1}) {
-            fmt::print("FPS: {}\n", static_cast<double>(frames) / diff.count());
+        if (diff > std::chrono::seconds{10}) {
+            LOGGER.log("FPS: {}", static_cast<double>(frames) / diff.count());
             frames = 0;
             start = now;
         }

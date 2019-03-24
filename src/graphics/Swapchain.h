@@ -21,7 +21,8 @@ public:
 private:
     Device* device;
     vk::SurfaceKHR surface;
-    vk::Format format;
+    vk::SurfaceFormatKHR format;
+    vk::PresentModeKHR present_mode;
     vk::Extent2D extent;
     vk::UniqueSwapchainKHR swapchain;
     std::vector<SwapchainImage> images;
@@ -34,11 +35,15 @@ public:
     vk::Result swap_buffers();
     std::vector<vk::UniqueFramebuffer> create_framebuffers(vk::RenderPass pass);
 
+    vk::PresentModeKHR surface_present_mode() const {
+        return this->present_mode;
+    }
+
     vk::Extent2D surface_extent() const {
         return this->extent;    
     }
 
-    vk::Format surface_format() const {
+    vk::SurfaceFormatKHR surface_format() const {
         return this->format;
     }
 

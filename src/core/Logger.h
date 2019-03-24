@@ -31,15 +31,13 @@ class Logger {
     std::vector<std::unique_ptr<Sink>> sinks;
 
 public:
-    size_t frame = 0;
-
     Logger() = default;
 
     template <typename T, typename... Args>
     void add_sink(Args&&... args);
 
     template <typename... Args>
-    void log(std::string_view fmt, const Args&&... args);
+    void log(std::string_view fmt, const Args&... args);
 
 private:
     void write(std::string_view fmt, fmt::format_args args);
@@ -51,8 +49,10 @@ void Logger::add_sink(Args&&... args) {
 }
 
 template <typename... Args>
-void Logger::log(std::string_view fmt, const Args&&... args) {
+void Logger::log(std::string_view fmt, const Args&... args) {
     this->write(fmt, fmt::make_format_args(args...));
 }
+
+extern Logger LOGGER;
 
 #endif

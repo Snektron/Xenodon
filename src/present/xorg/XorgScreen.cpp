@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 #include <cstring>
-#include <fmt/format.h>
+#include "core/Logger.h"
 #include "present/xorg/XorgWindow.h"
 #include "graphics/support.h"
 
@@ -119,7 +119,7 @@ namespace {
 
     Device create_device(vk::Instance instance, vk::SurfaceKHR surface) {
         auto [gpu, name, gqi, pqi, index] = pick_gpu(instance, surface);
-        fmt::print("Picked GPU {}: '{}'", index, name);
+        LOGGER.log("Picked GPU {}: '{}'", index, name);
         return Device(gpu, DEVICE_EXTENSIONS, gqi, pqi);
     }
 }
@@ -128,6 +128,13 @@ XorgScreen::XorgScreen(vk::Instance instance, XorgWindow& window, vk::Extent2D w
     surface(create_surface(instance, window)),
     device(create_device(instance, this->surface.get())),
     swapchain(this->device, this->surface.get(), window_extent) {
+    LOGGER.log("Surface present mode: {}", vk::to_string(this->swapchain.surface_present_mode()));
+    auto extent = this->swapchain.surface_extent();
+    LOGGER.log("Surface extent: {}x{}", extent.width, extent.height);
+    auto surface_format = this->swapchain.surface_format();
+    LOGGER.log("Surface format: {}", vk::to_string(surface_format.format));
+    LOGGER.log("Surface colorspace: {}", vk::to_string(surface_format.colorSpace));
+    LOGGER.log("Swapchain images: {}", this->swapchain.num_images());
 }
 
 XorgScreen::~XorgScreen() {
@@ -145,7 +152,7 @@ void XorgScreen::resize(vk::Extent2D window_extent) {
 void XorgScreen::swap_buffers() {
     vk::Result res = this->swapchain.swap_buffers();
     if (res != vk::Result::eSuccess) {
-        fmt::print("Failed to swap; frame dropped\n");
+        LOGGER.log("Failed to swap; image dropped");
     }
 }
 
@@ -173,7 +180,7 @@ vk::Rect2D XorgScreen::region() const {
 
 vk::AttachmentDescription XorgScreen::color_attachment_descr() const {
     auto descr = vk::AttachmentDescription();
-    descr.format = this->swapchain.surface_format();
+    descr.format = this->swapchain.surface_format().format;
     descr.loadOp = vk::AttachmentLoadOp::eClear;
     descr.finalLayout = vk::ImageLayout::ePresentSrcKHR;
     return descr;

@@ -56,10 +56,9 @@ Swapchain::Swapchain(Device& device, vk::SurfaceKHR surface, vk::Extent2D surfac
 
 void Swapchain::recreate(vk::Extent2D surface_extent) {
     auto caps = this->device->physical.getSurfaceCapabilitiesKHR(this->surface);
-    auto surface_format = pick_surface_format(this->device->physical, surface);
-    auto present_mode = pick_present_mode(this->device->physical, surface);
+    this->format = pick_surface_format(this->device->physical, surface);
+    this->present_mode = pick_present_mode(this->device->physical, surface);
     this->extent = pick_extent(caps, surface, extent);
-    this->format = surface_format.format;
 
     // Create the swapchain itself
     {
@@ -71,8 +70,8 @@ void Swapchain::recreate(vk::Extent2D surface_extent) {
             {},
             this->surface,
             image_count,
-            surface_format.format,
-            surface_format.colorSpace,
+            this->format.format,
+            this->format.colorSpace,
             this->extent,
             1,
             vk::ImageUsageFlagBits::eColorAttachment,
@@ -126,7 +125,7 @@ void Swapchain::recreate(vk::Extent2D surface_extent) {
             {},
             vk::Image(),
             vk::ImageViewType::e2D,
-            surface_format.format,
+            this->format.format,
             component_mapping,
             sub_resource_range
         );

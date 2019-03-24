@@ -3,6 +3,8 @@
 #include <iostream>
 #include "present/xorg/XorgScreen.h"
 #include "present/xorg/xorg_translate_key.h"
+#include "version.h"
+#include <cstring>
 
 // Thank you xcb-xkb devs, very cool!
 #define explicit explicit_
@@ -104,6 +106,17 @@ XorgWindow::XorgWindow(EventDispatcher& dispatcher, uint16_t width, uint16_t hei
             32,
             1,
             &this->atom_wm_delete_window->atom
+        );
+
+        xcb_change_property(
+            this->connection.get(),
+            XCB_PROP_MODE_REPLACE,
+            this->window,
+            XCB_ATOM_WM_NAME,
+            XCB_ATOM_STRING,
+            8,
+            std::strlen(version::NAME),
+            version::NAME
         );
     }
 

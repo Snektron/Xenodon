@@ -10,6 +10,8 @@
 #include "present/xorg/XorgScreen.h"
 #include "present/xorg/XorgWindow.h"
 
+class Logger;
+
 class XorgDisplay final: public Display {
     vk::UniqueInstance instance;
     XorgWindow window;

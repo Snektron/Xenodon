@@ -6,8 +6,7 @@
 #include "utility/Span.h"
 
 struct EventDispatcher;
-class Logger;
 
-std::unique_ptr<XorgDisplay> make_xorg_display(Span<const char*> args, Logger& logger, EventDispatcher& dispatcher);
+std::unique_ptr<XorgDisplay> make_xorg_display(Span<const char*> args, EventDispatcher& dispatcher);
 
 #endif

@@ -79,18 +79,18 @@ namespace {
         }
     }
 
-    std::unique_ptr<Display> make_display(Span<const char*> args, Logger& logger, EventDispatcher& dispatcher) {
+    std::unique_ptr<Display> make_display(Span<const char*> args, EventDispatcher& dispatcher) {
         auto backend = std::string_view(args[0]);
         if (backend == "xorg") {
             #if defined(XENODON_PRESENT_XORG)
-                return make_xorg_display(args.sub(1), logger, dispatcher);
+                return make_xorg_display(args.sub(1), dispatcher);
             #else
                 fmt::print("Error: Xorg support was disabled\n");
                 return nullptr;
             #endif
         } else if (backend == "direct") {
             #if defined(XENODON_PRESENT_DIRECT)
-                return make_direct_display(args.sub(1), logger, dispatcher);
+                return make_direct_display(args.sub(1), dispatcher);
             #else
                 fmt::print("Error: Direct support was disabled\n");
                 return nullptr;
@@ -128,24 +128,22 @@ namespace {
             return;
         }
 
-        auto logger = Logger();
-
         if (!quiet) {
-            logger.add_sink<ConsoleSink>();
+            LOGGER.add_sink<ConsoleSink>();
         }
 
         if (log_output) {
-            logger.add_sink<FileSink>(log_output);
+            LOGGER.add_sink<FileSink>(log_output);
         }
 
         auto dispatcher = EventDispatcher();
-        auto display = make_display(args.sub(i), logger, dispatcher);
+        auto display = make_display(args.sub(i), dispatcher);
 
         if (!display) {
             return;
         }
 
-        main_loop(logger, dispatcher, display.get());
+        main_loop(dispatcher, display.get());
     }
 }
 
