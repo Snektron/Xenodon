@@ -16,14 +16,16 @@ cxx = meson.get_compiler('cpp')
 sources = [
     'src/main.cpp',
     'src/main_loop.cpp',
-    'src/core/Config.cpp',
     'src/core/Logger.cpp',
+    'src/core/Parser.cpp',
     'src/graphics/Device.cpp',
     'src/graphics/support.cpp',
     'src/graphics/Swapchain.cpp',
     'src/render/Renderer.cpp',
     'src/render/DeviceRenderer.cpp',
-    'src/render/TestRenderer.cpp'
+    'src/render/TestRenderer.cpp',
+    'src/present/headless/headless.cpp',
+    'src/present/headless/HeadlessDisplay.cpp'
 ]
 
 shaders = [

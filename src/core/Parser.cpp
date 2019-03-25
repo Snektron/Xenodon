@@ -1,11 +1,12 @@
-#include "core/Config.h"
-#include <sstream>
+#include "core/Parser.h"
+#include <cctype>
 
-namespace cfg {
-    Parser::Parser(std::istream& input):
+namespace parser {
+    Parser::Parser(std::istream& input, bool multiline):
         input(input),
         line(1),
-        column(1) {
+        column(1),
+        multiline(multiline) {
     }
 
     int Parser::peek() {
@@ -13,6 +14,10 @@ namespace cfg {
 
         // skip comments
         if (c == '#') {
+            if (this->multiline) {
+                throw ParseError(*this, "Unexpected character '#'");
+            }
+
             while (c != '\n' && c > 0) {
                 this->input.get();
                 c = this->input.peek();
@@ -29,8 +34,12 @@ namespace cfg {
 
         int c = this->input.get();
         if (c == '\n') {
-            ++this->line;
-            this->column = 0;
+            if (this->multiline) {
+                ++this->line;
+                this->column = 0;
+            } else {
+                throw ParseError(*this, "Unexpected newline");
+            }
         }
 
         ++this->column;        
@@ -79,6 +88,17 @@ namespace cfg {
         }
 
         return key.str();
+    }
+
+    std::string ParseError::format_error(const Parser& parser, std::string_view fmt, fmt::format_args args) {
+        auto buf = fmt::memory_buffer();
+        if (parser.multiline) {
+            fmt::format_to(buf, "Parse error at {}, {}: ", parser.line, parser.column);
+        } else {
+            fmt::format_to(buf, "Parse error at {}: ", parser.line);
+        }
+        fmt::vformat_to(buf, fmt, args);
+        return fmt::to_string(buf);
     }
 
     size_t Parse<size_t>::operator()(Parser& p) {

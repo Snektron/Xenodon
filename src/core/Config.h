@@ -12,42 +12,9 @@
 #include <cstddef>
 #include <cctype>
 #include <fmt/format.h>
+#include "core/Parser.h"
 
 namespace cfg {
-    class Parser {
-        std::istream& input;
-        size_t line;
-        size_t column;
-
-    public:
-        Parser(std::istream& input);
-
-        int peek();
-        int consume();
-        void expect(int expected);
-        void optws();
-        void expectws();
-
-        std::string parse_key();
-
-        friend struct ParseError;
-    };
-
-    struct ParseError: public std::runtime_error {
-        template <typename... Args>
-        ParseError(const Parser& parser, std::string_view fmt, const Args&... args):
-            runtime_error(format_error(parser, fmt, fmt::make_format_args(args...))) {
-        }
-
-    private:
-        std::string format_error(const Parser& parser, std::string_view fmt, fmt::format_args args) {
-            auto buf = fmt::memory_buffer();
-            fmt::format_to(buf, "Parse error at {}, {}: ", parser.line, parser.column);
-            fmt::vformat_to(buf, fmt, args);
-            return fmt::to_string(buf);
-        }
-    };
-
     struct ConfigError: public std::runtime_error {
         template <typename... Args>
         ConfigError(std::string_view fmt, const Args&... args):
@@ -62,9 +29,6 @@ namespace cfg {
             return fmt::to_string(buf);
         }
     };
-
-    template <typename T>
-    struct Parse;
 
     template <typename T>
     struct FromConfig;
@@ -169,7 +133,7 @@ namespace cfg {
     };
 
     class Config {
-        Parser parser;
+        parser::Parser parser;
 
     public:
         Config(std::istream& input):
@@ -181,7 +145,7 @@ namespace cfg {
             auto result = FromConfig<T>{}(*this);
             int c = this->parser.peek();
             if (c != -1) {
-                throw ParseError(parser, "Expected end of input, found '{}'", static_cast<char>(c));
+                throw parser::ParseError(parser, "Expected end of input, found '{}'", static_cast<char>(c));
             }
             return result;
         }
@@ -196,7 +160,7 @@ namespace cfg {
             auto result = this->parse(std::index_sequence_for<Items...>{}, std::forward<Items>(items)...);
             int c = this->parser.peek();
             if (c != -1) {
-                throw ParseError(parser, "Expected end of input, found '{}'", static_cast<char>(c));
+                throw parser::ParseError(parser, "Expected end of input, found '{}'", static_cast<char>(c));
             }
             return result;
         }
@@ -224,7 +188,7 @@ namespace cfg {
 
                 bool parsed = (parse_item(key, items, std::get<Indices>(accumulators)) || ...);
                 if (!parsed) {
-                    throw ParseError(parser, "Unexpected key '{}'", key);
+                    throw parser::ParseError(parser, "Unexpected key '{}'", key);
                 }
 
                 c = this->parser.peek();
@@ -255,7 +219,7 @@ namespace cfg {
     T Value<T>::parse(Config& cfg) const {
         cfg.parser.expect('=');
         cfg.parser.optws();
-        return Parse<T>{}(cfg.parser);
+        return parser::Parse<T>{}(cfg.parser);
     }
 
     template <typename T>
@@ -273,16 +237,6 @@ namespace cfg {
         cfg.parser.expect('}');
         return result;
     }
-
-    template<>
-    struct Parse<size_t> {
-        size_t operator()(Parser& p);
-    };
-
-    template<>
-    struct Parse<std::string> {
-        std::string operator()(Parser& p);
-    };
 }
 
 #endif

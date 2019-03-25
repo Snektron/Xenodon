@@ -10,6 +10,7 @@
 #include "resources.h"
 #include "version.h"
 #include "main_loop.h"
+#include "present/headless/headless.h"
 
 #if defined(XENODON_PRESENT_XORG)
     #include "present/xorg/xorg.h"
@@ -81,7 +82,9 @@ namespace {
 
     std::unique_ptr<Display> make_display(Span<const char*> args, EventDispatcher& dispatcher) {
         auto backend = std::string_view(args[0]);
-        if (backend == "xorg") {
+        if (backend == "headless") {
+            return make_headless_display(args.sub(1), dispatcher);
+        } else if (backend == "xorg") {
             #if defined(XENODON_PRESENT_XORG)
                 return make_xorg_display(args.sub(1), dispatcher);
             #else

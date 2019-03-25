@@ -5,14 +5,14 @@ using Screen = DirectConfig::Screen;
 using Device = DirectConfig::Device;
 using Input = DirectConfig::Input;
 
-vk::Offset2D cfg::Parse<vk::Offset2D>::operator()(cfg::Parser& p) {
+vk::Offset2D parser::Parse<vk::Offset2D>::operator()(parser::Parser& p) {
     p.expect('(');
     p.optws();
-    size_t x = cfg::Parse<size_t>{}(p);
+    size_t x = parser::Parse<size_t>{}(p);
     p.optws();
     p.expect(',');
     p.optws();
-    size_t y = cfg::Parse<size_t>{}(p);
+    size_t y = parser::Parse<size_t>{}(p);
     p.optws();
     p.expect(')');
 

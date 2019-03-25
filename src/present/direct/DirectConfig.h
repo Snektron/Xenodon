@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include "core/Config.h"
+#include "core/Parser.h"
 
 struct DirectConfig {
     struct Screen {
@@ -26,8 +27,8 @@ struct DirectConfig {
 };
 
 template<>
-struct cfg::Parse<vk::Offset2D> {
-    vk::Offset2D operator()(cfg::Parser& p);
+struct parser::Parse<vk::Offset2D> {
+    vk::Offset2D operator()(parser::Parser& p);
 };
 
 template<>
