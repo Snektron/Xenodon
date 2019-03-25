@@ -150,10 +150,3 @@ ScreenGroup::~ScreenGroup() {
     if (this->device.logical)
         this->device.logical->waitIdle();
 }
-
-void ScreenGroup::swap_buffers() {
-    // Simple implementation for now
-    for (auto& screen : this->screens) {
-        screen.swap_buffers();
-    }
-}

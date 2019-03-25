@@ -72,9 +72,3 @@ Screen* DirectDisplay::screen_at(size_t gpu_index, size_t screen_index) {
 void DirectDisplay::poll_events() {
     this->input.poll_events();
 }
-
-void DirectDisplay::swap_buffers() {
-    for (auto& screen_group : this->screen_groups) {
-        screen_group.swap_buffers();
-    }
-}

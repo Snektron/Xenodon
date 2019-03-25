@@ -17,7 +17,6 @@ public:
     ScreenGroup(ScreenGroup&&) = default;
     ScreenGroup& operator=(ScreenGroup&&) = default;
     ~ScreenGroup();
-    void swap_buffers();
 
     friend class DirectDisplay;
 };

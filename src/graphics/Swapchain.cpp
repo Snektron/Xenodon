@@ -156,36 +156,32 @@ void Swapchain::recreate(vk::Extent2D surface_extent) {
         }
     }
 
-    this->current_image_acquired_sem = this->device->logical->createSemaphoreUnique(vk::SemaphoreCreateInfo());
+    this->image_index = 0;
+}
+
+vk::Result Swapchain::present(PresentCallback f) {
+    const auto fence = this->images[this->image_index].fence.get();
+    this->device->logical->waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
+    this->device->logical->resetFences(fence);
+
+    const auto image_acquired = this->images[this->image_index].image_acquired.get();
+    const auto render_finished = this->images[this->image_index].render_finished.get();
 
     vk::Result result = this->device->logical->acquireNextImageKHR(
         this->swapchain.get(),
         std::numeric_limits<uint64_t>::max(),
-        this->current_image_acquired_sem.get(),
+        image_acquired,
         vk::Fence(),
-        &this->current_image_index
+        &this->image_index
     );
 
-    vk::createResultValue(result, __PRETTY_FUNCTION__);
+    if (result != vk::Result::eSuccess)
+        return result;
 
-    std::swap(
-        this->images[this->current_image_index].image_acquired.get(),
-        this->current_image_acquired_sem.get()
+    f(
+        this->image_index,
+        this->image(this->image_index)
     );
-}
-
-vk::Result Swapchain::swap_buffers() {
-    auto& current_image = this->current_image();
-
-    this->device->logical->waitForFences(current_image.fence.get(), true, std::numeric_limits<uint64_t>::max());
-    this->device->logical->resetFences(current_image.fence.get());
-    this->device->logical->waitIdle();
-
-    // Temporary to avoid crashing my GPU
-    // const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-    // current_image.command_buffer->begin(&begin_info);
-    // current_image.command_buffer->end();
-    //
 
     auto wait_stages = std::array{
         vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)
@@ -193,41 +189,25 @@ vk::Result Swapchain::swap_buffers() {
 
     auto submit_info = vk::SubmitInfo(
         1,
-        &current_image.image_acquired.get(),
+        &image_acquired,
         wait_stages.data(),
         1,
-        &current_image.command_buffer.get(),
+        &this->images[this->image_index].command_buffer.get(),
         1,
-        &current_image.render_finished.get()
+        &render_finished
     );
 
-    this->device->graphics.queue.submit(1, &submit_info, current_image.fence.get());
+    this->device->graphics.queue.submit(1, &submit_info, fence);
 
     auto present_info = vk::PresentInfoKHR(
         1,
-        &current_image.render_finished.get(),
+        &render_finished,
         1,
         &this->swapchain.get(),
-        &this->current_image_index
+        &this->image_index
     );
 
-    device->present.queue.presentKHR(&present_info);
-
-    vk::Result result = this->device->logical->acquireNextImageKHR(
-        this->swapchain.get(),
-        std::numeric_limits<uint64_t>::max(),
-        this->current_image_acquired_sem.get(),
-        vk::Fence(),
-        &this->current_image_index
-    );
-
-    if (result != vk::Result::eSuccess)
-        return result;
-
-    std::swap(
-        this->images[this->current_image_index].image_acquired.get(),
-        this->current_image_acquired_sem.get()
-    );
+    this->device->present.queue.presentKHR(&present_info);
 
     return vk::Result::eSuccess;
 }

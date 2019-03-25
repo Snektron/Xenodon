@@ -49,7 +49,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
     });
 
     dispatcher.bind_swapchain_recreate([&renderer](size_t gpu, size_t screen) {
-        LOGGER.log("Resizing gpu {}, screen {}\n", gpu, screen);
+        LOGGER.log("Resizing gpu {}, screen {}", gpu, screen);
         renderer.recreate(gpu, screen);
     });
 

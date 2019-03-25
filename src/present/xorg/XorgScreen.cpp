@@ -147,18 +147,8 @@ vk::Extent2D XorgScreen::size() const {
 }
 
 void XorgScreen::resize(vk::Extent2D window_extent) {
+    this->device.logical->waitIdle();
     this->swapchain.recreate(window_extent);
-}
-
-void XorgScreen::swap_buffers() {
-    vk::Result res = this->swapchain.swap_buffers();
-    if (res != vk::Result::eSuccess) {
-        LOGGER.log("Failed to swap; image dropped");
-    }
-}
-
-uint32_t XorgScreen::active_index() const {
-    return this->swapchain.current_index();
 }
 
 uint32_t XorgScreen::num_swap_images() const {
@@ -166,13 +156,11 @@ uint32_t XorgScreen::num_swap_images() const {
 }
 
 SwapImage XorgScreen::swap_image(uint32_t index) const {
-    const auto& image = this->swapchain.image(index);
+    return this->swapchain.image(index);
+}
 
-    return {
-        image.image,
-        image.image_view.get(),
-        image.command_buffer.get()
-    };
+vk::Result XorgScreen::present(Swapchain::PresentCallback f) {
+    return this->swapchain.present(f);
 }
 
 vk::Rect2D XorgScreen::region() const {

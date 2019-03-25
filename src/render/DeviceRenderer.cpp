@@ -25,11 +25,9 @@ RenderOutput::RenderOutput(Device& device, Screen* screen):
 }
 
 void RenderOutput::render() {
-    size_t idx = this->screen->active_index();
-    auto swap_image = this->screen->active_image();
-
-    this->renderer.present(swap_image.command_buffer, this->framebuffers[idx].get());
-    this->screen->swap_buffers();
+    this->screen->present([this](size_t i, const auto& swap_image) {
+        this->renderer.present(swap_image.command_buffer, this->framebuffers[i].get());
+    });
 }
 
 DeviceRenderer::DeviceRenderer(Display* display, size_t gpu, size_t screens):
@@ -50,6 +48,7 @@ void DeviceRenderer::render() {
 void DeviceRenderer::recreate(size_t screen) {
     auto it = this->outputs.begin() + static_cast<std::vector<RenderOutput>::difference_type>(screen);
     this->outputs.emplace(it, this->device, this->outputs[screen].screen);
+    this->device.logical->waitIdle();
 }
 
 DeviceRenderer::~DeviceRenderer() {

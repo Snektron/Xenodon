@@ -1,22 +1,10 @@
 #include "present/direct/DirectScreen.h"
 #include <stdexcept>
 #include <vector>
-#include "core/Logger.h"
 
 DirectScreen::DirectScreen(Device& device, vk::SurfaceKHR surface, vk::Offset2D offset):
     offset(offset),
     swapchain(device, surface, vk::Extent2D{0, 0}) {    
-}
-
-void DirectScreen::swap_buffers() {
-    vk::Result res = this->swapchain.swap_buffers();
-    if (res != vk::Result::eSuccess) {
-        LOGGER.log("Failed to swap; image dropped");
-    }
-}
-
-uint32_t DirectScreen::active_index() const {
-    return this->swapchain.current_index();
 }
 
 uint32_t DirectScreen::num_swap_images() const {
@@ -24,13 +12,11 @@ uint32_t DirectScreen::num_swap_images() const {
 }
 
 SwapImage DirectScreen::swap_image(uint32_t index) const {
-    const auto& image = this->swapchain.image(index);
+    return this->swapchain.image(index);
+}
 
-    return {
-        image.image,
-        image.image_view.get(),
-        image.command_buffer.get()
-    };
+vk::Result DirectScreen::present(Swapchain::PresentCallback f) {
+    return this->swapchain.present(f);
 }
 
 vk::Rect2D DirectScreen::region() const {

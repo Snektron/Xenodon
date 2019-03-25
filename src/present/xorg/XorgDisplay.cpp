@@ -43,7 +43,3 @@ Screen* XorgDisplay::screen_at(size_t gpu_index, size_t screen_index) {
 void XorgDisplay::poll_events() {
     this->window.poll_events(this->screen);
 }
-
-void XorgDisplay::swap_buffers() {
-    this->screen.swap_buffers();
-}

@@ -2,11 +2,16 @@
 #define _XENODON_GRAPHICS_SWAPCHAIN_H
 
 #include <vector>
+#include <functional>
 #include <vulkan/vulkan.hpp>
 #include "graphics/Device.h"
 
-// Implementation inspired by
-// https://chromium.googlesource.com/chromium/src/gpu/+/45b0f5183d399bed91c38c1ac869b7ce05f72d14/vulkan/vulkan_swap_chain.cc
+struct SwapImage {
+    vk::CommandBuffer command_buffer;
+    vk::Image image;
+    vk::ImageView view;
+};
+
 class Swapchain {
 public:
     struct SwapchainImage {
@@ -18,6 +23,8 @@ public:
         vk::UniqueFence fence;
     };
 
+    using PresentCallback = std::function<void(uint32_t, const SwapImage&)>;
+
 private:
     Device* device;
     vk::SurfaceKHR surface;
@@ -26,14 +33,14 @@ private:
     vk::Extent2D extent;
     vk::UniqueSwapchainKHR swapchain;
     std::vector<SwapchainImage> images;
-    uint32_t current_image_index;
-    vk::UniqueSemaphore current_image_acquired_sem;
+    uint32_t image_index;
 
 public:
     Swapchain(Device& device, vk::SurfaceKHR surface, vk::Extent2D surface_extent);
     void recreate(vk::Extent2D surface_extent);
     vk::Result swap_buffers();
     std::vector<vk::UniqueFramebuffer> create_framebuffers(vk::RenderPass pass);
+    vk::Result present(PresentCallback f);
 
     vk::PresentModeKHR surface_present_mode() const {
         return this->present_mode;
@@ -51,24 +58,12 @@ public:
         return static_cast<uint32_t>(this->images.size());
     }
 
-    uint32_t current_index() const {
-        return this->current_image_index;
-    }
-
-    SwapchainImage& current_image() {
-        return this->images[this->current_image_index];
-    }
-
-    const SwapchainImage& current_image() const {
-        return this->images[this->current_image_index];
-    }
-
-    SwapchainImage& image(uint32_t index) {
-        return this->images[index];
-    }
-
-    const SwapchainImage& image(uint32_t index) const {
-        return this->images[index];
+    SwapImage image(uint32_t index) const {
+        return {
+            this->images[index].command_buffer.get(),
+            this->images[index].image,
+            this->images[index].image_view.get()
+        };
     }
 };
 

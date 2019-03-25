@@ -16,7 +16,6 @@ struct Display {
     virtual Device& device_at(size_t gpu_index) = 0;
     virtual Screen* screen_at(size_t gpu_index, size_t screen_index) = 0;
     virtual void poll_events() = 0;
-    virtual void swap_buffers() = 0;
 };
 
 #endif
