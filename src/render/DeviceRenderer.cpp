@@ -29,6 +29,7 @@ void RenderOutput::render() {
     auto swap_image = this->screen->active_image();
 
     this->renderer.present(swap_image.command_buffer, this->framebuffers[idx].get());
+    this->screen->swap_buffers();
 }
 
 DeviceRenderer::DeviceRenderer(Display* display, size_t gpu, size_t screens):

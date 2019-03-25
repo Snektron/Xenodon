@@ -13,7 +13,7 @@ class DirectScreen final: public Screen {
 
 public:
     DirectScreen(Device& device, vk::SurfaceKHR surface, vk::Offset2D offset);
-    void swap_buffers();
+    void swap_buffers() override;
 
     uint32_t active_index() const override;
     uint32_t num_swap_images() const override;

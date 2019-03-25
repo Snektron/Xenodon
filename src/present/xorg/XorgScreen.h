@@ -20,7 +20,7 @@ public:
 
     vk::Extent2D size() const;
     void resize(vk::Extent2D window_extent);
-    void swap_buffers();
+    void swap_buffers() override;
 
     uint32_t active_index() const override;
     uint32_t num_swap_images() const override;

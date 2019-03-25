@@ -23,6 +23,7 @@ struct Screen {
     virtual SwapImage swap_image(uint32_t index) const = 0;
     virtual vk::Rect2D region() const = 0;
     virtual vk::AttachmentDescription color_attachment_descr() const = 0;
+    virtual void swap_buffers() = 0;
 };
 
 #endif
