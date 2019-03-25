@@ -137,14 +137,14 @@ namespace cfg {
 
     public:
         Config(std::istream& input):
-            parser(input) {
+            parser(input, true) {
         }
 
         template <typename T>
         T as() {
             auto result = FromConfig<T>{}(*this);
             int c = this->parser.peek();
-            if (c != -1) {
+            if (c > 0) {
                 throw parser::ParseError(parser, "Expected end of input, found '{}'", static_cast<char>(c));
             }
             return result;

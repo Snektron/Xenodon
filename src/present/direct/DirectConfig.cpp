@@ -5,7 +5,7 @@ using Screen = DirectConfig::Screen;
 using Device = DirectConfig::Device;
 using Input = DirectConfig::Input;
 
-vk::Offset2D parser::Parse<vk::Offset2D>::operator()(parser::Parser& p) {
+vk::Offset2D parser::Parse<vk::Offset2D>::operator()(parser::Parser& p) const {
     p.expect('(');
     p.optws();
     size_t x = parser::Parse<size_t>{}(p);
@@ -22,7 +22,7 @@ vk::Offset2D parser::Parse<vk::Offset2D>::operator()(parser::Parser& p) {
     };
 }
 
-Screen cfg::FromConfig<Screen>::operator()(cfg::Config& cfg) {
+Screen cfg::FromConfig<Screen>::operator()(cfg::Config& cfg) const {
     auto [index, offset] = cfg.get(
         Value<size_t>("vkindex"),
         Value<vk::Offset2D>("offset")
@@ -34,7 +34,7 @@ Screen cfg::FromConfig<Screen>::operator()(cfg::Config& cfg) {
     };
 }
 
-Device cfg::FromConfig<Device>::operator()(cfg::Config& cfg) {
+Device cfg::FromConfig<Device>::operator()(cfg::Config& cfg) const {
     auto [index, screens] = cfg.get(
         Value<size_t>("vkindex"),
         Vector<Screen>("screen")
@@ -62,7 +62,7 @@ Device cfg::FromConfig<Device>::operator()(cfg::Config& cfg) {
     };
 }
 
-Input cfg::FromConfig<Input>::operator()(cfg::Config& cfg) {
+Input cfg::FromConfig<Input>::operator()(cfg::Config& cfg) const {
     auto [kbd_dev] = cfg.get(
         Value<std::string>("keyboard")
     );
@@ -70,7 +70,7 @@ Input cfg::FromConfig<Input>::operator()(cfg::Config& cfg) {
     return {kbd_dev};
 }
 
-DirectConfig cfg::FromConfig<DirectConfig>::operator()(cfg::Config& cfg) {
+DirectConfig cfg::FromConfig<DirectConfig>::operator()(cfg::Config& cfg) const {
     auto [devices, input] = cfg.get(
         Vector<Device>("device"),
         Struct<Input>("input")

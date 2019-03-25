@@ -28,27 +28,27 @@ struct DirectConfig {
 
 template<>
 struct parser::Parse<vk::Offset2D> {
-    vk::Offset2D operator()(parser::Parser& p);
+    vk::Offset2D operator()(parser::Parser& p) const;
 };
 
 template<>
 struct cfg::FromConfig<DirectConfig::Screen> {
-    DirectConfig::Screen operator()(cfg::Config& cfg);
+    DirectConfig::Screen operator()(cfg::Config& cfg) const;
 };
 
 template<>
 struct cfg::FromConfig<DirectConfig::Device> {
-    DirectConfig::Device operator()(cfg::Config& cfg);
+    DirectConfig::Device operator()(cfg::Config& cfg) const;
 };
 
 template<>
 struct cfg::FromConfig<DirectConfig::Input> {
-    DirectConfig::Input operator()(cfg::Config& cfg);
+    DirectConfig::Input operator()(cfg::Config& cfg) const;
 };
 
 template<>
 struct cfg::FromConfig<DirectConfig> {
-    DirectConfig operator()(cfg::Config& cfg);
+    DirectConfig operator()(cfg::Config& cfg) const;
 };
 
 #endif

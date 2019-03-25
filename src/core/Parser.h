@@ -5,6 +5,7 @@
 #include <string_view>
 #include <string>
 #include <sstream>
+#include <utility>
 #include <fmt/format.h>
 
 namespace parser {
@@ -43,18 +44,23 @@ namespace parser {
 
     template<>
     struct Parse<size_t> {
-        size_t operator()(Parser& p);
+        size_t operator()(Parser& p) const;
     };
 
     template<>
     struct Parse<std::string> {
-        std::string operator()(Parser& p);
+        std::string operator()(Parser& p) const;
     };
 
     template <typename T>
     T parse(std::istream& stream, bool multiline = false) {
         auto parser = Parser(stream, multiline);
-        return Parse<T>{}(parser);
+        auto result = Parse<T>{}(parser);
+        int c = parser.peek();
+        if (c > 0) {
+            throw parser::ParseError(parser, "Expected end of input, found '{}'", static_cast<char>(c));
+        }
+        return result;
     }
 
     template <typename T>

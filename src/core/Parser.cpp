@@ -29,7 +29,7 @@ namespace parser {
 
     int Parser::consume() {
         if (this->input.eof()) {
-            throw ParseError(*this, "Unexpected end of file");
+            throw ParseError(*this, "Unexpected end of input");
         }
 
         int c = this->input.get();
@@ -93,15 +93,15 @@ namespace parser {
     std::string ParseError::format_error(const Parser& parser, std::string_view fmt, fmt::format_args args) {
         auto buf = fmt::memory_buffer();
         if (parser.multiline) {
-            fmt::format_to(buf, "Parse error at {}, {}: ", parser.line, parser.column);
+            fmt::format_to(buf, "Parse error at line {}, col {}: ", parser.line, parser.column);
         } else {
-            fmt::format_to(buf, "Parse error at {}: ", parser.line);
+            fmt::format_to(buf, "Parse error at col {}: ", parser.column);
         }
         fmt::vformat_to(buf, fmt, args);
         return fmt::to_string(buf);
     }
 
-    size_t Parse<size_t>::operator()(Parser& p) {
+    size_t Parse<size_t>::operator()(Parser& p) const {
         int c = p.consume();
         if (c < '0' || c > '9') {
             throw ParseError(p, "Expected numeric character, found '{}'", static_cast<char>(c));
@@ -120,7 +120,7 @@ namespace parser {
         return value;
     }
 
-    std::string Parse<std::string>::operator()(Parser& p) {
+    std::string Parse<std::string>::operator()(Parser& p) const {
         p.expect('"');
         auto ss = std::stringstream();
 

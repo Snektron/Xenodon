@@ -117,12 +117,12 @@ namespace {
             } else if (arg == "-q" || arg == "--quiet") {
                 quiet = true;
             } else if (arg == "--log") {
-                if (++i >= args.size()) {
-                    fmt::print("Error: --log expects parameter <file>\n");
+                if (++i == args.size()) {
+                    fmt::print("Error: --log expects argument <file>\n");
                     return;
-                } else {
-                    log_output = args[i];
                 }
+                
+                log_output = args[i];
             }
         }
 
