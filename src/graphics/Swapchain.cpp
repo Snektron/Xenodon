@@ -207,7 +207,7 @@ vk::Result Swapchain::present(PresentCallback f) {
         &this->image_index
     );
 
-    this->device->present.queue.presentKHR(&present_info);
+    this->device->present.queue.presentKHR(present_info);
 
     return vk::Result::eSuccess;
 }
