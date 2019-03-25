@@ -64,7 +64,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
         auto now = std::chrono::high_resolution_clock::now();
         auto diff = std::chrono::duration<double>(now - start);
 
-        if (diff > std::chrono::seconds{10}) {
+        if (diff > std::chrono::seconds{5}) {
             LOGGER.log("FPS: {}", static_cast<double>(frames) / diff.count());
             frames = 0;
             start = now;

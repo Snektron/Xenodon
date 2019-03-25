@@ -1,10 +1,9 @@
 #include "present/xorg/XorgWindow.h"
 #include <stdexcept>
-#include <iostream>
+#include <cstring>
 #include "present/xorg/XorgScreen.h"
 #include "present/xorg/xorg_translate_key.h"
 #include "version.h"
-#include <cstring>
 
 // Thank you xcb-xkb devs, very cool!
 #define explicit explicit_
@@ -192,6 +191,9 @@ void XorgWindow::handle_event(XorgScreen& screen, const xcb_generic_event_t& eve
             // Is the notification a window drag event?
             if (this->width == event_args.width && this->height == event_args.height)
                 break;
+
+            this->width = event_args.width;
+            this->height = event_args.height;
 
             auto extent = vk::Extent2D{
                 static_cast<uint32_t>(event_args.width),

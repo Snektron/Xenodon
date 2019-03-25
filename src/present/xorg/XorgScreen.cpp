@@ -142,10 +142,6 @@ XorgScreen::~XorgScreen() {
     this->device.logical->waitIdle();
 }
 
-vk::Extent2D XorgScreen::size() const {
-    return this->swapchain.surface_extent();
-}
-
 void XorgScreen::resize(vk::Extent2D window_extent) {
     this->device.logical->waitIdle();
     this->swapchain.recreate(window_extent);

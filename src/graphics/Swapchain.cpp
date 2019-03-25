@@ -102,13 +102,13 @@ void Swapchain::recreate(vk::Extent2D surface_extent) {
     // Retrieve the swapchains' images
     {
         auto swapchain_images = this->device->logical->getSwapchainImagesKHR(this->swapchain.get());
+        this->images.clear();
         this->images.resize(swapchain_images.size());
 
         for (size_t i = 0; i < this->images.size(); ++i) {
             this->images[i].image = swapchain_images[i];
         }
     }
-
 
     // Create the image views
     {

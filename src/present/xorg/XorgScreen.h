@@ -18,7 +18,6 @@ public:
     XorgScreen(vk::Instance instance, XorgWindow& window, vk::Extent2D window_extent);
     ~XorgScreen();
 
-    vk::Extent2D size() const;
     void resize(vk::Extent2D window_extent);
 
     uint32_t num_swap_images() const override;
