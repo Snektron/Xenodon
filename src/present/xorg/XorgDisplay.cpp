@@ -30,12 +30,12 @@ Setup XorgDisplay::setup() const {
     return {1};
 }
 
-Device& XorgDisplay::device_at(size_t gpu_index) const {
+Device& XorgDisplay::device_at(size_t gpu_index) {
     // gpu_index should be 0.
     return this->screen.device;
 }
 
-Screen* XorgDisplay::screen_at(size_t gpu_index, size_t screen_index) const {
+Screen* XorgDisplay::screen_at(size_t gpu_index, size_t screen_index) {
     // gpu_index and screen_index should be 0.
     return &this->screen;
 }

@@ -50,7 +50,7 @@ DirectDisplay::DirectDisplay(EventDispatcher& dispatcher, const DirectConfig& di
     }
 }
 
-Setup DirectDisplay::setup() {
+Setup DirectDisplay::setup() const {
     auto setup = Setup();
     setup.resize(this->screen_groups.size());
 

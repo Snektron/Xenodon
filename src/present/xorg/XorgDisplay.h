@@ -24,8 +24,8 @@ public:
     XorgDisplay& operator=(XorgDisplay&& other) = default;
     
     Setup setup() const override;
-    Device& device_at(size_t gpu_index) const override;
-    Screen* screen_at(size_t gpu_index, size_t screen_index) const override;
+    Device& device_at(size_t gpu_index) override;
+    Screen* screen_at(size_t gpu_index, size_t screen_index) override;
     void poll_events() override;
 };
 
