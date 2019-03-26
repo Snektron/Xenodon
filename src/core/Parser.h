@@ -7,6 +7,7 @@
 #include <sstream>
 #include <utility>
 #include <fmt/format.h>
+#include <vulkan/vulkan.hpp>
 
 namespace parser {
     class Parser {
@@ -42,14 +43,29 @@ namespace parser {
     template <typename T>
     struct Parse;
 
-    template<>
+    template <>
     struct Parse<size_t> {
         size_t operator()(Parser& p) const;
     };
 
-    template<>
+    template <>
     struct Parse<std::string> {
         std::string operator()(Parser& p) const;
+    };
+
+    template <typename T, typename U>
+    struct parser::Parse<std::pair<T, U>> {
+        std::pair<T, U> operator()(parser::Parser& p) const;
+    };
+
+    template<>
+    struct Parse<vk::Offset2D> {
+        vk::Offset2D operator()(Parser& p) const;
+    };
+
+    template<>
+    struct Parse<vk::Extent2D> {
+        vk::Extent2D operator()(Parser& p) const;
     };
 
     template <typename T>
@@ -68,6 +84,21 @@ namespace parser {
         auto ss = std::stringstream();
         ss << str;
         return parse<T>(ss, multiline);
+    }
+
+    template <typename T, typename U>
+    std::pair<T, U> Parse<std::pair<T, U>>::operator()(parser::Parser& p) const {
+        p.expect('(');
+        p.optws();
+        T x = parser::Parse<T>{}(p);
+        p.optws();
+        p.expect(',');
+        p.optws();
+        U y = parser::Parse<U>{}(p);
+        p.optws();
+        p.expect(')');
+
+        return {x, y};
     }
 }
 

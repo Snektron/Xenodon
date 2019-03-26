@@ -1,6 +1,5 @@
 #include "present/direct/direct.h"
 #include <fstream>
-#include <optional>
 #include <stdexcept>
 #include <fmt/format.h>
 #include "core/Config.h"
@@ -8,36 +7,27 @@
 #include "present/direct/DirectConfig.h"
 #include "present/Event.h"
 
-namespace {
-    std::optional<DirectConfig> read_config(const char* file) {
-        auto in = std::ifstream(file);
-        if (!in) {
-            fmt::print("Error: Failed to open config file '{}'\n", std::string_view(file));
-            return std::nullopt;
-        }
-
-        try {
-            auto config = cfg::Config(in);
-            return config.as<DirectConfig>();
-        } catch (const std::runtime_error& err) {
-            fmt::print("Failed to read config file '{}':\n{}\n", file, err.what());
-            return std::nullopt;
-        }
-    }
-}
-
 std::unique_ptr<DirectDisplay> make_direct_display(Span<const char*> args, EventDispatcher& dispatcher) {
     if (args.empty()) {
         fmt::print("Error: Missing argument <config>\n");
         return nullptr;
     }
 
-    auto config = read_config(args[0]);
+    auto in = std::ifstream(args[0]);
+    if (!in) {
+        fmt::print("Error: Failed to open config file '{}'\n", std::string_view(args[0]));
+        return nullptr;
+    }
 
-    if (!config) {
+    DirectConfig config;
+
+    try {
+        config = cfg::Config(in).as<DirectConfig>();
+    } catch (const std::runtime_error& err) {
+        fmt::print("Failed to read config file '{}':\n{}\n", args[0], err.what());
         return nullptr;
     }
 
     LOGGER.log("Using direct presenting backend");
-    return std::make_unique<DirectDisplay>(dispatcher, config.value());
+    return std::make_unique<DirectDisplay>(dispatcher, config);
 }

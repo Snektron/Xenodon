@@ -25,7 +25,9 @@ sources = [
     'src/render/DeviceRenderer.cpp',
     'src/render/TestRenderer.cpp',
     'src/present/headless/headless.cpp',
-    'src/present/headless/HeadlessDisplay.cpp'
+    'src/present/headless/HeadlessDisplay.cpp',
+    'src/present/headless/HeadlessConfig.cpp',
+    'src/present/headless/HeadlessScreen.cpp'
 ]
 
 shaders = [

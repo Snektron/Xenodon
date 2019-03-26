@@ -26,16 +26,16 @@ XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, uint16_t width, uint16_t h
     screen(this->instance.get(), this->window, {static_cast<uint32_t>(width), static_cast<uint32_t>(height)}) {
 }
 
-Setup XorgDisplay::setup() {
+Setup XorgDisplay::setup() const {
     return {1};
 }
 
-Device& XorgDisplay::device_at(size_t gpu_index) {
+Device& XorgDisplay::device_at(size_t gpu_index) const {
     // gpu_index should be 0.
     return this->screen.device;
 }
 
-Screen* XorgDisplay::screen_at(size_t gpu_index, size_t screen_index) {
+Screen* XorgDisplay::screen_at(size_t gpu_index, size_t screen_index) const {
     // gpu_index and screen_index should be 0.
     return &this->screen;
 }

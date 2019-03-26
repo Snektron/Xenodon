@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include "core/Config.h"
-#include "core/Parser.h"
 
 struct DirectConfig {
     struct Screen {
@@ -24,11 +23,6 @@ struct DirectConfig {
 
     std::vector<Device> gpus;
     Input input;
-};
-
-template<>
-struct parser::Parse<vk::Offset2D> {
-    vk::Offset2D operator()(parser::Parser& p) const;
 };
 
 template<>

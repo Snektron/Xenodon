@@ -5,23 +5,6 @@ using Screen = DirectConfig::Screen;
 using Device = DirectConfig::Device;
 using Input = DirectConfig::Input;
 
-vk::Offset2D parser::Parse<vk::Offset2D>::operator()(parser::Parser& p) const {
-    p.expect('(');
-    p.optws();
-    size_t x = parser::Parse<size_t>{}(p);
-    p.optws();
-    p.expect(',');
-    p.optws();
-    size_t y = parser::Parse<size_t>{}(p);
-    p.optws();
-    p.expect(')');
-
-    return {
-        static_cast<int32_t>(x),
-        static_cast<int32_t>(y)
-    };
-}
-
 Screen cfg::FromConfig<Screen>::operator()(cfg::Config& cfg) const {
     auto [index, offset] = cfg.get(
         Value<size_t>("vkindex"),
@@ -41,7 +24,7 @@ Device cfg::FromConfig<Device>::operator()(cfg::Config& cfg) const {
     );
 
     if (screens.empty()) {
-        throw cfg::ConfigError("Config error: A device must have at least one screen entry");
+        throw cfg::ConfigError("A device must have at least one screen entry");
     }
 
     std::sort(screens.begin(), screens.end(), [](auto& a, auto& b) {
@@ -53,7 +36,7 @@ Device cfg::FromConfig<Device>::operator()(cfg::Config& cfg) const {
     });
 
     if (it != screens.end()) {
-        throw cfg::ConfigError("Config error: Screen vulkan indices within a device must be unique");
+        throw cfg::ConfigError("Screen vulkan indices within a device must be unique");
     }
 
     return {
@@ -77,7 +60,7 @@ DirectConfig cfg::FromConfig<DirectConfig>::operator()(cfg::Config& cfg) const {
     );
 
     if (devices.empty()) {
-        throw cfg::ConfigError("Config error: The config must have at least one device entry");
+        throw cfg::ConfigError("At least one device entry is required");
     }
 
     return {devices, input};

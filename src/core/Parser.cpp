@@ -159,4 +159,20 @@ namespace parser {
 
         return ss.str();
     }
+
+    vk::Offset2D Parse<vk::Offset2D>::operator()(Parser& p) const {
+        auto [x, y] = Parse<std::pair<size_t, size_t>>{}(p);
+        return {
+            static_cast<int32_t>(x),
+            static_cast<int32_t>(y)
+        };
+    }
+
+    vk::Extent2D Parse<vk::Extent2D>::operator()(Parser& p) const {
+        auto [x, y] = Parse<std::pair<size_t, size_t>>{}(p);
+        return {
+            static_cast<uint32_t>(x),
+            static_cast<uint32_t>(y)
+        };
+    }
 }

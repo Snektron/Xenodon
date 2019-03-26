@@ -18,9 +18,9 @@ public:
     DirectDisplay(EventDispatcher& dispatcher, const DirectConfig& display_config);
     ~DirectDisplay() override = default;
 
-    Setup setup() override;
-    Device& device_at(size_t gpu_index) override;
-    Screen* screen_at(size_t gpu_index, size_t screen_index) override;
+    Setup setup() const override;
+    Device& device_at(size_t gpu_index) const override;
+    Screen* screen_at(size_t gpu_index, size_t screen_index) const override;
     void poll_events() override;
 };
 
