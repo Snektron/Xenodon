@@ -20,7 +20,9 @@ sources = [
     'src/core/Parser.cpp',
     'src/graphics/Device.cpp',
     'src/graphics/Swapchain.cpp',
+    'src/graphics/RenderTarget.cpp',
     'src/graphics/utility.cpp',
+    'src/graphics/Buffer.cpp',
     'src/render/Renderer.cpp',
     'src/render/DeviceRenderer.cpp',
     'src/render/TestRenderer.cpp',
@@ -49,8 +51,11 @@ add_project_arguments(
 
 # Project-wide dependencies
 vk_dep = dependency('vulkan', method: 'system')
-dependencies = [vk_dep]
-dependencies += subproject('fmt').get_variable('fmt_dep')
+dependencies = [
+    vk_dep,
+    subproject('fmt').get_variable('fmt_dep'),
+    subproject('lodepng').get_variable('lodepng_dep')
+]
 
 # Generate version.h
 versions = meson.project_version().split('.')

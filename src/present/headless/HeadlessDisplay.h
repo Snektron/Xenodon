@@ -2,6 +2,7 @@
 #define _XENODON_PRESENT_HEADLESS_HEADLESSDISPLAY_H
 
 #include <vector>
+#include <string_view>
 #include <vulkan/vulkan.hpp>
 #include "graphics/Device.h"
 #include "present/Display.h"
@@ -21,6 +22,8 @@ public:
     Device& device_at(size_t gpu_index) override;
     Screen* screen_at(size_t gpu_index, size_t screen_index) override;
     void poll_events() override;
+
+    void save();
 };
 
 #endif

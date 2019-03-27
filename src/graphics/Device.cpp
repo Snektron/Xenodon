@@ -1,4 +1,5 @@
 #include "graphics/Device.h"
+#include <stdexcept>
 
 namespace {
     vk::UniqueDevice create_logical_device(vk::PhysicalDevice gpu, Span<const char* const> extensions, uint32_t gqi) {
@@ -48,4 +49,24 @@ Device::Device(vk::PhysicalDevice physical, Span<const char* const> extensions, 
     physical(physical),
     logical(create_logical_device(physical, extensions, graphics_queue)),
     graphics(logical.get(), graphics_queue) {
+}
+
+std::optional<uint32_t> Device::find_memory_type(uint32_t filter, vk::MemoryPropertyFlags flags) const {
+    auto mem_props = this->physical.getMemoryProperties();
+    for (uint32_t i = 0; i < mem_props.memoryTypeCount; ++i) {
+        if (filter & (1 << i) && (mem_props.memoryTypes[i].propertyFlags & flags) == flags) {
+            return i;
+        }
+    }
+
+    return std::nullopt;
+}
+
+vk::UniqueDeviceMemory Device::allocate(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) {
+    auto alloc_info = vk::MemoryAllocateInfo(
+        requirements.size,
+        this->find_memory_type(requirements.memoryTypeBits, flags).value()
+    );
+
+    return this->logical->allocateMemoryUnique(alloc_info);
 }

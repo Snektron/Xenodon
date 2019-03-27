@@ -27,11 +27,13 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
     auto setup = display->setup();
     if (setup.empty()) {
         LOGGER.log("Error: Invalid setup (no gpus)");
+        return;
     }
 
-    for (size_t num_screens : setup) {
-        if (num_screens == 0) {
-            LOGGER.log("Error: Invalid setup (no screens)");
+    for (size_t i = 0; i < setup.size(); ++i) {
+        if (setup[i] == 0) {
+            LOGGER.log("Error: Invalid setup (gpu {} has no screens)", i);
+            return;
         }
     }
 
