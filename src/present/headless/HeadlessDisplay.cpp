@@ -77,6 +77,8 @@ void HeadlessDisplay::save() {
         }
     }
 
+    LOGGER.log("Compressing...");
+
     unsigned error = lodepng::encode(
         "out.png",
         reinterpret_cast<const unsigned char*>(image.data()),
