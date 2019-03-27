@@ -52,15 +52,11 @@ void HeadlessDisplay::save() {
         return screen.render_region;
     });
 
-    LOGGER.log("Enclosing: {}x{} {}x{}", enclosing.offset.x, enclosing.offset.y, enclosing.extent.width, enclosing.extent.height);
-
     auto image = std::vector<Pixel>(enclosing.extent.width * enclosing.extent.height, BLACK_PIXEL);
     size_t stride = static_cast<size_t>(enclosing.extent.width);
 
     for (auto& screen : screens) {
         auto pixels = screen.download();
-
-        LOGGER.log("Screen: {}x{} {}x{}", screen.render_region.offset.x, screen.render_region.offset.y, screen.render_region.extent.width, screen.render_region.extent.height);
 
         size_t start_x = static_cast<size_t>(screen.render_region.offset.x - enclosing.offset.x);
         size_t start_y = static_cast<size_t>(screen.render_region.offset.y - enclosing.offset.y);
