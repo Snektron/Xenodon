@@ -1,34 +1,28 @@
 #include "graphics/Device.h"
 
 namespace {
-    vk::UniqueDevice create_logical_device(vk::PhysicalDevice gpu, vk::ArrayProxy<const char* const> extensions, uint32_t gqi, uint32_t pqi) {
-        auto logical_info = vk::DeviceCreateInfo();
-        logical_info.queueCreateInfoCount = 1;
-
-        // Create the logical device
+    vk::UniqueDevice create_logical_device(vk::PhysicalDevice gpu, vk::ArrayProxy<const char* const> extensions, uint32_t gqi) {
         float priority = 1.0f;
 
-        auto queue_infos = std::array<vk::DeviceQueueCreateInfo, 2>();
+        auto queue_create_info = vk::DeviceQueueCreateInfo(
+            {},
+            gqi,
+            1,
+            &priority
+        );
 
-        queue_infos[0].flags = {};
-        queue_infos[0].queueFamilyIndex = gqi;
-        queue_infos[0].queueCount = 1;
-        queue_infos[0].pQueuePriorities = &priority;
+        auto logical_create_info = vk::DeviceCreateInfo(
+            {},
+            1,
+            &queue_create_info,
+            0,
+            nullptr,
+            static_cast<uint32_t>(extensions.size()),
+            extensions.data(),
+            nullptr
+        );
 
-        if (gqi != pqi) {
-            logical_info.queueCreateInfoCount = 2;
-
-            queue_infos[1].flags = {};
-            queue_infos[1].queueFamilyIndex = pqi;
-            queue_infos[1].queueCount = 1;
-            queue_infos[1].pQueuePriorities = &priority;
-        }
-
-        logical_info.pQueueCreateInfos = queue_infos.data();
-        logical_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-        logical_info.ppEnabledExtensionNames = extensions.data();
-
-        return gpu.createDeviceUnique(logical_info);
+        return gpu.createDeviceUnique(logical_create_info);
     }
 
     vk::UniqueCommandPool create_command_pool(vk::Device logical, uint32_t gqi) {
@@ -54,10 +48,9 @@ bool Queue::is_valid() const {
     return this->queue != vk::Queue(nullptr);
 }
 
-Device::Device(vk::PhysicalDevice physical, vk::ArrayProxy<const char* const> extensions, uint32_t graphics_queue, uint32_t present_queue):
+Device::Device(vk::PhysicalDevice physical, vk::ArrayProxy<const char* const> extensions, uint32_t graphics_queue):
     physical(physical),
-    logical(create_logical_device(physical, extensions, graphics_queue, present_queue)),
+    logical(create_logical_device(physical, extensions, graphics_queue)),
     graphics(logical.get(), graphics_queue),
-    present(logical.get(), present_queue),
     graphics_command_pool(create_command_pool(this->logical.get(), graphics_queue)) {
 }

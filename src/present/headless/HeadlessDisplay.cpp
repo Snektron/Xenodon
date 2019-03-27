@@ -18,15 +18,16 @@ HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConf
 }
 
 Setup HeadlessDisplay::setup() const {
-
+    return Setup(this->screens.size(), 1);
 }
 
 Device& HeadlessDisplay::device_at(size_t gpu_index) {
-
+    
 }
 
 Screen* HeadlessDisplay::screen_at(size_t gpu_index, size_t screen_index) {
-
+    // screen index should always be 0
+    return &this->screens[gpu_index];
 }
 
 void HeadlessDisplay::poll_events() {

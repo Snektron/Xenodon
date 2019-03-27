@@ -1,8 +1,8 @@
-#include "graphics/support.h"
+#include "graphics/utility.h"
 #include <algorithm>
 #include <cstring>
 
-bool check_extension_support(vk::PhysicalDevice gpu, Span<const char* const> extensions) {
+bool gpu_supports_extensions(vk::PhysicalDevice gpu, Span<const char* const> extensions) {
     auto extension_properties = gpu.enumerateDeviceExtensionProperties();
 
     auto it = extensions.begin();
@@ -21,7 +21,7 @@ bool check_extension_support(vk::PhysicalDevice gpu, Span<const char* const> ext
     return supported;
 }
 
-bool check_surface_support(vk::PhysicalDevice gpu, vk::SurfaceKHR surface) {
+bool gpu_supports_surface(vk::PhysicalDevice gpu, vk::SurfaceKHR surface) {
     uint32_t format_count, present_mode_count;
 
     vk::createResultValue(
@@ -43,4 +43,24 @@ bool check_surface_support(vk::PhysicalDevice gpu, vk::SurfaceKHR surface) {
     );
 
     return format_count != 0 && present_mode_count != 0;
+}
+
+std::optional<uint32_t> pick_graphics_queue(vk::PhysicalDevice gpu, Span<const vk::SurfaceKHR> surfaces) {
+    auto surfaces_supported = [gpu, &surfaces](uint32_t i) {
+        for (auto& surface : surfaces) {
+            if (!gpu.getSurfaceSupportKHR(i, surface))
+                return false;
+        }
+
+        return true;
+    };
+
+    auto queue_families = gpu.getQueueFamilyProperties();
+    uint32_t num_queues = static_cast<uint32_t>(queue_families.size());
+    for (uint32_t i = 0; i < num_queues; ++i) {
+        if ((queue_families[i].queueFlags & vk::QueueFlagBits::eGraphics) && surfaces_supported(i))
+            return i;
+    }
+
+    return std::nullopt;
 }

@@ -1,15 +1,18 @@
 #ifndef _XENODON_PRESENT_HEADLESS_HEADLESSDISPLAY_H
 #define _XENODON_PRESENT_HEADLESS_HEADLESSDISPLAY_H
 
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include "graphics/Device.h"
 #include "present/Display.h"
 #include "present/Event.h"
 #include "present/headless/HeadlessConfig.h"
+#include "present/headless/HeadlessScreen.h"
 
 class HeadlessDisplay final: public Display {
     EventDispatcher& dispatcher;
     vk::UniqueInstance instance;
+    std::vector<HeadlessScreen> screens;
 
 public:
     HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config);

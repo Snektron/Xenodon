@@ -6,7 +6,7 @@
 #include <cstring>
 #include "core/Logger.h"
 #include "present/xorg/XorgWindow.h"
-#include "graphics/support.h"
+#include "graphics/utility.h"
 
 namespace {
     constexpr const std::array DEVICE_EXTENSIONS = {
@@ -17,7 +17,6 @@ namespace {
         vk::PhysicalDevice gpu;
         const char* device_name;
         uint32_t graphics_queue_index;
-        uint32_t present_queue_index;
         uint32_t index;
     };
 
@@ -49,8 +48,6 @@ namespace {
             return rate(l) < rate(r);
         });
 
-        auto graphics_supported = std::vector<uint32_t>();
-        auto present_supported = std::vector<uint32_t>();
         for (size_t i = 0; i < gpu_infos.size(); ++i) {
             auto& [gpu, props] = gpu_infos[i];
 
@@ -60,46 +57,12 @@ namespace {
                 props.deviceType != vk::PhysicalDeviceType::eIntegratedGpu)
                 break;
 
-            if (!check_extension_support(gpu, DEVICE_EXTENSIONS)
-                || !check_surface_support(gpu, surface))
+            if (!gpu_supports_extensions(gpu, DEVICE_EXTENSIONS)
+                || !gpu_supports_surface(gpu, surface))
                 continue;
 
-            // Find a compute and present queue for of the gpu
-            {
-                graphics_supported.clear();
-                present_supported.clear();
-                auto queue_families = gpu.getQueueFamilyProperties();
-
-                uint32_t num_queues = static_cast<uint32_t>(queue_families.size());
-                for (uint32_t i = 0; i < num_queues; ++i) {
-                    if (queue_families[i].queueFlags & vk::QueueFlagBits::eGraphics)
-                        graphics_supported.push_back(i);
-
-                    if (gpu.getSurfaceSupportKHR(i, surface))
-                        present_supported.push_back(i);
-                }
-
-                if (graphics_supported.empty() || present_supported.empty())
-                    continue;
-
-                auto git = graphics_supported.begin();
-                auto pit = present_supported.begin();
-
-                // Check if theres a queue with both supported
-                while (git != graphics_supported.end() && pit != present_supported.end()) {
-                    uint32_t g = *git;
-                    uint32_t p = *pit;
-
-                    if (g == p)
-                        return {gpu, props.deviceName, g, p, static_cast<uint32_t>(i)};
-                    else if (g < p)
-                        ++git;
-                    else
-                        ++pit;
-                }
-
-                // No queue with both supported, but both are supported, so just take the first of both
-                return {gpu, props.deviceName, graphics_supported[0], present_supported[0], static_cast<uint32_t>(i)};
+            if (auto queue = pick_graphics_queue(gpu, surface)) {
+                return {gpu, props.deviceName, queue.value(), static_cast<uint32_t>(i)};
             }
         }
 
@@ -118,9 +81,10 @@ namespace {
     }
 
     Device create_device(vk::Instance instance, vk::SurfaceKHR surface) {
-        auto [gpu, name, gqi, pqi, index] = pick_gpu(instance, surface);
+        auto [gpu, name, gqi, index] = pick_gpu(instance, surface);
         LOGGER.log("Picked GPU {}: '{}'", index, name);
-        return Device(gpu, DEVICE_EXTENSIONS, gqi, pqi);
+        LOGGER.log("Graphics queue index: {}", gqi);
+        return Device(gpu, DEVICE_EXTENSIONS, gqi);
     }
 }
 

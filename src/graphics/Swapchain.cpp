@@ -77,24 +77,13 @@ void Swapchain::recreate(vk::Extent2D surface_extent) {
             vk::ImageUsageFlagBits::eColorAttachment,
             vk::SharingMode::eExclusive,
             1,
-            &this->device->present.family_index,
+            &this->device->graphics.family_index,
             caps.currentTransform,
             vk::CompositeAlphaFlagBitsKHR::eOpaque,
             present_mode,
             true,
             this->swapchain.get() // Returns nullptr if recreating, or else returns the old swapchain
         );
-
-        if (this->device->graphics.family_index != this->device->present.family_index) {
-            auto queue_indices = std::array{
-                this->device->graphics.family_index,
-                this->device->present.family_index
-            };
-
-            create_info.imageSharingMode = vk::SharingMode::eConcurrent;
-            create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_indices.size());
-            create_info.pQueueFamilyIndices = queue_indices.data();
-        }
 
         this->swapchain = this->device->logical->createSwapchainKHRUnique(create_info);
     }
@@ -207,7 +196,7 @@ vk::Result Swapchain::present(PresentCallback f) {
         &this->image_index
     );
 
-    this->device->present.queue.presentKHR(present_info);
+    this->device->graphics.queue.presentKHR(present_info);
 
     return vk::Result::eSuccess;
 }

@@ -1,6 +1,6 @@
 #include "present/direct/ScreenGroup.h"
 #include <array>
-#include "graphics/support.h"
+#include "graphics/utility.h"
 
 namespace {
     constexpr const std::array DEVICE_EXTENSIONS = {
@@ -77,62 +77,22 @@ namespace {
         return surfaces;
     }
 
-    std::pair<uint32_t, uint32_t> pick_queues(vk::PhysicalDevice gpu, const std::vector<vk::UniqueSurfaceKHR>& surfaces) {
-        auto surfaces_supported = [gpu, &surfaces](uint32_t i) {
-            for (auto& surface : surfaces) {
-                if (!gpu.getSurfaceSupportKHR(i, surface.get()))
-                    return false;
-            }
-
-            return true;
-        };
-
-        auto graphics_supported = std::vector<uint32_t>();
-        auto present_supported = std::vector<uint32_t>();
-        auto queue_families = gpu.getQueueFamilyProperties();
-
-        uint32_t num_queues = static_cast<uint32_t>(queue_families.size());
-        for (uint32_t i = 0; i < num_queues; ++i) {
-            if (queue_families[i].queueFlags & vk::QueueFlagBits::eGraphics)
-                graphics_supported.push_back(i);
-
-            if (surfaces_supported(i))
-                present_supported.push_back(i);
-        }
-
-        if (graphics_supported.empty())
-            throw std::runtime_error("No supported graphics queue found");
-        else if (present_supported.empty())
-            throw std::runtime_error("No supported present queue found");
-
-        auto git = graphics_supported.begin();
-        auto pit = present_supported.begin();
-
-        // Check if theres a queue with both supported
-        while (git != graphics_supported.end() && pit != present_supported.end()) {
-            uint32_t g = *git;
-            uint32_t p = *pit;
-
-            if (g == p)
-                return {g, p};
-            else if (g < p)
-                ++git;
-            else
-                ++pit;
-        }
-
-        // No queue with both supported, but both are supported, so just take the first of both
-        return {graphics_supported.front(), present_supported.front()};
-    }
-
-    Device create_device(vk::PhysicalDevice gpu, const std::vector<vk::UniqueSurfaceKHR>& surfaces) {
-        if (!check_extension_support(gpu, DEVICE_EXTENSIONS)) {
+    Device create_device(vk::PhysicalDevice gpu, const std::vector<vk::UniqueSurfaceKHR>& unique_surfaces) {
+        if (!gpu_supports_extensions(gpu, DEVICE_EXTENSIONS)) {
             throw std::runtime_error("Gpu does not support required extensions");
         }
 
-        auto [gqi, pqi] = pick_queues(gpu, surfaces);
+        auto surfaces = std::vector<vk::SurfaceKHR>();
+        surfaces.reserve(unique_surfaces.size());
+        for (auto& surface : unique_surfaces) {
+            surfaces.push_back(surface.get());
+        }
 
-        return Device(gpu, DEVICE_EXTENSIONS, gqi, pqi);
+        if (auto queue = pick_graphics_queue(gpu, surfaces)) {
+            return Device(gpu, DEVICE_EXTENSIONS, queue.value());
+        } else {
+            throw std::runtime_error("Gpu does not support graphics/present queue");
+        }
     }
 }
 

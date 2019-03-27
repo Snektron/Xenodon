@@ -3,9 +3,14 @@
 
 #include "graphics/Device.h"
 #include "present/Screen.h"
+#include "present/headless/HeadlessConfig.h"
 
 class HeadlessScreen final: public Screen {
+    vk::Rect2D render_region;
+
 public:
+    HeadlessScreen(vk::PhysicalDevice gpu, vk::Rect2D render_region);
+
     uint32_t num_swap_images() const override;
     SwapImage swap_image(uint32_t index) const override;
     vk::Result present(Swapchain::PresentCallback f) override;
