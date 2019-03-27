@@ -22,7 +22,7 @@ public:
 
     XorgDisplay(XorgDisplay&& other) = default;
     XorgDisplay& operator=(XorgDisplay&& other) = default;
-    
+
     Setup setup() const override;
     Device& device_at(size_t gpu_index) override;
     Screen* screen_at(size_t gpu_index, size_t screen_index) override;

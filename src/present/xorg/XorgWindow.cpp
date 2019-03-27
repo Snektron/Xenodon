@@ -119,7 +119,7 @@ XorgWindow::XorgWindow(EventDispatcher& dispatcher, uint16_t width, uint16_t hei
         );
     }
 
-    // Enable detectable key repeat. This will make a repeat appear as a single press 
+    // Enable detectable key repeat. This will make a repeat appear as a single press
     // instead of a press and a release
     {
         xcb_xkb_use_extension(this->connection.get(), 1, 0);

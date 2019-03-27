@@ -4,7 +4,7 @@
 
 DirectScreen::DirectScreen(Device& device, vk::SurfaceKHR surface, vk::Offset2D offset):
     offset(offset),
-    swapchain(device, surface, vk::Extent2D{0, 0}) {    
+    swapchain(device, surface, vk::Extent2D{0, 0}) {
 }
 
 uint32_t DirectScreen::num_swap_images() const {

@@ -47,7 +47,7 @@ public:
     }
 
     vk::Extent2D surface_extent() const {
-        return this->extent;    
+        return this->extent;
     }
 
     vk::SurfaceFormatKHR surface_format() const {

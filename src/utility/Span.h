@@ -119,7 +119,7 @@ public:
 
     constexpr T* data() {
         return this->ptr;
-    } 
+    }
 
     constexpr const T* data() const {
         return this->ptr;

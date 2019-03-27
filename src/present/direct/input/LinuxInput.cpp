@@ -48,7 +48,7 @@ void LinuxInput::poll_events() {
         int nready = poll(&fd_info, 1, 0);
         if (nready == 0)
             break;
-        
+
         struct input_event buff[16];
 
         ssize_t n = read(this->kbd_fd.fd, &buff, sizeof buff);

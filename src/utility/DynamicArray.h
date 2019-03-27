@@ -163,7 +163,7 @@ public:
         if (this->items != nullptr) {
             this->deallocate(this->items, this->count);
             this->count = 0;
-        }        
+        }
     }
 
     // Requires T is default (optional) and copy constructable

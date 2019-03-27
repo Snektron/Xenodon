@@ -121,7 +121,7 @@ namespace {
                     fmt::print("Error: --log expects argument <file>\n");
                     return;
                 }
-                
+
                 log_output = args[i];
             }
         }

@@ -3,7 +3,7 @@
 
 // Keycodes inspired from GLFW, but this is not an exact copy:
 // WORLD_1, WORLD_2, F13 - F15, PRINT_SCREEN, LEFT_SUPER and RIGHT_SUPER have been removed.
-// I wont be needing most of these, but lets just add them for 
+// I wont be needing most of these, but lets just add them for
 // the sake of completeness
 
 enum class Key {

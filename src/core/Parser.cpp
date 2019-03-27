@@ -42,7 +42,7 @@ namespace parser {
             }
         }
 
-        ++this->column;        
+        ++this->column;
 
         return c;
     }

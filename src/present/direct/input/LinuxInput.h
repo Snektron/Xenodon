@@ -8,7 +8,7 @@ struct FileDescriptor {
     int fd;
 
     FileDescriptor(const char* path);
-    
+
     FileDescriptor(const FileDescriptor&) = delete;
     FileDescriptor& operator=(const FileDescriptor&) = delete;
 
