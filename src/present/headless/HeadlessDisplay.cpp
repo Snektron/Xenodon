@@ -52,6 +52,9 @@ void HeadlessDisplay::save() {
         return screen.render_region;
     });
 
+    LOGGER.log("Saving image...");
+    LOGGER.log("Enclosing size: {}x{}", enclosing.extent.width * enclosing.extent.height);
+
     auto image = std::vector<Pixel>(enclosing.extent.width * enclosing.extent.height, BLACK_PIXEL);
     size_t stride = static_cast<size_t>(enclosing.extent.width);
 
