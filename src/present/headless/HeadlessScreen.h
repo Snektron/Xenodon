@@ -7,6 +7,7 @@
 
 class HeadlessScreen final: public Screen {
     vk::Rect2D render_region;
+    Device device;
 
 public:
     HeadlessScreen(vk::PhysicalDevice gpu, vk::Rect2D render_region);
@@ -17,6 +18,8 @@ public:
 
     vk::Rect2D region() const override;
     vk::AttachmentDescription color_attachment_descr() const override;
+
+    friend class HeadlessDisplay;
 };
 
 #endif

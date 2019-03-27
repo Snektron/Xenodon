@@ -4,13 +4,14 @@
 #include <limits>
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
+#include "utility/Span.h"
 
 struct Queue {
     vk::Queue queue;
     uint32_t family_index;
+    vk::UniqueCommandPool command_pool;
 
     Queue(vk::Device device, uint32_t family_index);
-    Queue(std::nullptr_t);
 
     static Queue invalid();
 
@@ -23,9 +24,7 @@ struct Device {
 
     Queue graphics;
 
-    vk::UniqueCommandPool graphics_command_pool;
-
-    Device(vk::PhysicalDevice physical, vk::ArrayProxy<const char* const> extensions, uint32_t graphics_queue);
+    Device(vk::PhysicalDevice physical, Span<const char* const> extensions, uint32_t graphics_queue);
 };
 
 #endif

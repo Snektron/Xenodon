@@ -102,7 +102,7 @@ void Swapchain::recreate(vk::Extent2D surface_extent) {
     // Create the image views
     {
         auto sub_resource_range = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-        
+
         auto component_mapping = vk::ComponentMapping(
             vk::ComponentSwizzle::eR,
             vk::ComponentSwizzle::eG,
@@ -126,8 +126,8 @@ void Swapchain::recreate(vk::Extent2D surface_extent) {
     }
 
     // Create the command buffers
-    {   
-        auto command_buffers_info = vk::CommandBufferAllocateInfo(this->device->graphics_command_pool.get());
+    {
+        auto command_buffers_info = vk::CommandBufferAllocateInfo(this->device->graphics.command_pool.get());
         command_buffers_info.commandBufferCount = static_cast<uint32_t>(this->images.size());
         auto command_buffers = this->device->logical->allocateCommandBuffersUnique(command_buffers_info);
 

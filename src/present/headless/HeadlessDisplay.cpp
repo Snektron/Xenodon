@@ -22,7 +22,7 @@ Setup HeadlessDisplay::setup() const {
 }
 
 Device& HeadlessDisplay::device_at(size_t gpu_index) {
-    
+    return this->screens[gpu_index].device;
 }
 
 Screen* HeadlessDisplay::screen_at(size_t gpu_index, size_t screen_index) {

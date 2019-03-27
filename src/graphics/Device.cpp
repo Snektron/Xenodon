@@ -1,7 +1,7 @@
 #include "graphics/Device.h"
 
 namespace {
-    vk::UniqueDevice create_logical_device(vk::PhysicalDevice gpu, vk::ArrayProxy<const char* const> extensions, uint32_t gqi) {
+    vk::UniqueDevice create_logical_device(vk::PhysicalDevice gpu, Span<const char* const> extensions, uint32_t gqi) {
         float priority = 1.0f;
 
         auto queue_create_info = vk::DeviceQueueCreateInfo(
@@ -36,21 +36,16 @@ namespace {
 
 Queue::Queue(vk::Device device, uint32_t family_index):
     queue(device.getQueue(family_index, 0)),
-    family_index(family_index) {
-}
-
-Queue::Queue(std::nullptr_t):
-    queue(vk::Queue(nullptr)),
-    family_index(std::numeric_limits<uint32_t>::max()) {
+    family_index(family_index),
+    command_pool(create_command_pool(device, family_index)) {
 }
 
 bool Queue::is_valid() const {
     return this->queue != vk::Queue(nullptr);
 }
 
-Device::Device(vk::PhysicalDevice physical, vk::ArrayProxy<const char* const> extensions, uint32_t graphics_queue):
+Device::Device(vk::PhysicalDevice physical, Span<const char* const> extensions, uint32_t graphics_queue):
     physical(physical),
     logical(create_logical_device(physical, extensions, graphics_queue)),
-    graphics(logical.get(), graphics_queue),
-    graphics_command_pool(create_command_pool(this->logical.get(), graphics_queue)) {
+    graphics(logical.get(), graphics_queue) {
 }
