@@ -54,7 +54,7 @@ namespace parser {
     };
 
     template <typename T, typename U>
-    struct parser::Parse<std::pair<T, U>> {
+    struct Parse<std::pair<T, U>> {
         std::pair<T, U> operator()(parser::Parser& p) const;
     };
 
