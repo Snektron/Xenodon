@@ -1,5 +1,4 @@
 #include "present/headless/HeadlessScreen.h"
-#include <cstring>
 #include "graphics/utility.h"
 #include "graphics/Swapchain.h"
 #include "graphics/Buffer.h"
@@ -72,7 +71,7 @@ vk::AttachmentDescription HeadlessScreen::color_attachment_descr() const {
     return descr;
 }
 
-std::vector<Pixel> HeadlessScreen::download() {
+void HeadlessScreen::download(Pixel* pixels, size_t stride) {
     const size_t n_pixels = this->render_region.extent.width * this->render_region.extent.height;
     const size_t size = n_pixels * sizeof(Pixel);
     const auto memory_bits = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
@@ -97,14 +96,16 @@ std::vector<Pixel> HeadlessScreen::download() {
         );
     });
 
-    auto pixels = std::vector<Pixel>();
-    pixels.resize(n_pixels);
-
     Pixel* staging_pixels = reinterpret_cast<Pixel*>(this->device.logical->mapMemory(staging_buffer.memory.get(), 0, size, {}));
 
-    std::memcpy(pixels.data(), staging_pixels, size);
+    if (stride == 0)
+        stride = this->render_region.extent.width;
+
+    for (size_t y = 0; y < this->render_region.extent.height; ++y) {
+        for (size_t x = 0; x < this->render_region.extent.width; ++x) {
+            pixels[y * stride + x] = staging_pixels[y * this->render_region.extent.width + x];
+        }
+    }
 
     this->device.logical->unmapMemory(staging_buffer.memory.get());
-
-    return pixels;
 }

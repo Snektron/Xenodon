@@ -1,6 +1,7 @@
 #ifndef _XENODON_PRESENT_HEADLESS_HEADLESSSCREEN_H
 #define _XENODON_PRESENT_HEADLESS_HEADLESSSCREEN_H
 
+#include <functional>
 #include <cstdint>
 #include "graphics/Device.h"
 #include "graphics/RenderTarget.h"
@@ -25,7 +26,7 @@ public:
     vk::Rect2D region() const override;
     vk::AttachmentDescription color_attachment_descr() const override;
 
-    std::vector<Pixel> download();
+    void download(Pixel* pixels, size_t stride);
 
     friend class HeadlessDisplay;
 };

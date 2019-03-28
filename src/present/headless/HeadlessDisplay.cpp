@@ -18,9 +18,10 @@ namespace {
     constexpr const auto BLACK_PIXEL = 0xFF000000;
 }
 
-HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config):
+HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, const char* output):
     dispatcher(dispatcher),
-    instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)) {
+    instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)),
+    output(output) {
 
     auto gpus = this->instance->enumeratePhysicalDevices();
     this->screens.reserve(config.gpus.size());
@@ -56,31 +57,20 @@ void HeadlessDisplay::save() {
     LOGGER.log("Enclosing size: {}x{}", enclosing.extent.width, enclosing.extent.height);
 
     auto image = std::vector<Pixel>(enclosing.extent.width * enclosing.extent.height, BLACK_PIXEL);
-    size_t stride = static_cast<size_t>(enclosing.extent.width);
+    size_t stride = enclosing.extent.width;
 
     for (auto& screen : screens) {
-        auto pixels = screen.download();
-
         size_t start_x = static_cast<size_t>(screen.render_region.offset.x - enclosing.offset.x);
         size_t start_y = static_cast<size_t>(screen.render_region.offset.y - enclosing.offset.y);
-        size_t width = static_cast<size_t>(screen.render_region.extent.width);
-        size_t height = static_cast<size_t>(screen.render_region.extent.height);
 
-        for (size_t y = 0; y < height; ++y) {
-            size_t yy = start_y + y;
-
-            for (size_t x = 0; x < width; ++x) {
-                size_t xx = start_x + x;
-
-                image[xx + yy * stride] = pixels[x + y * width];
-            }
-        }
+        size_t offset = start_y * stride + start_x;
+        screen.download(image.data() + offset, stride);
     }
 
     LOGGER.log("Compressing...");
 
     unsigned error = lodepng::encode(
-        "out.png",
+        this->output,
         reinterpret_cast<const unsigned char*>(image.data()),
         enclosing.extent.width,
         enclosing.extent.height
@@ -89,6 +79,6 @@ void HeadlessDisplay::save() {
     if (error) {
         LOGGER.log("Error saving output: {}", lodepng_error_text(error));
     } else {
-        LOGGER.log("Saved output to 'out.png'", enclosing.extent.width, enclosing.extent.height);
+        LOGGER.log("Saved output to '{}'", this->output);
     }
 }

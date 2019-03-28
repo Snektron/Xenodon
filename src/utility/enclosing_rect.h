@@ -17,8 +17,8 @@ vk::Rect2D enclosing_rect(It first, It last, F f) {
     ssize_t begin_x = static_cast<ssize_t>(rect.offset.x);
     ssize_t begin_y = static_cast<ssize_t>(rect.offset.y);
 
-    ssize_t end_x = begin_x + static_cast<ssize_t>(rect.extent.width);
-    ssize_t end_y = begin_y + static_cast<ssize_t>(rect.extent.height);
+    ssize_t end_x = begin_x + rect.extent.width;
+    ssize_t end_y = begin_y + rect.extent.height;
 
     while (first != last) {
         rect = f(*first);
@@ -30,8 +30,8 @@ vk::Rect2D enclosing_rect(It first, It last, F f) {
         begin_x = std::min(begin_x, current_begin_x);
         begin_y = std::min(begin_y, current_begin_y);
 
-        end_x = std::max(end_x, current_begin_x + static_cast<ssize_t>(rect.extent.width));
-        end_y = std::max(end_y, current_begin_y + static_cast<ssize_t>(rect.extent.height));
+        end_x = std::max(end_x, current_begin_x + rect.extent.width);
+        end_y = std::max(end_y, current_begin_y + rect.extent.height);
     }
 
     return {

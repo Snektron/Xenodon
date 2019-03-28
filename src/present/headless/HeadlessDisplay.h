@@ -14,15 +14,17 @@ class HeadlessDisplay final: public Display {
     EventDispatcher& dispatcher;
     vk::UniqueInstance instance;
     std::vector<HeadlessScreen> screens;
+    const char* output;
 
 public:
-    HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config);
+    HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, const char* output);
 
     Setup setup() const override;
     Device& device_at(size_t gpu_index) override;
     Screen* screen_at(size_t gpu_index, size_t screen_index) override;
     void poll_events() override;
 
+private:
     void save();
 };
 

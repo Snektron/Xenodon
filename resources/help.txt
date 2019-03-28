@@ -3,21 +3,21 @@ Usage:
 
 Subcommands:
 help
-    Show this message
+    Show this message.
 
 sysinfo
     Detect system information such as connected monitors and video cards.
 
-render [flags] <mode> [mode parameters]
+render [flags] <mode> [mode flags]
     Run the program in render mode. <mode> is one of the available presenting
     modes, see below.
 
     Flags:
     -q --quiet
-        Dont output logs to console
+        Dont output logs to console.
 
     --log <file>
-        Output logs to <file>
+        Output logs to <file>.
 
     Presenting modes:
     direct <config>
@@ -42,10 +42,29 @@ render [flags] <mode> [mode parameters]
         The config file must have at least one device entry, and each device
         entry must have at least one screen entry. The indices of the devices
         and the screens are the vulkan indices and must be unique. They can be 
-        ueried with the sysinfo subcommand. <offset>s are relative to (0, 0)
+        queried with the sysinfo subcommand. <offset>s are relative to (0, 0)
         and must be positive, with the origin at the top-left. The input paths
         are paths to the linux event files of the keyboard and mouse.
 
     xorg
         X11 presenting mode. This makes the program behave as if it were
         a normal program, but it is not able to use multiple video cards.
+
+    headless <config>
+        Render an image without a monitor, and save it to a .png file.
+        <config> is a path of a config file, which has entries in the
+        following format:
+
+        device {{
+            vkindex = <number>
+            offset = (<offset x>, <offset y>)
+            extent = (<width>, <height>)
+        }}
+
+        There must be at least one device entry, but vkindex does not have
+        to be unique. The resulting image will have the size of the smallest
+        enclosing rectangle around the images of each device.
+
+        Additional flags:
+        -o --output <output image>
+            Override the output image location. The default is 'out.png'.
