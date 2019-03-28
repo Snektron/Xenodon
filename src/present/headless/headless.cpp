@@ -29,7 +29,7 @@ std::unique_ptr<HeadlessDisplay> make_headless_display(Span<const char*> args, E
         return nullptr;
     }
 
-    auto in = std::ifstream(args[0]);
+    auto in = std::ifstream(args[i]);
     if (!in) {
         fmt::print("Error: Failed to open config file '{}'\n", std::string_view(args[0]));
         return nullptr;
