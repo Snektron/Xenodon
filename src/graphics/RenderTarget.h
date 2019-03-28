@@ -3,13 +3,28 @@
 
 #include <vulkan/vulkan.hpp>
 #include "graphics/Device.h"
+#include "graphics/Image.h"
 
-struct RenderTarget {
-    vk::UniqueImage image;
-    vk::UniqueDeviceMemory memory;
-    vk::UniqueImageView view;
+class RenderTarget {
+    Image img;
+    vk::UniqueImageView img_view;
 
-    RenderTarget(Device& device, vk::Format format, vk::Extent2D extent);
+public:
+    const static vk::ImageUsageFlags USAGE_FLAGS;
+
+    RenderTarget(Device& device, vk::Extent2D extent, vk::Format format = vk::Format::eR8G8B8A8Unorm);
+
+    vk::Image image() const {
+        return this->img.image();
+    }
+
+    vk::ImageView view() const {
+        return this->img_view.get();
+    }
+
+    vk::DeviceMemory memory() const {
+        return this->img.memory();
+    }
 };
 
 #endif

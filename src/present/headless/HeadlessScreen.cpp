@@ -19,7 +19,7 @@ namespace {
 HeadlessScreen::HeadlessScreen(vk::PhysicalDevice gpu, vk::Rect2D render_region):
     render_region(render_region),
     device(create_device(gpu)),
-    render_target(this->device, RENDER_TARGET_FORMAT, render_region.extent) {
+    render_target(this->device, render_region.extent, RENDER_TARGET_FORMAT) {
 
     auto command_buffer_info = vk::CommandBufferAllocateInfo(this->device.graphics.command_pool.get());
     command_buffer_info.commandBufferCount = 1;
@@ -33,8 +33,8 @@ uint32_t HeadlessScreen::num_swap_images() const {
 SwapImage HeadlessScreen::swap_image(uint32_t index) const {
     return {
         this->command_buffer.get(),
-        this->render_target.image.get(),
-        this->render_target.view.get()
+        this->render_target.image(),
+        this->render_target.view()
     };
 }
 
@@ -90,7 +90,7 @@ std::vector<Pixel> HeadlessScreen::download() {
         );
 
         cmd_buf.copyImageToBuffer(
-            this->render_target.image.get(),
+            this->render_target.image(),
             vk::ImageLayout::eTransferSrcOptimal,
             staging_buffer.buffer.get(),
             copy_info

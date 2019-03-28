@@ -20,6 +20,7 @@ sources = [
     'src/core/Parser.cpp',
     'src/graphics/Device.cpp',
     'src/graphics/Swapchain.cpp',
+    'src/graphics/Image.cpp',
     'src/graphics/RenderTarget.cpp',
     'src/graphics/utility.cpp',
     'src/graphics/Buffer.cpp',

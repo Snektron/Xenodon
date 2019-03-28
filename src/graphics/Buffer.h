@@ -9,9 +9,6 @@ struct Buffer {
     vk::UniqueDeviceMemory memory;
 
     Buffer(Device& device, vk::DeviceSize size, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags);
-
-    template <typename F>
-    void map(Device& device, F f);
 };
 
 #endif
