@@ -7,8 +7,8 @@ Buffer::Buffer(Device& device, vk::DeviceSize size, vk::BufferUsageFlags usage_f
         usage_flags
     );
 
-    this->buffer = device.logical->createBufferUnique(buffer_create_info);
-    auto reqs = device.logical->getBufferMemoryRequirements(this->buffer.get());
-    this->memory = device.allocate(reqs, memory_flags);
-    device.logical->bindBufferMemory(this->buffer.get(), this->memory.get(), 0);
+    this->buf = device.logical->createBufferUnique(buffer_create_info);
+    auto reqs = device.logical->getBufferMemoryRequirements(this->buffer());
+    this->mem = device.allocate(reqs, memory_flags);
+    device.logical->bindBufferMemory(this->buffer(), this->memory(), 0);
 }

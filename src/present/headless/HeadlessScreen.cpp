@@ -91,15 +91,16 @@ void HeadlessScreen::download(Pixel* pixels, size_t stride) {
         cmd_buf.copyImageToBuffer(
             this->render_target.image(),
             vk::ImageLayout::eTransferSrcOptimal,
-            staging_buffer.buffer.get(),
+            staging_buffer.buffer(),
             copy_info
         );
     });
 
-    Pixel* staging_pixels = reinterpret_cast<Pixel*>(this->device.logical->mapMemory(staging_buffer.memory.get(), 0, size, {}));
+    Pixel* staging_pixels = reinterpret_cast<Pixel*>(this->device.logical->mapMemory(staging_buffer.memory(), 0, size));
 
-    if (stride == 0)
+    if (stride == 0) {
         stride = this->render_region.extent.width;
+    }
 
     for (size_t y = 0; y < this->render_region.extent.height; ++y) {
         for (size_t x = 0; x < this->render_region.extent.width; ++x) {
@@ -107,5 +108,5 @@ void HeadlessScreen::download(Pixel* pixels, size_t stride) {
         }
     }
 
-    this->device.logical->unmapMemory(staging_buffer.memory.get());
+    this->device.logical->unmapMemory(staging_buffer.memory());
 }
