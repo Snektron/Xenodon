@@ -11,10 +11,10 @@ std::unique_ptr<HeadlessDisplay> make_headless_display(Span<const char*> args, E
     const char* output = "out.png";
 
     for (; i < args.size(); ++i) {
-        auto arg = std::string_view(args[0]);
+        auto arg = std::string_view(args[i]);
         if (arg == "-o" || arg == "--output") {
             if (++i == args.size()) {
-                fmt::print("Error: expected argument <output image>\n");
+                fmt::print("Error: {} expects argument <output image>\n", arg);
                 return nullptr;
             } else {
                 output = args[i];
