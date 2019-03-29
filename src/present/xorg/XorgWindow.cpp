@@ -47,7 +47,7 @@ XorgWindow::XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent):
 
 XorgWindow::XorgWindow(EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config):
     dispatcher(dispatcher) {
-    xcb_screen_t* screen = this->init_connection(nullptr);
+    xcb_screen_t* screen = this->init_connection(config.displayname.c_str());
     this->init_window(screen, {screen->width_in_pixels, screen->height_in_pixels}, true);
 }
 
