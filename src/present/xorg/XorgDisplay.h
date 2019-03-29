@@ -8,17 +8,15 @@
 #include "present/Display.h"
 #include "present/Event.h"
 #include "present/xorg/XorgScreen.h"
-#include "present/xorg/XorgWindow.h"
 
 class Logger;
 
 class XorgDisplay final: public Display {
     vk::UniqueInstance instance;
-    XorgWindow window;
     XorgScreen screen;
 
 public:
-    XorgDisplay(EventDispatcher& dispatcher, uint16_t width, uint16_t height);
+    XorgDisplay(EventDispatcher& dispatcher, vk::Extent2D extent);
 
     XorgDisplay(XorgDisplay&& other) = default;
     XorgDisplay& operator=(XorgDisplay&& other) = default;

@@ -1,15 +1,15 @@
 #ifndef _XENODON_PRESENT_XORG_XORGWINDOW_H
 #define _XENODON_PRESENT_XORG_XORGWINDOW_H
 
+#include <functional>
 #include <memory>
 #include <string_view>
 #include <cstdint>
+#include <vulkan/vulkan.hpp>
 #include <xcb/xcb.h>
 #include <xcb/xcb_keysyms.h>
 #include "present/Event.h"
 #include "utility/MallocPtr.h"
-
-class XorgScreen;
 
 class XorgWindow {
     using AtomReply = MallocPtr<xcb_intern_atom_reply_t>;
@@ -37,7 +37,9 @@ class XorgWindow {
     XcbKeySymbolsPtr key_symbols;
 
 public:
-    XorgWindow(EventDispatcher& dispatcher, uint16_t width, uint16_t height);
+    using ResizeCallback = std::function<void(vk::Extent2D resize_callback)>;
+
+    XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent, const char* displayname = nullptr);
 
     XorgWindow(const XorgWindow&) = delete;
     XorgWindow& operator=(const XorgWindow&) = delete;
@@ -47,8 +49,8 @@ public:
 
     ~XorgWindow();
 
-    void poll_events(XorgScreen& screen);
-    void handle_event(XorgScreen& screen, const xcb_generic_event_t& event);
+    void poll_events(ResizeCallback cbk);
+    void handle_event(ResizeCallback cbk, const xcb_generic_event_t& event);
 
     std::pair<xcb_connection_t*, xcb_window_t> x_handles();
 private:

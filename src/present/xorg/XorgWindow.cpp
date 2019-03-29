@@ -1,7 +1,6 @@
 #include "present/xorg/XorgWindow.h"
 #include <stdexcept>
 #include <cstring>
-#include "present/xorg/XorgScreen.h"
 #include "present/xorg/xorg_translate_key.h"
 #include "version.h"
 
@@ -40,13 +39,14 @@ namespace {
     }
 }
 
-XorgWindow::XorgWindow(EventDispatcher& dispatcher, uint16_t width, uint16_t height):
+XorgWindow::XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent, const char* displayname):
     dispatcher(dispatcher),
-    width(width), height(height) {
+    width(static_cast<uint16_t>(extent.width)),
+    height(static_cast<uint16_t>(extent.height)) {
     int preferred_screen_index;
 
     {
-        this->connection = XcbConnectionPtr(xcb_connect(nullptr, &preferred_screen_index));
+        this->connection = XcbConnectionPtr(xcb_connect(displayname, &preferred_screen_index));
 
         int err = xcb_connection_has_error(this->connection.get());
         if (err > 0) {
@@ -79,8 +79,8 @@ XorgWindow::XorgWindow(EventDispatcher& dispatcher, uint16_t width, uint16_t hei
             screen->root,
             0,
             0,
-            width,
-            height,
+            this->width,
+            this->height,
             0,
             XCB_WINDOW_CLASS_INPUT_OUTPUT,
             screen->root_visual,
@@ -145,7 +145,7 @@ XorgWindow::~XorgWindow() {
     }
 }
 
-void XorgWindow::poll_events(XorgScreen& screen) {
+void XorgWindow::poll_events(ResizeCallback cbk) {
     while (true) {
         auto event = MallocPtr<xcb_generic_event_t>(
             xcb_poll_for_event(this->connection.get())
@@ -154,11 +154,11 @@ void XorgWindow::poll_events(XorgScreen& screen) {
         if (!event)
             break;
 
-        this->handle_event(screen, *event.get());
+        this->handle_event(cbk, *event.get());
     }
 }
 
-void XorgWindow::handle_event(XorgScreen& screen, const xcb_generic_event_t& event) {
+void XorgWindow::handle_event(ResizeCallback cbk, const xcb_generic_event_t& event) {
     auto dispatch_key_event = [this](Action action, xcb_keycode_t kc) {
         xcb_keysym_t keysym = xcb_key_symbols_get_keysym(this->key_symbols.get(), kc, 0);
         Key key = xorg_translate_key(keysym);
@@ -200,7 +200,10 @@ void XorgWindow::handle_event(XorgScreen& screen, const xcb_generic_event_t& eve
                 static_cast<uint32_t>(event_args.height)
             };
 
-            screen.resize(extent);
+            // Vulkan might need to do some stuff when the window is resized
+            // to avoid making the dispatcher more complicated, just call a
+            // function pointer for now.
+            cbk(extent);
 
             // Theres only a single gpu and screen at all times
             this->dispatcher.dispatch_swapchain_recreate_event(0, 0);

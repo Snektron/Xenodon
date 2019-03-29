@@ -88,17 +88,19 @@ namespace {
     }
 }
 
-XorgScreen::XorgScreen(vk::Instance instance, XorgWindow& window, vk::Extent2D window_extent):
-    surface(create_surface(instance, window)),
+XorgScreen::XorgScreen(vk::Instance instance, EventDispatcher& dispatcher, vk::Extent2D extent):
+    window(dispatcher, extent),
+    surface(create_surface(instance, this->window)),
     device(create_device(instance, this->surface.get())),
-    swapchain(this->device, this->surface.get(), window_extent) {
+    swapchain(this->device, this->surface.get(), extent) {
     LOGGER.log("Screen info:");
     LOGGER.log("\tPresent mode: {}", vk::to_string(this->swapchain.surface_present_mode()));
-    auto extent = this->swapchain.surface_extent();
-    LOGGER.log("\tExtent: {}x{}", extent.width, extent.height);
     auto surface_format = this->swapchain.surface_format();
     LOGGER.log("\tFormat: {}", vk::to_string(surface_format.format));
     LOGGER.log("\tColorspace: {}", vk::to_string(surface_format.colorSpace));
+    LOGGER.log("\tWindow extent: {}x{}", extent.width, extent.height);
+    auto swap_extent = this->swapchain.surface_extent();
+    LOGGER.log("\tSwapchain extent: {}x{}", swap_extent.width, swap_extent.height);
     LOGGER.log("\tSwapchain images: {}", this->swapchain.num_images());
 }
 
@@ -106,9 +108,11 @@ XorgScreen::~XorgScreen() {
     this->device.logical->waitIdle();
 }
 
-void XorgScreen::resize(vk::Extent2D window_extent) {
-    this->device.logical->waitIdle();
-    this->swapchain.recreate(window_extent);
+void XorgScreen::poll_events() {
+    this->window.poll_events([this](vk::Extent2D new_extent) {
+        this->device.logical->waitIdle();
+        this->swapchain.recreate(new_extent);
+    });
 }
 
 uint32_t XorgScreen::num_swap_images() const {

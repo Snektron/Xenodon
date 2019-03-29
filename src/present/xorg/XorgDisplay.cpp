@@ -20,10 +20,9 @@ namespace {
     };
 }
 
-XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, uint16_t width, uint16_t height):
+XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, vk::Extent2D extent):
     instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)),
-    window(dispatcher, width, height),
-    screen(this->instance.get(), this->window, {static_cast<uint32_t>(width), static_cast<uint32_t>(height)}) {
+    screen(this->instance.get(), dispatcher, extent) {
 }
 
 Setup XorgDisplay::setup() const {
@@ -41,5 +40,5 @@ Screen* XorgDisplay::screen_at(size_t gpu_index, size_t screen_index) {
 }
 
 void XorgDisplay::poll_events() {
-    this->window.poll_events(this->screen);
+    this->screen.poll_events();
 }
