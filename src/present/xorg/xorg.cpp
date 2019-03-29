@@ -46,5 +46,9 @@ std::unique_ptr<XorgDisplay> make_xorg_display(Span<const char*> args, EventDisp
     }
 
     LOGGER.log("Using xorg presenting backend");
-    return std::make_unique<XorgDisplay>(dispatcher, vk::Extent2D{800, 600});
+    if (config) {
+        return std::make_unique<XorgDisplay>(dispatcher, config.value());
+    } else {
+        return std::make_unique<XorgDisplay>(dispatcher, vk::Extent2D{800, 600});
+    }
 }

@@ -93,15 +93,15 @@ XorgScreen::XorgScreen(vk::Instance instance, EventDispatcher& dispatcher, vk::E
     surface(create_surface(instance, this->window)),
     device(create_device(instance, this->surface.get())),
     swapchain(this->device, this->surface.get(), extent) {
-    LOGGER.log("Screen info:");
-    LOGGER.log("\tPresent mode: {}", vk::to_string(this->swapchain.surface_present_mode()));
-    auto surface_format = this->swapchain.surface_format();
-    LOGGER.log("\tFormat: {}", vk::to_string(surface_format.format));
-    LOGGER.log("\tColorspace: {}", vk::to_string(surface_format.colorSpace));
-    LOGGER.log("\tWindow extent: {}x{}", extent.width, extent.height);
-    auto swap_extent = this->swapchain.surface_extent();
-    LOGGER.log("\tSwapchain extent: {}x{}", swap_extent.width, swap_extent.height);
-    LOGGER.log("\tSwapchain images: {}", this->swapchain.num_images());
+    this->log();
+}
+
+XorgScreen::XorgScreen(vk::Instance instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config):
+    window(dispatcher, config),
+    surface(create_surface(instance, this->window)),
+    device(create_device(instance, this->surface.get())),
+    swapchain(this->device, this->surface.get(), this->window.extent()) {
+    this->log();
 }
 
 XorgScreen::~XorgScreen() {
@@ -137,4 +137,15 @@ vk::AttachmentDescription XorgScreen::color_attachment_descr() const {
     descr.loadOp = vk::AttachmentLoadOp::eClear;
     descr.finalLayout = vk::ImageLayout::ePresentSrcKHR;
     return descr;
+}
+
+void XorgScreen::log() const {
+    LOGGER.log("Screen info:");
+    LOGGER.log("\tPresent mode: {}", vk::to_string(this->swapchain.surface_present_mode()));
+    auto surface_format = this->swapchain.surface_format();
+    LOGGER.log("\tFormat: {}", vk::to_string(surface_format.format));
+    LOGGER.log("\tColorspace: {}", vk::to_string(surface_format.colorSpace));
+    auto swap_extent = this->swapchain.surface_extent();
+    LOGGER.log("\tExtent: {}x{}", swap_extent.width, swap_extent.height);
+    LOGGER.log("\tSwapchain images: {}", this->swapchain.num_images());
 }

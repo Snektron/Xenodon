@@ -39,104 +39,16 @@ namespace {
     }
 }
 
-XorgWindow::XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent, const char* displayname):
-    dispatcher(dispatcher),
-    width(static_cast<uint16_t>(extent.width)),
-    height(static_cast<uint16_t>(extent.height)) {
-    int preferred_screen_index;
+XorgWindow::XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent):
+    dispatcher(dispatcher) {
+    xcb_screen_t* screen = this->init_connection(nullptr);
+    this->init_window(screen, extent, false);
+}
 
-    {
-        this->connection = XcbConnectionPtr(xcb_connect(displayname, &preferred_screen_index));
-
-        int err = xcb_connection_has_error(this->connection.get());
-        if (err > 0) {
-            throw std::runtime_error(x_strerr(err));
-        }
-    }
-
-    const xcb_setup_t* setup = xcb_get_setup(this->connection.get());
-    auto it = xcb_setup_roots_iterator(setup);
-
-    for (int i = 0; i < preferred_screen_index; ++i) {
-        xcb_screen_next(&it);
-    }
-
-    xcb_screen_t* screen = it.data;
-
-    {
-        this->window = xcb_generate_id(this->connection.get());
-
-        uint32_t value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-        uint32_t value_list[] = {
-            screen->black_pixel,
-            EVENT_MASK
-        };
-
-        xcb_create_window_checked(
-            this->connection.get(),
-            XCB_COPY_FROM_PARENT,
-            this->window,
-            screen->root,
-            0,
-            0,
-            this->width,
-            this->height,
-            0,
-            XCB_WINDOW_CLASS_INPUT_OUTPUT,
-            screen->root_visual,
-            value_mask,
-            value_list
-        );
-
-        xcb_map_window(this->connection.get(), this->window);
-    }
-
-    {
-        this->atom_wm_delete_window = this->atom(false, std::string_view{"WM_DELETE_WINDOW"});
-
-        AtomReply atom_wm_protocols = this->atom(true, std::string_view{"WM_PROTOCOLS"});
-
-        xcb_change_property(
-            this->connection.get(),
-            XCB_PROP_MODE_REPLACE,
-            this->window,
-            atom_wm_protocols->atom,
-            XCB_ATOM_ATOM,
-            32,
-            1,
-            &this->atom_wm_delete_window->atom
-        );
-
-        xcb_change_property(
-            this->connection.get(),
-            XCB_PROP_MODE_REPLACE,
-            this->window,
-            XCB_ATOM_WM_NAME,
-            XCB_ATOM_STRING,
-            8,
-            std::strlen(version::NAME),
-            version::NAME
-        );
-    }
-
-    // Enable detectable key repeat. This will make a repeat appear as a single press
-    // instead of a press and a release
-    {
-        xcb_xkb_use_extension(this->connection.get(), 1, 0);
-        xcb_xkb_per_client_flags(
-            this->connection.get(),
-            XCB_XKB_ID_USE_CORE_KBD,
-            XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
-            XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
-            0,0,0
-        );
-    }
-
-    xcb_flush(this->connection.get());
-
-    this->key_symbols = XcbKeySymbolsPtr(
-        xcb_key_symbols_alloc(this->connection.get())
-    );
+XorgWindow::XorgWindow(EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config):
+    dispatcher(dispatcher) {
+    xcb_screen_t* screen = this->init_connection(nullptr);
+    this->init_window(screen, {screen->width_in_pixels, screen->height_in_pixels}, true);
 }
 
 XorgWindow::~XorgWindow() {
@@ -218,6 +130,113 @@ std::pair<xcb_connection_t*, xcb_window_t> XorgWindow::x_handles() {
         this->connection.get(),
         this->window
     };
+}
+
+vk::Extent2D XorgWindow::extent() const {
+    return {this->width, this->height};
+}
+
+xcb_screen_t* XorgWindow::init_connection(const char* displayname) {
+    int preferred_screen_index;
+
+    {
+        this->connection = XcbConnectionPtr(xcb_connect(displayname, &preferred_screen_index));
+
+        int err = xcb_connection_has_error(this->connection.get());
+        if (err > 0) {
+            throw std::runtime_error(x_strerr(err));
+        }
+    }
+
+    const xcb_setup_t* setup = xcb_get_setup(this->connection.get());
+    auto it = xcb_setup_roots_iterator(setup);
+
+    for (int i = 0; i < preferred_screen_index; ++i) {
+        xcb_screen_next(&it);
+    }
+
+    return it.data;
+}
+
+void XorgWindow::init_window(xcb_screen_t* screen, vk::Extent2D extent, bool override_redirect) {
+    this->width = static_cast<uint16_t>(extent.width);
+    this->height = static_cast<uint16_t>(extent.height);
+
+    {
+        this->window = xcb_generate_id(this->connection.get());
+
+        uint32_t value_mask = XCB_CW_BACK_PIXEL | XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK;
+        uint32_t value_list[] = {
+            screen->black_pixel,
+            static_cast<uint32_t>(override_redirect),
+            EVENT_MASK
+        };
+
+        xcb_create_window_checked(
+            this->connection.get(),
+            XCB_COPY_FROM_PARENT,
+            this->window,
+            screen->root,
+            0,
+            0,
+            this->width,
+            this->height,
+            0,
+            XCB_WINDOW_CLASS_INPUT_OUTPUT,
+            screen->root_visual,
+            value_mask,
+            value_list
+        );
+
+        xcb_map_window(this->connection.get(), this->window);
+    }
+
+    {
+        this->atom_wm_delete_window = this->atom(false, std::string_view{"WM_DELETE_WINDOW"});
+
+        AtomReply atom_wm_protocols = this->atom(true, std::string_view{"WM_PROTOCOLS"});
+
+        xcb_change_property(
+            this->connection.get(),
+            XCB_PROP_MODE_REPLACE,
+            this->window,
+            atom_wm_protocols->atom,
+            XCB_ATOM_ATOM,
+            32,
+            1,
+            &this->atom_wm_delete_window->atom
+        );
+
+        xcb_change_property(
+            this->connection.get(),
+            XCB_PROP_MODE_REPLACE,
+            this->window,
+            XCB_ATOM_WM_NAME,
+            XCB_ATOM_STRING,
+            8,
+            std::strlen(version::NAME),
+            version::NAME
+        );
+    }
+
+    // Enable detectable key repeat. This will make a repeat appear as a single press
+    // instead of a press and a release
+    {
+        xcb_xkb_use_extension(this->connection.get(), 1, 0);
+        xcb_xkb_per_client_flags(
+            this->connection.get(),
+            XCB_XKB_ID_USE_CORE_KBD,
+            XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
+            XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
+            0,0,0
+        );
+    }
+
+    xcb_flush(this->connection.get());
+
+    this->key_symbols = XcbKeySymbolsPtr(
+        xcb_key_symbols_alloc(this->connection.get())
+    );
 }
 
 XorgWindow::AtomReply XorgWindow::atom(bool only_if_exists, const std::string_view& str) const {

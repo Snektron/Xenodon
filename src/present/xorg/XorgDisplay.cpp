@@ -21,24 +21,35 @@ namespace {
 }
 
 XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, vk::Extent2D extent):
-    instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)),
-    screen(this->instance.get(), dispatcher, extent) {
+    instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)) {
+    this->screens.generate_in_place(1, [&](XorgScreen* ptr, size_t i){
+        new (ptr) XorgScreen(this->instance.get(), dispatcher, extent);
+    });
+}
+
+XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, const XorgMultiGpuConfig& config):
+    instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)) {
+
+    this->screens.generate_in_place(config.screens.size(), [&](XorgScreen* ptr, size_t i){
+        new (ptr) XorgScreen(this->instance.get(), dispatcher, config.screens[i]);
+    });
 }
 
 Setup XorgDisplay::setup() const {
-    return {1};
+    return Setup(this->screens.size(), 1);
 }
 
 Device& XorgDisplay::device_at(size_t gpu_index) {
-    // gpu_index should be 0.
-    return this->screen.device;
+    return this->screens[gpu_index].device;
 }
 
 Screen* XorgDisplay::screen_at(size_t gpu_index, size_t screen_index) {
-    // gpu_index and screen_index should be 0.
-    return &this->screen;
+    // screen_index should be 0.
+    return &this->screens[gpu_index];
 }
 
 void XorgDisplay::poll_events() {
-    this->screen.poll_events();
+    for (auto& screen : this->screens) {
+        screen.poll_events();
+    }
 }

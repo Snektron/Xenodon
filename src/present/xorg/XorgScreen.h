@@ -8,6 +8,7 @@
 #include "present/Event.h"
 #include "present/Screen.h"
 #include "present/xorg/XorgWindow.h"
+#include "present/xorg/XorgMultiGpuConfig.h"
 
 class XorgScreen final: public Screen {
     XorgWindow window;
@@ -17,7 +18,12 @@ class XorgScreen final: public Screen {
 
 public:
     XorgScreen(vk::Instance instance, EventDispatcher& dispatcher, vk::Extent2D extent);
+    XorgScreen(vk::Instance instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config);
+
     ~XorgScreen();
+
+    XorgScreen(XorgScreen&& other) = delete;
+    XorgScreen& operator=(XorgScreen&& other) = delete;
 
     void poll_events();
 
@@ -27,6 +33,9 @@ public:
 
     vk::Rect2D region() const override;
     vk::AttachmentDescription color_attachment_descr() const override;
+
+private:
+    void log() const;
 
     friend class XorgDisplay;
 };

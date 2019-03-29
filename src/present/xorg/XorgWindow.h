@@ -9,6 +9,7 @@
 #include <xcb/xcb.h>
 #include <xcb/xcb_keysyms.h>
 #include "present/Event.h"
+#include "present/xorg/XorgMultiGpuConfig.h"
 #include "utility/MallocPtr.h"
 
 class XorgWindow {
@@ -39,7 +40,8 @@ class XorgWindow {
 public:
     using ResizeCallback = std::function<void(vk::Extent2D resize_callback)>;
 
-    XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent, const char* displayname = nullptr);
+    XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent);
+    XorgWindow(EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config);
 
     XorgWindow(const XorgWindow&) = delete;
     XorgWindow& operator=(const XorgWindow&) = delete;
@@ -53,7 +55,10 @@ public:
     void handle_event(ResizeCallback cbk, const xcb_generic_event_t& event);
 
     std::pair<xcb_connection_t*, xcb_window_t> x_handles();
+    vk::Extent2D extent() const;
 private:
+    xcb_screen_t* init_connection(const char* displayname);
+    void init_window(xcb_screen_t* screen, vk::Extent2D extent, bool override_redirect);
     AtomReply atom(bool only_if_exists, const std::string_view& str) const;
 };
 
