@@ -31,11 +31,11 @@ void RenderOutput::render() {
 }
 
 DeviceRenderer::DeviceRenderer(Display* display, size_t gpu, size_t screens):
-    device(display->device_at(gpu)) {
+    device(display->device(gpu)) {
 
     this->outputs.reserve(screens);
     for (size_t i = 0; i < screens; ++i) {
-        this->outputs.emplace_back(this->device, display->screen_at(gpu, i));
+        this->outputs.emplace_back(this->device, display->screen(gpu, i));
     }
 }
 

@@ -34,11 +34,11 @@ Setup HeadlessDisplay::setup() const {
     return Setup(this->screens.size(), 1);
 }
 
-Device& HeadlessDisplay::device_at(size_t gpu_index) {
+Device& HeadlessDisplay::device(size_t gpu_index) {
     return this->screens[gpu_index].device;
 }
 
-Screen* HeadlessDisplay::screen_at(size_t gpu_index, [[maybe_unused]] size_t screen_index) {
+Screen* HeadlessDisplay::screen(size_t gpu_index, [[maybe_unused]] size_t screen_index) {
     // screen index should always be 0
     return &this->screens[gpu_index];
 }

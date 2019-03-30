@@ -20,8 +20,8 @@ public:
     HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, const char* output);
 
     Setup setup() const override;
-    Device& device_at(size_t gpu_index) override;
-    Screen* screen_at(size_t gpu_index, size_t screen_index) override;
+    Device& device(size_t gpu_index) override;
+    Screen* screen(size_t gpu_index, size_t screen_index) override;
     void poll_events() override;
 
 private:

@@ -61,11 +61,11 @@ Setup DirectDisplay::setup() const {
     return setup;
 }
 
-Device& DirectDisplay::device_at(size_t gpu_index) {
+Device& DirectDisplay::device(size_t gpu_index) {
     return this->screen_groups[gpu_index].device;
 }
 
-Screen* DirectDisplay::screen_at(size_t gpu_index, size_t screen_index) {
+Screen* DirectDisplay::screen(size_t gpu_index, size_t screen_index) {
     return &this->screen_groups[gpu_index].screens[screen_index];
 }
 

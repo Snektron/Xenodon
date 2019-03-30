@@ -39,11 +39,11 @@ Setup XorgDisplay::setup() const {
     return Setup(this->screens.size(), 1);
 }
 
-Device& XorgDisplay::device_at(size_t gpu_index) {
+Device& XorgDisplay::device(size_t gpu_index) {
     return this->screens[gpu_index].device;
 }
 
-Screen* XorgDisplay::screen_at(size_t gpu_index, [[maybe_unused]] size_t screen_index) {
+Screen* XorgDisplay::screen(size_t gpu_index, [[maybe_unused]] size_t screen_index) {
     // screen_index should be 0.
     return &this->screens[gpu_index];
 }
