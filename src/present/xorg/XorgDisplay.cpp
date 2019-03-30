@@ -22,7 +22,7 @@ namespace {
 
 XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, vk::Extent2D extent):
     instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)) {
-    this->screens.generate_in_place(1, [&](XorgScreen* ptr, size_t i){
+    this->screens.generate_in_place(1, [&](XorgScreen* ptr, [[maybe_unused]] size_t i){
         new (ptr) XorgScreen(this->instance.get(), dispatcher, extent);
     });
 }
@@ -43,7 +43,7 @@ Device& XorgDisplay::device_at(size_t gpu_index) {
     return this->screens[gpu_index].device;
 }
 
-Screen* XorgDisplay::screen_at(size_t gpu_index, size_t screen_index) {
+Screen* XorgDisplay::screen_at(size_t gpu_index, [[maybe_unused]] size_t screen_index) {
     // screen_index should be 0.
     return &this->screens[gpu_index];
 }

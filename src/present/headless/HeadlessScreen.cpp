@@ -29,7 +29,7 @@ uint32_t HeadlessScreen::num_swap_images() const {
     return 1;
 }
 
-SwapImage HeadlessScreen::swap_image(uint32_t index) const {
+SwapImage HeadlessScreen::swap_image([[maybe_unused]] uint32_t index) const {
     return {
         this->command_buffer.get(),
         this->render_target.image(),

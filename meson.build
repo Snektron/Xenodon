@@ -46,6 +46,8 @@ add_project_arguments(
     [
         '-march=native',
         '-Wconversion',
+        '-Wall',
+        '-Wextra'
     ],
     language: 'cpp'
 )

@@ -25,7 +25,7 @@ namespace {
         fmt::print(resources::open("resources/help.txt"), program_name);
     }
 
-    void subcommand_sysinfo(Span<const char*> args) {
+    void subcommand_sysinfo() {
         constexpr const std::array required_instance_extensions = {
             VK_KHR_SURFACE_EXTENSION_NAME,
             VK_KHR_DISPLAY_EXTENSION_NAME
@@ -162,7 +162,7 @@ int main(int argc, const char* argv[]) {
     if (subcommand == "help") {
         print_help(argv[0]);
     } else if (subcommand == "sysinfo") {
-        subcommand_sysinfo(args);
+        subcommand_sysinfo();
     } else if (subcommand == "render") {
         subcommand_render(args);
     } else {

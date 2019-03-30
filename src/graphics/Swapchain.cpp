@@ -36,7 +36,7 @@ namespace {
         return vk::PresentModeKHR::eFifo;
     }
 
-    vk::Extent2D pick_extent(const vk::SurfaceCapabilitiesKHR& caps, vk::SurfaceKHR surface, vk::Extent2D surface_extent) {
+    vk::Extent2D pick_extent(const vk::SurfaceCapabilitiesKHR& caps, vk::Extent2D surface_extent) {
         if (caps.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return caps.currentExtent;
         } else {
@@ -51,14 +51,14 @@ namespace {
 Swapchain::Swapchain(Device& device, vk::SurfaceKHR surface, vk::Extent2D surface_extent):
     device(&device),
     surface(surface) {
-    this->recreate(extent);
+    this->recreate(surface_extent);
 }
 
 void Swapchain::recreate(vk::Extent2D surface_extent) {
     auto caps = this->device->physical.getSurfaceCapabilitiesKHR(this->surface);
     this->format = pick_surface_format(this->device->physical, surface);
     this->present_mode = pick_present_mode(this->device->physical, surface);
-    this->extent = pick_extent(caps, surface, extent);
+    this->extent = pick_extent(caps, surface_extent);
 
     // Create the swapchain itself
     {

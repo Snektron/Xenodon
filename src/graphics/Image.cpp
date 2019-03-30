@@ -12,7 +12,7 @@ Image::Image(Device& device, vk::Extent2D extent, vk::Format format, vk::ImageUs
         1,
         vk::SampleCountFlagBits::e1,
         vk::ImageTiling::eOptimal,
-        vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc,
+        flags,
         vk::SharingMode::eExclusive
     );
 
