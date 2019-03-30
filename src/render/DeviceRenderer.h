@@ -28,6 +28,8 @@ struct DeviceRenderer {
     std::vector<RenderOutput> outputs;
 
     DeviceRenderer(Display* display, size_t gpu, size_t screens);
+    DeviceRenderer(DeviceRenderer&&) = default;
+    DeviceRenderer& operator=(DeviceRenderer&&) = default;
     ~DeviceRenderer();
 
     void render();
