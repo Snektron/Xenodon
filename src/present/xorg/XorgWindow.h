@@ -43,12 +43,6 @@ public:
     XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent);
     XorgWindow(EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config);
 
-    XorgWindow(const XorgWindow&) = delete;
-    XorgWindow& operator=(const XorgWindow&) = delete;
-
-    XorgWindow(XorgWindow&& other) = default;
-    XorgWindow& operator=(XorgWindow&& other) = default;
-
     ~XorgWindow();
 
     void poll_events(ResizeCallback cbk);
