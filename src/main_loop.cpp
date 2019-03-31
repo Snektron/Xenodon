@@ -72,7 +72,6 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
             start = now;
         }
 
-        // display->swap_buffers();
         display->poll_events();
     }
 }
