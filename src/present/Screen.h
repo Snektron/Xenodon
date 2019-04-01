@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include "graphics/Swapchain.h"
+#include "math/Vec.h"
 
 struct Screen {
     virtual ~Screen() = default;

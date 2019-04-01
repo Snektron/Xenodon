@@ -3,25 +3,32 @@
 
 #include <vulkan/vulkan.hpp>
 #include "graphics/Device.h"
+#include "graphics/Buffer.h"
+#include "math/Vec.h"
 
 class TestRenderer {
-    Device* device;
-    vk::Extent2D extent;
+    struct OutputRegion {
+        Vec2F min;
+        Vec2F max;
+        Vec2F resolution;
+    };
 
+    Device* device;
+    vk::Rect2D region;
+
+    vk::UniqueDescriptorSetLayout descriptor_layout;
     vk::UniquePipelineLayout layout;
     vk::UniqueRenderPass render_pass;
     vk::UniquePipeline pipeline;
+    Buffer output_region;
 
 public:
-    TestRenderer(Device& device, vk::Extent2D extent, vk::AttachmentDescription target);
+    TestRenderer(Device& device, vk::Rect2D region, vk::AttachmentDescription output_attachment);
     TestRenderer(TestRenderer&&) = default;
     TestRenderer& operator=(TestRenderer&&) = default;
 
     void present(vk::CommandBuffer cmd, vk::Framebuffer target);
     vk::RenderPass final_render_pass() const;
-
-private:
-    void init_render_pass(vk::AttachmentDescription target);
 };
 
 #endif

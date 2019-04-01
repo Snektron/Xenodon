@@ -3,6 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <xcb/xcb.h>
+#include "graphics/core/Instance.h"
 #include "graphics/Device.h"
 #include "graphics/Swapchain.h"
 #include "present/Event.h"
@@ -17,8 +18,8 @@ class XorgScreen final: public Screen {
     Swapchain swapchain;
 
 public:
-    XorgScreen(vk::Instance instance, EventDispatcher& dispatcher, vk::Extent2D extent);
-    XorgScreen(vk::Instance instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config);
+    XorgScreen(Instance& instance, EventDispatcher& dispatcher, vk::Extent2D extent);
+    XorgScreen(Instance& instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config);
 
     ~XorgScreen();
 

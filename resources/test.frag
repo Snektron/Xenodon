@@ -1,5 +1,11 @@
 #version 450
 
+layout(binding = 0) uniform OutputRegionBuffer {
+    vec2 min;
+    vec2 max;
+    vec2 resolution;
+} output_region;
+
 layout(location = 0) in vec3 v_color;
 layout(location = 1) in vec2 v_pos;
 

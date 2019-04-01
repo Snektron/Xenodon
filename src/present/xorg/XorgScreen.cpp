@@ -80,25 +80,26 @@ namespace {
         return instance.createXcbSurfaceKHRUnique(create_info);
     }
 
-    Device create_device(vk::Instance instance, vk::SurfaceKHR surface) {
-        auto [gpu, name, gqi, index] = pick_gpu(instance, surface);
+    Device create_device(Instance& instance, vk::SurfaceKHR surface) {
+        auto [gpu, name, gqi, index] = pick_gpu(instance.get(), surface);
+
         LOGGER.log("Picked GPU {}: '{}'", index, name);
         LOGGER.log("Graphics queue index: {}", gqi);
         return Device(gpu, DEVICE_EXTENSIONS, gqi);
     }
 }
 
-XorgScreen::XorgScreen(vk::Instance instance, EventDispatcher& dispatcher, vk::Extent2D extent):
+XorgScreen::XorgScreen(Instance& instance, EventDispatcher& dispatcher, vk::Extent2D extent):
     window(dispatcher, extent),
-    surface(create_surface(instance, this->window)),
+    surface(create_surface(instance.get(), this->window)),
     device(create_device(instance, this->surface.get())),
     swapchain(this->device, this->surface.get(), extent) {
     this->log();
 }
 
-XorgScreen::XorgScreen(vk::Instance instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config):
-    window(dispatcher, config),
-    surface(create_surface(instance, this->window)),
+XorgScreen::XorgScreen(Instance& instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config):
+    window(dispatcher, config.displayname.c_str(), true),
+    surface(create_surface(instance.get(), this->window)),
     device(create_device(instance, this->surface.get())),
     swapchain(this->device, this->surface.get(), this->window.extent()) {
     this->log();

@@ -60,13 +60,13 @@ public:
         ptr(proxy.data()) {
     }
 
-    template <class Allocator = std::allocator<typename std::remove_const<T>::type>>
+    template <class Allocator>
     Span(std::vector<typename std::remove_const<T>::type, Allocator> & data):
         count(data.size()),
         ptr(data.data()) {
     }
 
-    template <class Allocator = std::allocator<typename std::remove_const<T>::type>>
+    template <class Allocator>
     Span(const std::vector<typename std::remove_const<T>::type, Allocator>& data):
         count(data.size()),
         ptr(data.data()) {

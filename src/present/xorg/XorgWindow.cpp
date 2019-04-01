@@ -45,10 +45,10 @@ XorgWindow::XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent):
     this->init_window(screen, extent, false);
 }
 
-XorgWindow::XorgWindow(EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config):
+XorgWindow::XorgWindow(EventDispatcher& dispatcher, const char* displayname, bool override_redirect):
     dispatcher(dispatcher) {
-    xcb_screen_t* screen = this->init_connection(config.displayname.c_str());
-    this->init_window(screen, {screen->width_in_pixels, screen->height_in_pixels}, true);
+    xcb_screen_t* screen = this->init_connection(displayname);
+    this->init_window(screen, {screen->width_in_pixels, screen->height_in_pixels}, override_redirect);
 }
 
 XorgWindow::~XorgWindow() {

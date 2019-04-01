@@ -19,6 +19,8 @@ sources = [
     'src/sysinfo.cpp',
     'src/core/Logger.cpp',
     'src/core/Parser.cpp',
+    'src/graphics/core/Instance.cpp',
+    'src/graphics/core/PhysicalDevice.cpp',
     'src/graphics/Device.cpp',
     'src/graphics/Swapchain.cpp',
     'src/graphics/Image.cpp',

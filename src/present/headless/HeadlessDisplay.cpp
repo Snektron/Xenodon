@@ -3,27 +3,17 @@
 #include <lodepng.h>
 #include "core/Logger.h"
 #include "utility/enclosing_rect.h"
-#include "version.h"
 
 namespace {
-    const auto INSTANCE_CREATE_INFO = vk::InstanceCreateInfo{
-        {},
-        &version::APP_INFO,
-        0,
-        nullptr,
-        0,
-        nullptr
-    };
-
     constexpr const auto BLACK_PIXEL = 0xFF000000;
 }
 
 HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, const char* output):
     dispatcher(dispatcher),
-    instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)),
+    instance(nullptr),
     output(output) {
 
-    auto gpus = this->instance->enumeratePhysicalDevices();
+    auto gpus = this->instance.get().enumeratePhysicalDevices();
     this->screens.reserve(config.gpus.size());
     for (const auto gpu_config : config.gpus) {
         this->screens.emplace_back(gpus.at(gpu_config.vulkan_index), gpu_config.region);

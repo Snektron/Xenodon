@@ -3,14 +3,18 @@
 
 #include <vector>
 #include <vulkan/vulkan.hpp>
+#include "graphics/core/Instance.h"
 #include "present/Display.h"
 #include "present/Event.h"
 #include "present/direct/DirectConfig.h"
 #include "present/direct/ScreenGroup.h"
 #include "present/direct/input/LinuxInput.h"
 
+struct Device;
+struct Screen;
+
 class DirectDisplay final: public Display {
-    vk::UniqueInstance instance;
+    Instance instance;
     std::vector<ScreenGroup> screen_groups;
     LinuxInput input;
 

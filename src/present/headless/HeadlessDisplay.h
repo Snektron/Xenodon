@@ -4,15 +4,18 @@
 #include <vector>
 #include <string_view>
 #include <vulkan/vulkan.hpp>
-#include "graphics/Device.h"
+#include "graphics/core/Instance.h"
 #include "present/Display.h"
 #include "present/Event.h"
 #include "present/headless/HeadlessConfig.h"
 #include "present/headless/HeadlessScreen.h"
 
+struct Device;
+struct Screen;
+
 class HeadlessDisplay final: public Display {
     EventDispatcher& dispatcher;
-    vk::UniqueInstance instance;
+    Instance instance;
     std::vector<HeadlessScreen> screens;
     const char* output;
 
@@ -26,6 +29,7 @@ public:
 
 private:
     void save();
+    void calculate_enclosing_rect();
 };
 
 #endif

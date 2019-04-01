@@ -3,7 +3,7 @@
 RenderOutput::RenderOutput(Device& device, Screen* screen):
     screen(screen),
     region(screen->region()),
-    renderer(device, this->region.extent, screen->color_attachment_descr()) {
+    renderer(device, this->region, screen->color_attachment_descr()) {
 
     uint32_t images = this->screen->num_swap_images();
     this->framebuffers.reserve(images);

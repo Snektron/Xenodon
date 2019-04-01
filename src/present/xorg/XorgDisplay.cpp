@@ -2,36 +2,27 @@
 #include <stdexcept>
 #include <utility>
 #include <array>
-#include "version.h"
 
 namespace {
     constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {
         VK_KHR_SURFACE_EXTENSION_NAME,
         VK_KHR_XCB_SURFACE_EXTENSION_NAME,
     };
-
-    const auto INSTANCE_CREATE_INFO = vk::InstanceCreateInfo{
-        {},
-        &version::APP_INFO,
-        0,
-        nullptr,
-        REQUIRED_INSTANCE_EXTENSIONS.size(),
-        REQUIRED_INSTANCE_EXTENSIONS.data()
-    };
 }
 
 XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, vk::Extent2D extent):
-    instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)) {
+    instance(REQUIRED_INSTANCE_EXTENSIONS) {
+
     this->screens.generate_in_place(1, [&](XorgScreen* ptr, [[maybe_unused]] size_t i){
-        new (ptr) XorgScreen(this->instance.get(), dispatcher, extent);
+        new (ptr) XorgScreen(this->instance, dispatcher, extent);
     });
 }
 
 XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, const XorgMultiGpuConfig& config):
-    instance(vk::createInstanceUnique(INSTANCE_CREATE_INFO)) {
+    instance(REQUIRED_INSTANCE_EXTENSIONS) {
 
     this->screens.generate_in_place(config.screens.size(), [&](XorgScreen* ptr, size_t i){
-        new (ptr) XorgScreen(this->instance.get(), dispatcher, config.screens[i]);
+        new (ptr) XorgScreen(this->instance, dispatcher, config.screens[i]);
     });
 }
 

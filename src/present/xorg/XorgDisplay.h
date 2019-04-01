@@ -4,16 +4,18 @@
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include <xcb/xcb.h>
+#include "graphics/core/Instance.h"
 #include "present/Display.h"
 #include "present/Event.h"
 #include "present/xorg/XorgScreen.h"
 #include "present/xorg/XorgMultiGpuConfig.h"
 #include "utility/DynamicArray.h"
 
-class Logger;
+struct Device;
+struct Screen;
 
 class XorgDisplay final: public Display {
-    vk::UniqueInstance instance;
+    Instance instance;
     DynamicArray<XorgScreen> screens;
 
 public:

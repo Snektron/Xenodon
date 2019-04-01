@@ -21,40 +21,34 @@ namespace {
     }
 }
 
-TestRenderer::TestRenderer(Device& device, vk::Extent2D extent, vk::AttachmentDescription target):
+TestRenderer::TestRenderer(Device& device, vk::Rect2D region, vk::AttachmentDescription output_attachment):
     device(&device),
-    extent(extent) {
-    this->init_render_pass(target);
-}
+    region(region),
+    output_region(device, sizeof(OutputRegion), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) {
 
-void TestRenderer::present(vk::CommandBuffer buf, vk::Framebuffer target) {
-    const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-    const auto clear_color = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.f, 0.0f, 0.f, 1.f}));
+    auto* output_region = reinterpret_cast<OutputRegion*>(this->device->logical->mapMemory(this->output_region.memory(), 0, sizeof(OutputRegion)));
 
-    buf.begin(&begin_info);
+    output_region->resolution = Vec2F(region.extent.width, region.extent.height);
 
-    auto render_pass_begin_info = vk::RenderPassBeginInfo(
-        this->render_pass.get(),
-        target,
-        {{0, 0}, this->extent},
-        1,
-        &clear_color
-    );
+    this->device->logical->unmapMemory(this->output_region.memory());
 
-    buf.beginRenderPass(&render_pass_begin_info, vk::SubpassContents::eInline);
-    buf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->pipeline.get());
-    buf.draw(4, 1, 0, 0);
-    buf.endRenderPass();
-    buf.end();
-}
-
-vk::RenderPass TestRenderer::final_render_pass() const {
-    return this->render_pass.get();
-}
-
-void TestRenderer::init_render_pass(vk::AttachmentDescription target) {
     const auto vertex_shader = create_shader(this->device->logical.get(), resources::open("resources/test.vert"));
     const auto fragment_shader = create_shader(this->device->logical.get(), resources::open("resources/test.frag"));
+
+    auto render_region_binding = vk::DescriptorSetLayoutBinding(
+        0,
+        vk::DescriptorType::eUniformBuffer,
+        1,
+        vk::ShaderStageFlagBits::eFragment
+    );
+
+    auto layout_create_info = vk::DescriptorSetLayoutCreateInfo(
+        {},
+        1,
+        &render_region_binding
+    );
+
+    this->descriptor_layout = device.logical->createDescriptorSetLayoutUnique(layout_create_info);
 
     const auto shader_stages_infos = std::array{
         create_shader_info(vertex_shader.get(), vk::ShaderStageFlagBits::eVertex),
@@ -67,13 +61,13 @@ void TestRenderer::init_render_pass(vk::AttachmentDescription target) {
     const auto viewport = vk::Viewport(
         0.0,
         0.0,
-        static_cast<float>(this->extent.width),
-        static_cast<float>(this->extent.height),
+        static_cast<float>(this->region.extent.width),
+        static_cast<float>(this->region.extent.height),
         0,
         1
     );
 
-    const auto scissor = vk::Rect2D{{0, 0}, this->extent};
+    const auto scissor = vk::Rect2D{{0, 0}, this->region.extent};
     const auto viewport_info = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
 
     auto rasterizer_info = vk::PipelineRasterizationStateCreateInfo();
@@ -93,7 +87,12 @@ void TestRenderer::init_render_pass(vk::AttachmentDescription target) {
     color_blend_info.attachmentCount = 1;
     color_blend_info.pAttachments = &color_blend_attachment_info;
 
-    auto pipeline_layout_info = vk::PipelineLayoutCreateInfo();
+    auto pipeline_layout_info = vk::PipelineLayoutCreateInfo(
+        {},
+        1,
+        &this->descriptor_layout.get()
+    );
+
     this->layout = this->device->logical->createPipelineLayoutUnique(pipeline_layout_info);
 
     auto attachment_ref = vk::AttachmentReference(
@@ -122,7 +121,7 @@ void TestRenderer::init_render_pass(vk::AttachmentDescription target) {
     auto render_pass_info = vk::RenderPassCreateInfo(
         {},
         1,
-        &target,
+        &output_attachment,
         1,
         &subpass,
         1,
@@ -149,4 +148,29 @@ void TestRenderer::init_render_pass(vk::AttachmentDescription target) {
     );
 
     this->pipeline = this->device->logical->createGraphicsPipelineUnique(vk::PipelineCache(), pipeline_info);
+}
+
+void TestRenderer::present(vk::CommandBuffer buf, vk::Framebuffer target) {
+    const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+    const auto clear_color = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.f, 0.0f, 0.f, 1.f}));
+
+    buf.begin(&begin_info);
+
+    auto render_pass_begin_info = vk::RenderPassBeginInfo(
+        this->render_pass.get(),
+        target,
+        {{0, 0}, this->region.extent},
+        1,
+        &clear_color
+    );
+
+    buf.beginRenderPass(&render_pass_begin_info, vk::SubpassContents::eInline);
+    buf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->pipeline.get());
+    buf.draw(4, 1, 0, 0);
+    buf.endRenderPass();
+    buf.end();
+}
+
+vk::RenderPass TestRenderer::final_render_pass() const {
+    return this->render_pass.get();
 }
