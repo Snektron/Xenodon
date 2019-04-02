@@ -8,17 +8,17 @@
 #include "main_loop.h"
 #include "sysinfo.h"
 #include "core/Logger.h"
-#include "present/Display.h"
-#include "present/Event.h"
-#include "present/headless/headless.h"
+#include "backend/Display.h"
+#include "backend/Event.h"
+#include "backend/headless/headless.h"
 #include "utility/Span.h"
 
 #if defined(XENODON_PRESENT_XORG)
-    #include "present/xorg/xorg.h"
+    #include "backend/xorg/xorg.h"
 #endif
 
 #if defined(XENODON_PRESENT_DIRECT)
-    #include "present/direct/direct.h"
+    #include "backend/direct/direct.h"
 #endif
 
 namespace {
@@ -34,14 +34,14 @@ namespace {
             #if defined(XENODON_PRESENT_XORG)
                 return make_xorg_display(args.sub(1), dispatcher);
             #else
-                fmt::print("Error: Xorg support was disabled\n");
+                fmt::print("Error: Xorg backend was disabled\n");
                 return nullptr;
             #endif
         } else if (backend == "direct") {
             #if defined(XENODON_PRESENT_DIRECT)
                 return make_direct_display(args.sub(1), dispatcher);
             #else
-                fmt::print("Error: Direct support was disabled\n");
+                fmt::print("Error: Direct backend was disabled\n");
                 return nullptr;
             #endif
         } else {

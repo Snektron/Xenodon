@@ -31,10 +31,10 @@ sources = [
     'src/render/Renderer.cpp',
     'src/render/DeviceRenderer.cpp',
     'src/render/TestRenderer.cpp',
-    'src/present/headless/headless.cpp',
-    'src/present/headless/HeadlessDisplay.cpp',
-    'src/present/headless/HeadlessConfig.cpp',
-    'src/present/headless/HeadlessOutput.cpp'
+    'src/backend/headless/headless.cpp',
+    'src/backend/headless/HeadlessDisplay.cpp',
+    'src/backend/headless/HeadlessConfig.cpp',
+    'src/backend/headless/HeadlessOutput.cpp'
 ]
 
 shaders = [
@@ -78,9 +78,9 @@ configure_file(
     configuration: conf
 )
 
-# Add configuration for the bare presenting backend
+# Add configuration for the direct backend
 if (get_option('present-direct').enabled())
-    message('Building with direct presenting support')
+    message('Building with direct backend')
 
     # Direct presenting requires raw linux input, and is thus
     # not supported on other platforms
@@ -91,13 +91,13 @@ if (get_option('present-direct').enabled())
     add_project_arguments('-DXENODON_PRESENT_DIRECT', language: 'cpp')
 
     sources += [
-        'src/present/direct/direct.cpp',
-        'src/present/direct/DirectDisplay.cpp',
-        'src/present/direct/DirectOutput.cpp',
-        'src/present/direct/ScreenGroup.cpp',
-        'src/present/direct/DirectConfig.cpp',
-        'src/present/direct/input/LinuxInput.cpp',
-        'src/present/direct/input/linux_translate_key.cpp'
+        'src/backend/direct/direct.cpp',
+        'src/backend/direct/DirectDisplay.cpp',
+        'src/backend/direct/DirectOutput.cpp',
+        'src/backend/direct/ScreenGroup.cpp',
+        'src/backend/direct/DirectConfig.cpp',
+        'src/backend/direct/input/LinuxInput.cpp',
+        'src/backend/direct/input/linux_translate_key.cpp'
     ]
 
     dependencies += [
@@ -105,7 +105,7 @@ if (get_option('present-direct').enabled())
     ]
 endif
 
-# Add configuration for the xorg presenting backend
+# Add configuration for the xorg backend
 if (get_option('present-xorg').enabled())
     message('Building with xorg presenting support')
 
@@ -124,12 +124,12 @@ if (get_option('present-xorg').enabled())
     )
 
     sources += [
-        'src/present/xorg/xorg.cpp',
-        'src/present/xorg/XorgDisplay.cpp',
-        'src/present/xorg/XorgOutput.cpp',
-        'src/present/xorg/XorgWindow.cpp',
-        'src/present/xorg/XorgMultiGpuConfig.cpp',
-        'src/present/xorg/xorg_translate_key.cpp'
+        'src/backend/xorg/xorg.cpp',
+        'src/backend/xorg/XorgDisplay.cpp',
+        'src/backend/xorg/XorgOutput.cpp',
+        'src/backend/xorg/XorgWindow.cpp',
+        'src/backend/xorg/XorgMultiGpuConfig.cpp',
+        'src/backend/xorg/xorg_translate_key.cpp'
     ]
 
     dependencies += [

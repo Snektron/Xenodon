@@ -5,8 +5,8 @@
 #include <cstddef>
 #include <vulkan/vulkan.h>
 #include "graphics/Device.h"
-#include "present/Display.h"
-#include "present/Output.h"
+#include "backend/Display.h"
+#include "backend/Output.h"
 #include "render/TestRenderer.h"
 
 struct RenderOutput {
