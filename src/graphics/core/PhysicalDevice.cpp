@@ -1,6 +1,7 @@
 #include "graphics/core/PhysicalDevice.h"
 #include <algorithm>
 #include <cstring>
+#include "core/Logger.h"
 
 PhysicalDevice::PhysicalDevice(vk::PhysicalDevice physdev):
     physdev(physdev),
@@ -8,12 +9,14 @@ PhysicalDevice::PhysicalDevice(vk::PhysicalDevice physdev):
 }
 
 bool PhysicalDevice::supports_extensions(Span<const char* const> extensions) const {
-    for (const auto& properties : this->physdev.enumerateDeviceExtensionProperties()) {
-        auto cmp_ext = [&properties](auto& ext_name) {
-            return std::strcmp(properties.extensionName, ext_name);
+    const auto ext_props = this->physdev.enumerateDeviceExtensionProperties();
+
+    for (const char* const ext_name : extensions) {
+        auto cmp_ext = [&ext_name](auto& properties) {
+            return std::strcmp(ext_name, properties.extensionName) == 0;
         };
 
-        if (!std::all_of(extensions.begin(), extensions.end(), cmp_ext)) {
+        if (std::none_of(ext_props.begin(), ext_props.end(), cmp_ext)) {
             return false;
         }
     }

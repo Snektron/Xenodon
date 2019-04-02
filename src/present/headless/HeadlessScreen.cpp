@@ -1,4 +1,5 @@
 #include "present/headless/HeadlessScreen.h"
+#include "core/Error.h"
 #include "graphics/utility.h"
 #include "graphics/Swapchain.h"
 #include "graphics/Buffer.h"
@@ -10,7 +11,7 @@ namespace {
         if (auto queue = pick_graphics_queue(gpu, nullptr)) {
             return Device(gpu, nullptr, queue.value());
         } else {
-            throw std::runtime_error("Gpu does not support graphics/present queue");
+            throw Error("Gpu does not support graphics/present queue");
         }
     }
 }

@@ -20,6 +20,10 @@ public:
     vk::Instance get() const {
         return this->instance.get();
     }
+
+    const vk::Instance* operator->() const {
+        return &this->instance.get();
+    }
 };
 
 #endif

@@ -1,18 +1,20 @@
 #include "present/direct/input/LinuxInput.h"
-#include <stdexcept>
 #include <linux/input.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <poll.h>
+#include <errno.h>
+#include <string.h>
+#include "core/Error.h"
 #include "present/direct/input/linux_translate_key.h"
 
 FileDescriptor::FileDescriptor(const char* path):
     fd(open(path, O_RDONLY)) {
 
     if (this->fd == -1) {
-        throw std::runtime_error("Failed to open file descriptor");
+        throw Error("Failed to open file descriptor '{}'", path);
     }
 }
 
@@ -53,7 +55,7 @@ void LinuxInput::poll_events() {
 
         ssize_t n = read(this->kbd_fd.fd, &buff, sizeof buff);
         if (n < ssize_t{0}) {
-            throw std::runtime_error("Error reading device data");
+            throw Error("Error reading device data: {} (core {})", strerror(errno), errno);
         }
 
         size_t m = static_cast<size_t>(n) / sizeof(struct input_event);

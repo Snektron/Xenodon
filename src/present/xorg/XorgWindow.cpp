@@ -1,6 +1,6 @@
 #include "present/xorg/XorgWindow.h"
-#include <stdexcept>
 #include <cstring>
+#include "core/Error.h"
 #include "present/xorg/xorg_translate_key.h"
 #include "version.h"
 
@@ -22,19 +22,19 @@ namespace {
     const char* x_strerr(int err) {
         switch (err) {
             case XCB_CONN_ERROR:
-                return "Failed to open X connection: Socket, pipe or stream error";
+                return "Socket, pipe or stream error";
             case XCB_CONN_CLOSED_EXT_NOTSUPPORTED:
-                return "Failed to open X connection: Extension not supported";
+                return "Extension not supported";
             case XCB_CONN_CLOSED_MEM_INSUFFICIENT:
-                return "Failed to open X connection: Insufficient memory";
+                return "Insufficient memory";
             case XCB_CONN_CLOSED_REQ_LEN_EXCEED:
-                return "Failed to open X connection: Exceeded server request length";
+                return "Exceeded server request length";
             case XCB_CONN_CLOSED_PARSE_ERR:
-                return "Failed to open X connection: Display string parse error";
+                return "Display string parse error";
             case XCB_CONN_CLOSED_INVALID_SCREEN:
-                return "Failed to open X connection: Display server does not have screen matching display string";
+                return "Display server does not have screen matching display string";
             default:
-                return "";
+                return "Unknown error";
         }
     }
 }
@@ -144,7 +144,7 @@ xcb_screen_t* XorgWindow::init_connection(const char* displayname) {
 
         int err = xcb_connection_has_error(this->connection.get());
         if (err > 0) {
-            throw std::runtime_error(x_strerr(err));
+            throw Error("Failed to open X connection: {} (error {})", x_strerr(err), err);
         }
     }
 

@@ -4,8 +4,10 @@
 #include <fstream>
 #include <vulkan/vulkan.hpp>
 #include <fmt/format.h>
-#include "present/Event.h"
+#include "core/Error.h"
 #include "core/Logger.h"
+#include "core/Config.h"
+#include "present/Event.h"
 #include "present/xorg/XorgMultiGpuConfig.h"
 
 namespace {
@@ -18,7 +20,7 @@ namespace {
 
         try {
             return cfg::Config(in).as<XorgMultiGpuConfig>();
-        } catch (const std::runtime_error& err) {
+        } catch (const Error& err) {
             fmt::print("Failed to read config file '{}':\n{}\n", file, err.what());
             return std::nullopt;
         }

@@ -1,9 +1,9 @@
 #include "present/xorg/XorgScreen.h"
-#include <stdexcept>
 #include <algorithm>
 #include <array>
 #include <vector>
 #include <cstring>
+#include "core/Error.h"
 #include "core/Logger.h"
 #include "present/xorg/XorgWindow.h"
 #include "graphics/utility.h"
@@ -13,85 +13,41 @@ namespace {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
-    struct GpuInfo {
-        vk::PhysicalDevice gpu;
-        const char* device_name;
-        uint32_t graphics_queue_index;
-        uint32_t index;
-    };
-
-    GpuInfo pick_gpu(vk::Instance instance, vk::SurfaceKHR surface) {
-        auto gpus = instance.enumeratePhysicalDevices();
-        auto gpu_infos = std::vector<std::pair<vk::PhysicalDevice, vk::PhysicalDeviceProperties>>(gpus.size());
-
-        std::transform(gpus.begin(), gpus.end(), gpu_infos.begin(), [](vk::PhysicalDevice gpu) {
-            return std::pair {
-                gpu,
-                gpu.getProperties()
-            };
-        });
-
-        // Make sure discrete GPUs are appearing before integrated GPUs, because
-        // we always want to chose discrete over integrated.
-        std::sort(gpu_infos.begin(), gpu_infos.end(), [](const auto& l, const auto& r) {
-            auto rate = [](const auto& gpu) {
-                switch (gpu.second.deviceType) {
-                    case vk::PhysicalDeviceType::eDiscreteGpu:
-                        return 0;
-                    case vk::PhysicalDeviceType::eIntegratedGpu:
-                        return 1;
-                    default:
-                        return 2;
-                }
-            };
-
-            return rate(l) < rate(r);
-        });
-
-        for (size_t i = 0; i < gpu_infos.size(); ++i) {
-            auto& [gpu, props] = gpu_infos[i];
-
-            // Because we sorted earlier, if the type isnt one of these there arent
-            // any more candidates, so we can exit early
-            if (props.deviceType != vk::PhysicalDeviceType::eDiscreteGpu &&
-                props.deviceType != vk::PhysicalDeviceType::eIntegratedGpu)
-                break;
-
-            if (!gpu_supports_extensions(gpu, DEVICE_EXTENSIONS)
-                || !gpu_supports_surface(gpu, surface))
-                continue;
-
-            if (auto queue = pick_graphics_queue(gpu, surface)) {
-                return {gpu, props.deviceName, queue.value(), static_cast<uint32_t>(i)};
-            }
-        }
-
-        throw std::runtime_error("Failed to find a suitable physical device");
-    }
-
-    vk::UniqueSurfaceKHR create_surface(vk::Instance instance, XorgWindow& window) {
+    vk::UniqueSurfaceKHR create_surface(Instance& instance, XorgWindow& window) {
         auto [connection, xid] = window.x_handles();
-        auto create_info = vk::XcbSurfaceCreateInfoKHR(
+        return instance->createXcbSurfaceKHRUnique({
             {},
             connection,
             xid
-        );
-
-        return instance.createXcbSurfaceKHRUnique(create_info);
+        });
     }
 
     Device create_device(Instance& instance, vk::SurfaceKHR surface) {
-        auto [gpu, name, gqi, index] = pick_gpu(instance.get(), surface);
+        const auto& physdevs = instance.physical_devices();
+        for (auto type : {vk::PhysicalDeviceType::eDiscreteGpu, vk::PhysicalDeviceType::eIntegratedGpu}) {
+            for (size_t i = 0; i < physdevs.size(); ++i) {
+                const auto& physdev = physdevs[i];
+                if (physdev.type() != type ||
+                    !physdev.supports_extensions(DEVICE_EXTENSIONS) ||
+                    !physdev.supports_surface(surface)) {
+                    continue;
+                }
 
-        LOGGER.log("Picked GPU {}: '{}'", index, name);
-        LOGGER.log("Graphics queue index: {}", gqi);
-        return Device(gpu, DEVICE_EXTENSIONS, gqi);
+                if (auto family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics, surface)) {
+                    LOGGER.log("Picked GPU {}: '{}'", i, physdev.name());
+                    LOGGER.log("Graphics queue family: {}", family.value());
+                    return Device(physdev.get(), DEVICE_EXTENSIONS, family.value());
+                }
+            }
+        }
+
+        throw Error("Failed to find suitable physical device");
     }
 }
 
 XorgScreen::XorgScreen(Instance& instance, EventDispatcher& dispatcher, vk::Extent2D extent):
     window(dispatcher, extent),
-    surface(create_surface(instance.get(), this->window)),
+    surface(create_surface(instance, this->window)),
     device(create_device(instance, this->surface.get())),
     swapchain(this->device, this->surface.get(), extent) {
     this->log();
@@ -99,7 +55,7 @@ XorgScreen::XorgScreen(Instance& instance, EventDispatcher& dispatcher, vk::Exte
 
 XorgScreen::XorgScreen(Instance& instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config):
     window(dispatcher, config.displayname.c_str(), true),
-    surface(create_surface(instance.get(), this->window)),
+    surface(create_surface(instance, this->window)),
     device(create_device(instance, this->surface.get())),
     swapchain(this->device, this->surface.get(), this->window.extent()) {
     this->log();

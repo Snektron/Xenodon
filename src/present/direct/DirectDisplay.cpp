@@ -1,6 +1,7 @@
 #include "present/direct/DirectDisplay.h"
 #include <array>
 #include "core/Logger.h"
+#include "core/Error.h"
 
 namespace {
     constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {
@@ -18,7 +19,7 @@ DirectDisplay::DirectDisplay(EventDispatcher& dispatcher, const DirectConfig& di
     auto gpus = this->instance.get().enumeratePhysicalDevices();
     for (const auto& device : display_config.gpus) {
         if (device.vulkan_index >= gpus.size()) {
-            throw std::runtime_error("Vulkan screen index out of range");
+            throw Error("Vulkan device index {} out of range", device.vulkan_index);
         }
 
         this->screen_groups.emplace_back(this->instance.get(), gpus[device.vulkan_index], device.screens);

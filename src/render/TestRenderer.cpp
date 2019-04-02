@@ -28,8 +28,6 @@ TestRenderer::TestRenderer(Device& device, vk::Rect2D region, vk::AttachmentDesc
 
     auto* output_region = reinterpret_cast<OutputRegion*>(this->device->logical->mapMemory(this->output_region.memory(), 0, sizeof(OutputRegion)));
 
-    output_region->resolution = Vec2F(region.extent.width, region.extent.height);
-
     this->device->logical->unmapMemory(this->output_region.memory());
 
     const auto vertex_shader = create_shader(this->device->logical.get(), resources::open("resources/test.vert"));

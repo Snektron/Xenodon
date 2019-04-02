@@ -1,5 +1,5 @@
-#ifndef _XENODON_CORE_PARSE_H
-#define _XENODON_CORE_PARSE_H
+#ifndef _XENODON_CORE_PARSER_H
+#define _XENODON_CORE_PARSER_H
 
 #include <istream>
 #include <string_view>
@@ -8,6 +8,7 @@
 #include <utility>
 #include <fmt/format.h>
 #include <vulkan/vulkan.hpp>
+#include "core/Error.h"
 
 namespace parser {
     class Parser {
@@ -30,10 +31,10 @@ namespace parser {
         friend struct ParseError;
     };
 
-    struct ParseError: public std::runtime_error {
+    struct ParseError: public Error {
         template <typename... Args>
         ParseError(const Parser& parser, std::string_view fmt, const Args&... args):
-            runtime_error(format_error(parser, fmt, fmt::make_format_args(args...))) {
+            Error(format_error(parser, fmt, fmt::make_format_args(args...))) {
         }
 
     private:

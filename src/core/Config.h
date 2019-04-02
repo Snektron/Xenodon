@@ -5,7 +5,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include <stdexcept>
 #include <tuple>
 #include <array>
 #include <optional>
@@ -13,12 +12,13 @@
 #include <cctype>
 #include <fmt/format.h>
 #include "core/Parser.h"
+#include "core/Error.h"
 
 namespace cfg {
-    struct ConfigError: public std::runtime_error {
+    struct ConfigError: public Error {
         template <typename... Args>
         ConfigError(std::string_view fmt, const Args&... args):
-            runtime_error(format_error(fmt, fmt::make_format_args(args...))) {
+            Error(format_error(fmt, fmt::make_format_args(args...))) {
         }
 
     private:

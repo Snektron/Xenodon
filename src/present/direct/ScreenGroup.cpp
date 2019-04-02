@@ -44,8 +44,9 @@ namespace {
                 break;
         }
 
-        if (!found)
-            throw std::runtime_error("Failed to find compatible plane");
+        if (!found) {
+            throw Error("Failed to find compatible plane");
+        }
 
         auto create_info = vk::DisplaySurfaceCreateInfoKHR();
         create_info.flags = {};
@@ -67,7 +68,7 @@ namespace {
         surfaces.reserve(screens.size());
         for (size_t i = 0; i < screens.size(); ++i) {
             if (screens[i].vulkan_index >= displays.size()) {
-                throw std::runtime_error("Vulkan screen index out of range");
+                throw Error("Vulkan screen index {} is out of range", i);
             }
 
             auto display_props = displays[screens[i].vulkan_index];
@@ -79,7 +80,7 @@ namespace {
 
     Device create_device(vk::PhysicalDevice gpu, const std::vector<vk::UniqueSurfaceKHR>& unique_surfaces) {
         if (!gpu_supports_extensions(gpu, DEVICE_EXTENSIONS)) {
-            throw std::runtime_error("Gpu does not support required extensions");
+            throw Error("Gpu does not support required extensions");
         }
 
         auto surfaces = std::vector<vk::SurfaceKHR>();
@@ -91,7 +92,7 @@ namespace {
         if (auto queue = pick_graphics_queue(gpu, surfaces)) {
             return Device(gpu, DEVICE_EXTENSIONS, queue.value());
         } else {
-            throw std::runtime_error("Gpu does not support graphics/present queue");
+            throw Error("Gpu does not support graphics/present queue");
         }
     }
 }

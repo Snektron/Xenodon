@@ -1,6 +1,7 @@
 #include "present/headless/headless.h"
 #include <string_view>
 #include <fmt/format.h>
+#include "core/Error.h"
 #include "core/Logger.h"
 #include "core/Config.h"
 #include "present/Event.h"
@@ -39,7 +40,7 @@ std::unique_ptr<HeadlessDisplay> make_headless_display(Span<const char*> args, E
 
     try {
         config = cfg::Config(in).as<HeadlessConfig>();
-    } catch (const std::runtime_error& err) {
+    } catch (const Error& err) {
         fmt::print("Failed to read config file '{}':\n{}\n", args[0], err.what());
         return nullptr;
     }

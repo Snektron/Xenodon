@@ -55,6 +55,7 @@ public:
 
     std::pair<xcb_connection_t*, xcb_window_t> x_handles();
     vk::Extent2D extent() const;
+
 private:
     xcb_screen_t* init_connection(const char* displayname);
     void init_window(xcb_screen_t* screen, vk::Extent2D extent, bool override_redirect);

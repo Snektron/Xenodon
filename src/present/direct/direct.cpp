@@ -4,6 +4,7 @@
 #include <fmt/format.h>
 #include "core/Config.h"
 #include "core/Logger.h"
+#include "core/Error.h"
 #include "present/direct/DirectConfig.h"
 #include "present/Event.h"
 
@@ -23,7 +24,7 @@ std::unique_ptr<DirectDisplay> make_direct_display(Span<const char*> args, Event
 
     try {
         config = cfg::Config(in).as<DirectConfig>();
-    } catch (const std::runtime_error& err) {
+    } catch (const Error& err) {
         fmt::print("Failed to read config file '{}':\n{}\n", args[0], err.what());
         return nullptr;
     }
