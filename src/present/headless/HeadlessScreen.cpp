@@ -1,4 +1,5 @@
 #include "present/headless/HeadlessScreen.h"
+#include <cassert>
 #include "core/Error.h"
 #include "graphics/Swapchain.h"
 #include "graphics/Buffer.h"
@@ -29,7 +30,9 @@ uint32_t HeadlessScreen::num_swap_images() const {
     return 1;
 }
 
-SwapImage HeadlessScreen::swap_image([[maybe_unused]] uint32_t index) const {
+SwapImage HeadlessScreen::swap_image(uint32_t index) const {
+    // There is only one image per screen
+    assert(index == 0);
     return {
         this->command_buffer.get(),
         this->render_target.image(),

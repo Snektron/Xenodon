@@ -11,18 +11,18 @@ class Instance {
     std::vector<PhysicalDevice> physdevs;
 
 public:
-    Instance(Span<const char* const> extensions);
-
-    const std::vector<PhysicalDevice>& physical_devices() {
-        return this->physdevs;
-    }
+    Instance(Span<const char* const> extensions = nullptr);
 
     vk::Instance get() const {
         return this->instance.get();
     }
 
     const vk::Instance* operator->() const {
-        return &this->instance.get();
+        return &*this->instance;
+    }
+
+    const std::vector<PhysicalDevice>& physical_devices() {
+        return this->physdevs;
     }
 };
 

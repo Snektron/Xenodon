@@ -61,6 +61,10 @@ namespace {
         auto surfaces = std::vector<vk::SurfaceKHR>();
         surfaces.reserve(unique_surfaces.size());
         for (auto& surface : unique_surfaces) {
+            if (!gpu.supports_surface(surface.get())) {
+                throw Error("Gpu doesnt support surface");
+            }
+
             surfaces.push_back(surface.get());
         }
 

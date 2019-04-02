@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <utility>
 #include <array>
+#include <cassert>
 
 namespace {
     constexpr const std::array REQUIRED_INSTANCE_EXTENSIONS = {
@@ -34,8 +35,9 @@ Device& XorgDisplay::device(size_t gpu_index) {
     return this->screens[gpu_index].device;
 }
 
-Screen* XorgDisplay::screen(size_t gpu_index, [[maybe_unused]] size_t screen_index) {
-    // screen_index should be 0.
+Screen* XorgDisplay::screen(size_t gpu_index, size_t screen_index) {
+    /// screen index should always be 0 because there is always one screen per render device.
+    assert(screen_index == 0);
     return &this->screens[gpu_index];
 }
 
