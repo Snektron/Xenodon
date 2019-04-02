@@ -1,22 +1,21 @@
 #include "present/headless/HeadlessScreen.h"
 #include "core/Error.h"
-#include "graphics/utility.h"
 #include "graphics/Swapchain.h"
 #include "graphics/Buffer.h"
 
 namespace {
     constexpr const auto RENDER_TARGET_FORMAT = vk::Format::eR8G8B8A8Unorm;
 
-    Device create_device(vk::PhysicalDevice gpu) {
-        if (auto queue = pick_graphics_queue(gpu, nullptr)) {
-            return Device(gpu, nullptr, queue.value());
+    Device create_device(const PhysicalDevice& gpu) {
+        if (auto queue = gpu.find_queue_family(vk::QueueFlagBits::eGraphics)) {
+            return Device(gpu.get(), nullptr, queue.value());
         } else {
             throw Error("Gpu does not support graphics/present queue");
         }
     }
 }
 
-HeadlessScreen::HeadlessScreen(vk::PhysicalDevice gpu, vk::Rect2D render_region):
+HeadlessScreen::HeadlessScreen(const PhysicalDevice& gpu, vk::Rect2D render_region):
     render_region(render_region),
     device(create_device(gpu)),
     render_target(this->device, render_region.extent, RENDER_TARGET_FORMAT) {

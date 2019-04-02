@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <cstdint>
+#include "graphics/core/PhysicalDevice.h"
 #include "graphics/Device.h"
 #include "graphics/RenderTarget.h"
 #include "present/Screen.h"
@@ -17,7 +18,7 @@ class HeadlessScreen final: public Screen {
     vk::UniqueCommandBuffer command_buffer;
 
 public:
-    HeadlessScreen(vk::PhysicalDevice gpu, vk::Rect2D render_region);
+    HeadlessScreen(const PhysicalDevice& gpu, vk::Rect2D render_region);
 
     uint32_t num_swap_images() const override;
     SwapImage swap_image(uint32_t index) const override;

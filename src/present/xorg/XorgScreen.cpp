@@ -6,7 +6,6 @@
 #include "core/Error.h"
 #include "core/Logger.h"
 #include "present/xorg/XorgWindow.h"
-#include "graphics/utility.h"
 
 namespace {
     constexpr const std::array DEVICE_EXTENSIONS = {

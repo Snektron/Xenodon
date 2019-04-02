@@ -1,6 +1,5 @@
 #include "present/direct/ScreenGroup.h"
 #include <array>
-#include "graphics/utility.h"
 
 namespace {
     constexpr const std::array DEVICE_EXTENSIONS = {
@@ -54,8 +53,8 @@ namespace {
         return surfaces;
     }
 
-    Device create_device(vk::PhysicalDevice gpu, const std::vector<vk::UniqueSurfaceKHR>& unique_surfaces) {
-        if (!gpu_supports_extensions(gpu, DEVICE_EXTENSIONS)) {
+    Device create_device(const PhysicalDevice& gpu, const std::vector<vk::UniqueSurfaceKHR>& unique_surfaces) {
+        if (!gpu.supports_extensions(DEVICE_EXTENSIONS)) {
             throw Error("Gpu does not support required extensions");
         }
 
@@ -65,8 +64,8 @@ namespace {
             surfaces.push_back(surface.get());
         }
 
-        if (auto queue = pick_graphics_queue(gpu, surfaces)) {
-            return Device(gpu, DEVICE_EXTENSIONS, queue.value());
+        if (auto queue = gpu.find_queue_family(vk::QueueFlagBits::eGraphics, surfaces)) {
+            return Device(gpu.get(), DEVICE_EXTENSIONS, queue.value());
         } else {
             throw Error("Gpu does not support graphics/present queue");
         }
@@ -75,7 +74,7 @@ namespace {
 
 ScreenGroup::ScreenGroup(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Screen>& screens):
     surfaces(create_surfaces(instance, gpu, screens)),
-    device(create_device(gpu.get(), this->surfaces)) {
+    device(create_device(gpu, this->surfaces)) {
 
     this->screens.reserve(screens.size());
     for (size_t i = 0; i < screens.size(); ++i) {

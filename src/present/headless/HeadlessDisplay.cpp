@@ -13,7 +13,7 @@ HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConf
     instance(nullptr),
     output(output) {
 
-    auto gpus = this->instance.get().enumeratePhysicalDevices();
+    auto gpus = this->instance.physical_devices();
     this->screens.reserve(config.gpus.size());
     for (const auto gpu_config : config.gpus) {
         this->screens.emplace_back(gpus.at(gpu_config.vulkan_index), gpu_config.region);
