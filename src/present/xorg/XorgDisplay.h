@@ -7,16 +7,16 @@
 #include "graphics/core/Instance.h"
 #include "present/Display.h"
 #include "present/Event.h"
-#include "present/xorg/XorgScreen.h"
+#include "present/xorg/XorgOutput.h"
 #include "present/xorg/XorgMultiGpuConfig.h"
 #include "utility/DynamicArray.h"
 
 struct Device;
-struct Screen;
+struct Output;
 
 class XorgDisplay final: public Display {
     Instance instance;
-    DynamicArray<XorgScreen> screens;
+    DynamicArray<XorgOutput> outputs;
 
 public:
     XorgDisplay(EventDispatcher& dispatcher, vk::Extent2D extent);
@@ -27,7 +27,7 @@ public:
 
     Setup setup() const override;
     Device& device(size_t gpu_index) override;
-    Screen* screen(size_t gpu_index, size_t screen_index) override;
+    Output* output(size_t gpu_index, size_t output_index) override;
     void poll_events() override;
 };
 

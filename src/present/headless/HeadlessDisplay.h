@@ -8,28 +8,27 @@
 #include "present/Display.h"
 #include "present/Event.h"
 #include "present/headless/HeadlessConfig.h"
-#include "present/headless/HeadlessScreen.h"
+#include "present/headless/HeadlessOutput.h"
 
 struct Device;
-struct Screen;
+struct Output;
 
 class HeadlessDisplay final: public Display {
     EventDispatcher& dispatcher;
     Instance instance;
-    std::vector<HeadlessScreen> screens;
-    const char* output;
+    std::vector<HeadlessOutput> outputs;
+    const char* out_path;
 
 public:
-    HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, const char* output);
+    HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, const char* out_path);
 
     Setup setup() const override;
     Device& device(size_t gpu_index) override;
-    Screen* screen(size_t gpu_index, size_t screen_index) override;
+    Output* output(size_t gpu_index, size_t output_index) override;
     void poll_events() override;
 
 private:
     void save();
-    void calculate_enclosing_rect();
 };
 
 #endif

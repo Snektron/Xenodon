@@ -7,24 +7,24 @@
 #include "graphics/Device.h"
 #include "graphics/Swapchain.h"
 #include "present/Event.h"
-#include "present/Screen.h"
+#include "present/Output.h"
 #include "present/xorg/XorgWindow.h"
 #include "present/xorg/XorgMultiGpuConfig.h"
 
-class XorgScreen final: public Screen {
+class XorgOutput final: public Output {
     XorgWindow window;
     vk::UniqueSurfaceKHR surface;
     Device device;
     Swapchain swapchain;
 
 public:
-    XorgScreen(Instance& instance, EventDispatcher& dispatcher, vk::Extent2D extent);
-    XorgScreen(Instance& instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config);
+    XorgOutput(Instance& instance, EventDispatcher& dispatcher, vk::Extent2D extent);
+    XorgOutput(Instance& instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Output& config);
 
-    ~XorgScreen();
+    ~XorgOutput();
 
-    XorgScreen(XorgScreen&& other) = delete;
-    XorgScreen& operator=(XorgScreen&& other) = delete;
+    XorgOutput(XorgOutput&& other) = delete;
+    XorgOutput& operator=(XorgOutput&& other) = delete;
 
     void poll_events();
 

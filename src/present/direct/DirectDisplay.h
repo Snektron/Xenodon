@@ -11,7 +11,7 @@
 #include "present/direct/input/LinuxInput.h"
 
 struct Device;
-struct Screen;
+struct Output;
 
 class DirectDisplay final: public Display {
     Instance instance;
@@ -24,7 +24,7 @@ public:
 
     Setup setup() const override;
     Device& device(size_t gpu_index) override;
-    Screen* screen(size_t gpu_index, size_t screen_index) override;
+    Output* output(size_t gpu_index, size_t output_index) override;
     void poll_events() override;
 };
 

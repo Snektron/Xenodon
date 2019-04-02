@@ -18,7 +18,7 @@ namespace {
             fmt::format_to(buf, ", {}", setup[i]);
         }
 
-        fmt::format_to(buf, " {}", ngpus > 1 || setup[0] > 1 ? "screens" : "screen");
+        fmt::format_to(buf, " {}", ngpus > 1 || setup[0] > 1 ? "outputs" : "output");
         LOGGER.log(fmt::to_string(buf));
     }
 }
@@ -32,7 +32,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
 
     for (size_t i = 0; i < setup.size(); ++i) {
         if (setup[i] == 0) {
-            LOGGER.log("Error: Invalid setup (gpu {} has no screens)", i);
+            LOGGER.log("Error: Invalid setup (gpu {} has no outputs)", i);
             return;
         }
     }
@@ -50,9 +50,9 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
         quit = true;
     });
 
-    dispatcher.bind_swapchain_recreate([&renderer](size_t gpu, size_t screen) {
-        LOGGER.log("Resizing gpu {}, screen {}", gpu, screen);
-        renderer.recreate(gpu, screen);
+    dispatcher.bind_swapchain_recreate([&renderer](size_t gpu, size_t output) {
+        LOGGER.log("Resizing gpu {}, output {}", gpu, output);
+        renderer.recreate(gpu, output);
     });
 
     auto start = std::chrono::high_resolution_clock::now();

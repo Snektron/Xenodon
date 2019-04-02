@@ -14,35 +14,35 @@ namespace {
 XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, vk::Extent2D extent):
     instance(REQUIRED_INSTANCE_EXTENSIONS) {
 
-    this->screens.generate_in_place(1, [&](XorgScreen* ptr, [[maybe_unused]] size_t i){
-        new (ptr) XorgScreen(this->instance, dispatcher, extent);
+    this->outputs.generate_in_place(1, [&](XorgOutput* ptr, [[maybe_unused]] size_t i){
+        new (ptr) XorgOutput(this->instance, dispatcher, extent);
     });
 }
 
 XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, const XorgMultiGpuConfig& config):
     instance(REQUIRED_INSTANCE_EXTENSIONS) {
 
-    this->screens.generate_in_place(config.screens.size(), [&](XorgScreen* ptr, size_t i){
-        new (ptr) XorgScreen(this->instance, dispatcher, config.screens[i]);
+    this->outputs.generate_in_place(config.outputs.size(), [&](XorgOutput* ptr, size_t i){
+        new (ptr) XorgOutput(this->instance, dispatcher, config.outputs[i]);
     });
 }
 
 Setup XorgDisplay::setup() const {
-    return Setup(this->screens.size(), 1);
+    return Setup(this->outputs.size(), 1);
 }
 
 Device& XorgDisplay::device(size_t gpu_index) {
-    return this->screens[gpu_index].device;
+    return this->outputs[gpu_index].device;
 }
 
-Screen* XorgDisplay::screen(size_t gpu_index, size_t screen_index) {
-    /// screen index should always be 0 because there is always one screen per render device.
-    assert(screen_index == 0);
-    return &this->screens[gpu_index];
+Output* XorgDisplay::output(size_t gpu_index, size_t output_index) {
+    /// output index should always be 0 because there is always one output per render device.
+    assert(output_index == 0);
+    return &this->outputs[gpu_index];
 }
 
 void XorgDisplay::poll_events() {
-    for (auto& screen : this->screens) {
-        screen.poll_events();
+    for (auto& output : this->outputs) {
+        output.poll_events();
     }
 }

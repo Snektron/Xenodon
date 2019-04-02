@@ -7,14 +7,14 @@
 #include "core/Config.h"
 
 struct DirectConfig {
-    struct Screen {
+    struct Output {
         uint32_t vulkan_index;
         vk::Offset2D offset;
     };
 
     struct Device {
         uint32_t vulkan_index;
-        std::vector<Screen> screens;
+        std::vector<Output> outputs;
     };
 
     struct Input {
@@ -26,8 +26,8 @@ struct DirectConfig {
 };
 
 template<>
-struct cfg::FromConfig<DirectConfig::Screen> {
-    DirectConfig::Screen operator()(cfg::Config& cfg) const;
+struct cfg::FromConfig<DirectConfig::Output> {
+    DirectConfig::Output operator()(cfg::Config& cfg) const;
 };
 
 template<>

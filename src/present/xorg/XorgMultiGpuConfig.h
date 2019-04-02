@@ -7,17 +7,17 @@
 #include "core/Config.h"
 
 struct XorgMultiGpuConfig {
-    struct Screen {
+    struct Output {
         std::string displayname;
         vk::Offset2D offset;
     };
 
-    std::vector<Screen> screens;
+    std::vector<Output> outputs;
 };
 
 template<>
-struct cfg::FromConfig<XorgMultiGpuConfig::Screen> {
-    XorgMultiGpuConfig::Screen operator()(cfg::Config& cfg) const;
+struct cfg::FromConfig<XorgMultiGpuConfig::Output> {
+    XorgMultiGpuConfig::Output operator()(cfg::Config& cfg) const;
 };
 
 template<>

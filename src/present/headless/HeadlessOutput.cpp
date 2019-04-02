@@ -1,4 +1,4 @@
-#include "present/headless/HeadlessScreen.h"
+#include "present/headless/HeadlessOutput.h"
 #include <cassert>
 #include "core/Error.h"
 #include "graphics/Swapchain.h"
@@ -16,7 +16,7 @@ namespace {
     }
 }
 
-HeadlessScreen::HeadlessScreen(const PhysicalDevice& gpu, vk::Rect2D render_region):
+HeadlessOutput::HeadlessOutput(const PhysicalDevice& gpu, vk::Rect2D render_region):
     render_region(render_region),
     device(create_device(gpu)),
     render_target(this->device, render_region.extent, RENDER_TARGET_FORMAT) {
@@ -26,12 +26,12 @@ HeadlessScreen::HeadlessScreen(const PhysicalDevice& gpu, vk::Rect2D render_regi
     this->command_buffer = std::move(this->device.logical->allocateCommandBuffersUnique(command_buffer_info).front());
 }
 
-uint32_t HeadlessScreen::num_swap_images() const {
+uint32_t HeadlessOutput::num_swap_images() const {
     return 1;
 }
 
-SwapImage HeadlessScreen::swap_image(uint32_t index) const {
-    // There is only one image per screen
+SwapImage HeadlessOutput::swap_image(uint32_t index) const {
+    // There is only one image per output
     assert(index == 0);
     return {
         this->command_buffer.get(),
@@ -40,7 +40,7 @@ SwapImage HeadlessScreen::swap_image(uint32_t index) const {
     };
 }
 
-vk::Result HeadlessScreen::present(Swapchain::PresentCallback f) {
+vk::Result HeadlessOutput::present(Swapchain::PresentCallback f) {
     f(0, this->swap_image(0));
 
     auto wait_stages = std::array{
@@ -62,11 +62,11 @@ vk::Result HeadlessScreen::present(Swapchain::PresentCallback f) {
     return vk::Result::eSuccess;
 }
 
-vk::Rect2D HeadlessScreen::region() const {
+vk::Rect2D HeadlessOutput::region() const {
     return this->render_region;
 }
 
-vk::AttachmentDescription HeadlessScreen::color_attachment_descr() const {
+vk::AttachmentDescription HeadlessOutput::color_attachment_descr() const {
     auto descr = vk::AttachmentDescription();
     descr.format = RENDER_TARGET_FORMAT;
     descr.loadOp = vk::AttachmentLoadOp::eClear;
@@ -74,7 +74,7 @@ vk::AttachmentDescription HeadlessScreen::color_attachment_descr() const {
     return descr;
 }
 
-void HeadlessScreen::download(Pixel* pixels, size_t stride) {
+void HeadlessOutput::download(Pixel* pixels, size_t stride) {
     const size_t n_pixels = this->render_region.extent.width * this->render_region.extent.height;
     const size_t size = n_pixels * sizeof(Pixel);
     const auto memory_bits = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;

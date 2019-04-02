@@ -36,17 +36,17 @@ namespace {
         return instance->createDisplayPlaneSurfaceKHRUnique(create_info);
     }
 
-    std::vector<vk::UniqueSurfaceKHR> create_surfaces(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Screen>& screens) {
+    std::vector<vk::UniqueSurfaceKHR> create_surfaces(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Output>& outputs) {
         auto surfaces = std::vector<vk::UniqueSurfaceKHR>();
 
         auto displays = gpu->getDisplayPropertiesKHR();
-        surfaces.reserve(screens.size());
-        for (size_t i = 0; i < screens.size(); ++i) {
-            if (screens[i].vulkan_index >= displays.size()) {
-                throw Error("Vulkan screen index {} is out of range", i);
+        surfaces.reserve(outputs.size());
+        for (size_t i = 0; i < outputs.size(); ++i) {
+            if (outputs[i].vulkan_index >= displays.size()) {
+                throw Error("Vulkan output index {} is out of range", i);
             }
 
-            auto display_props = displays[screens[i].vulkan_index];
+            auto display_props = displays[outputs[i].vulkan_index];
             surfaces.push_back(create_surface(instance, gpu, display_props.display));
         }
 
@@ -76,13 +76,13 @@ namespace {
     }
 }
 
-ScreenGroup::ScreenGroup(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Screen>& screens):
-    surfaces(create_surfaces(instance, gpu, screens)),
+ScreenGroup::ScreenGroup(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Output>& outputs):
+    surfaces(create_surfaces(instance, gpu, outputs)),
     device(create_device(gpu, this->surfaces)) {
 
-    this->screens.reserve(screens.size());
-    for (size_t i = 0; i < screens.size(); ++i) {
-        this->screens.emplace_back(this->device, this->surfaces[i].get(), screens[i].offset);
+    this->outputs.reserve(outputs.size());
+    for (size_t i = 0; i < outputs.size(); ++i) {
+        this->outputs.emplace_back(this->device, this->surfaces[i].get(), outputs[i].offset);
     }
 }
 

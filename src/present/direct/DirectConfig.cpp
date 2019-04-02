@@ -1,11 +1,11 @@
 #include "present/direct/DirectConfig.h"
 #include <algorithm>
 
-using Screen = DirectConfig::Screen;
+using Output = DirectConfig::Output;
 using Device = DirectConfig::Device;
 using Input = DirectConfig::Input;
 
-Screen cfg::FromConfig<Screen>::operator()(cfg::Config& cfg) const {
+Output cfg::FromConfig<Output>::operator()(cfg::Config& cfg) const {
     auto [index, offset] = cfg.get(
         Value<size_t>("vkindex"),
         Value<vk::Offset2D>("offset")
@@ -18,30 +18,30 @@ Screen cfg::FromConfig<Screen>::operator()(cfg::Config& cfg) const {
 }
 
 Device cfg::FromConfig<Device>::operator()(cfg::Config& cfg) const {
-    auto [index, screens] = cfg.get(
+    auto [index, outputs] = cfg.get(
         Value<size_t>("vkindex"),
-        Vector<Screen>("screen")
+        Vector<Output>("output")
     );
 
-    if (screens.empty()) {
-        throw cfg::ConfigError("A device must have at least one screen entry");
+    if (outputs.empty()) {
+        throw cfg::ConfigError("A device must have at least one output entry");
     }
 
-    std::sort(screens.begin(), screens.end(), [](auto& a, auto& b) {
+    std::sort(outputs.begin(), outputs.end(), [](auto& a, auto& b) {
         return a.vulkan_index < b.vulkan_index;
     });
 
-    auto it = adjacent_find(screens.begin(), screens.end(), [](auto& a, auto& b) {
+    auto it = adjacent_find(outputs.begin(), outputs.end(), [](auto& a, auto& b) {
         return a.vulkan_index == b.vulkan_index;
     });
 
-    if (it != screens.end()) {
-        throw cfg::ConfigError("Screen vulkan indices within a device must be unique");
+    if (it != outputs.end()) {
+        throw cfg::ConfigError("Output vulkan indices within a device must be unique");
     }
 
     return {
         static_cast<uint32_t>(index),
-        screens
+        outputs
     };
 }
 

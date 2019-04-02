@@ -47,9 +47,9 @@ public:
             this->close_binding();
     }
 
-    void dispatch_swapchain_recreate_event(size_t gpu_index, size_t screen_index) {
+    void dispatch_swapchain_recreate_event(size_t gpu_index, size_t output_index) {
         if (this->swapchain_recreate_binding)
-            this->swapchain_recreate_binding(gpu_index, screen_index);
+            this->swapchain_recreate_binding(gpu_index, output_index);
     }
 };
 

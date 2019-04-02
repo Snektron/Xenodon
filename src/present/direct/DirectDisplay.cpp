@@ -23,13 +23,13 @@ DirectDisplay::DirectDisplay(EventDispatcher& dispatcher, const DirectConfig& di
             throw Error("Vulkan device index {} out of range", device.vulkan_index);
         }
 
-        this->screen_groups.emplace_back(this->instance, gpus[device.vulkan_index], device.screens);
+        this->screen_groups.emplace_back(this->instance, gpus[device.vulkan_index], device.outputs);
     }
 
     for (size_t i = 0; i < this->screen_groups.size(); ++i) {
-        for (size_t j = 0; j < this->screen_groups[i].screens.size(); ++j) {
+        for (size_t j = 0; j < this->screen_groups[i].outputs.size(); ++j) {
             LOGGER.log("Screen {} {} info:", i, j);
-            const auto& swapchain = this->screen_groups[i].screens[j].swapchain;
+            const auto& swapchain = this->screen_groups[i].outputs[j].swapchain;
 
             LOGGER.log("\tPresent mode: {}", vk::to_string(swapchain.surface_present_mode()));
             auto extent = swapchain.surface_extent();
@@ -47,7 +47,7 @@ Setup DirectDisplay::setup() const {
     setup.resize(this->screen_groups.size());
 
     for (size_t i = 0; i < this->screen_groups.size(); ++i) {
-        setup[i] = this->screen_groups[i].screens.size();
+        setup[i] = this->screen_groups[i].outputs.size();
     }
 
     return setup;
@@ -57,8 +57,8 @@ Device& DirectDisplay::device(size_t gpu_index) {
     return this->screen_groups[gpu_index].device;
 }
 
-Screen* DirectDisplay::screen(size_t gpu_index, size_t screen_index) {
-    return &this->screen_groups[gpu_index].screens[screen_index];
+Output* DirectDisplay::output(size_t gpu_index, size_t output_index) {
+    return &this->screen_groups[gpu_index].outputs[output_index];
 }
 
 void DirectDisplay::poll_events() {

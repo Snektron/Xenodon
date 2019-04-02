@@ -6,16 +6,16 @@
 #include "graphics/core/Instance.h"
 #include "graphics/core/PhysicalDevice.h"
 #include "graphics/Device.h"
-#include "present/direct/DirectScreen.h"
+#include "present/direct/DirectOutput.h"
 #include "present/direct/DirectConfig.h"
 
 class ScreenGroup {
     std::vector<vk::UniqueSurfaceKHR> surfaces;
     Device device;
-    std::vector<DirectScreen> screens;
+    std::vector<DirectOutput> outputs;
 
 public:
-    ScreenGroup(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Screen>& screens);
+    ScreenGroup(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Output>& outputs);
     ScreenGroup(ScreenGroup&&) = default;
     ScreenGroup& operator=(ScreenGroup&&) = default;
     ~ScreenGroup();

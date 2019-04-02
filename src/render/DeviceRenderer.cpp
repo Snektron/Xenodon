@@ -1,14 +1,14 @@
 #include "render/DeviceRenderer.h"
 
-RenderOutput::RenderOutput(Device& device, Screen* screen):
-    screen(screen),
-    region(screen->region()),
-    renderer(device, this->region, screen->color_attachment_descr()) {
+RenderOutput::RenderOutput(Device& device, Output* output):
+    output(output),
+    region(output->region()),
+    renderer(device, this->region, output->color_attachment_descr()) {
 
-    uint32_t images = this->screen->num_swap_images();
+    uint32_t images = this->output->num_swap_images();
     this->framebuffers.reserve(images);
     for (uint32_t i = 0; i < images; ++i) {
-        auto swap_image = this->screen->swap_image(i);
+        auto swap_image = this->output->swap_image(i);
 
         auto create_info = vk::FramebufferCreateInfo(
             {},
@@ -25,17 +25,17 @@ RenderOutput::RenderOutput(Device& device, Screen* screen):
 }
 
 void RenderOutput::render() {
-    this->screen->present([this](size_t i, const auto& swap_image) {
+    this->output->present([this](size_t i, const auto& swap_image) {
         this->renderer.present(swap_image.command_buffer, this->framebuffers[i].get());
     });
 }
 
-DeviceRenderer::DeviceRenderer(Display* display, size_t gpu, size_t screens):
+DeviceRenderer::DeviceRenderer(Display* display, size_t gpu, size_t outputs):
     device(display->device(gpu)) {
 
-    this->outputs.reserve(screens);
-    for (size_t i = 0; i < screens; ++i) {
-        this->outputs.emplace_back(this->device, display->screen(gpu, i));
+    this->outputs.reserve(outputs);
+    for (size_t i = 0; i < outputs; ++i) {
+        this->outputs.emplace_back(this->device, display->output(gpu, i));
     }
 }
 
@@ -45,8 +45,8 @@ void DeviceRenderer::render() {
     }
 }
 
-void DeviceRenderer::recreate(size_t screen) {
-    this->outputs[screen] = RenderOutput(this->device, this->outputs[screen].screen);
+void DeviceRenderer::recreate(size_t output) {
+    this->outputs[output] = RenderOutput(this->device, this->outputs[output].output);
 }
 
 DeviceRenderer::~DeviceRenderer() {

@@ -1,8 +1,8 @@
 #include "present/xorg/XorgMultiGpuConfig.h"
 
-using Screen = XorgMultiGpuConfig::Screen;
+using Output = XorgMultiGpuConfig::Output;
 
-Screen cfg::FromConfig<Screen>::operator()(cfg::Config& cfg) const {
+Output cfg::FromConfig<Output>::operator()(cfg::Config& cfg) const {
     auto [displayname, offset] = cfg.get(
         Value<std::string>("displayname"),
         Value<vk::Offset2D>("offset")
@@ -15,13 +15,13 @@ Screen cfg::FromConfig<Screen>::operator()(cfg::Config& cfg) const {
 }
 
 XorgMultiGpuConfig cfg::FromConfig<XorgMultiGpuConfig>::operator()(cfg::Config& cfg) const {
-    auto [screens] = cfg.get(
-        Vector<Screen>("screen")
+    auto [outputs] = cfg.get(
+        Vector<Output>("output")
     );
 
-    if (screens.empty()) {
-        throw cfg::ConfigError("At least one screen entry is required");
+    if (outputs.empty()) {
+        throw cfg::ConfigError("At least one output entry is required");
     }
 
-    return {screens};
+    return {outputs};
 }

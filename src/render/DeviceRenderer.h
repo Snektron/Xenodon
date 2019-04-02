@@ -6,16 +6,16 @@
 #include <vulkan/vulkan.h>
 #include "graphics/Device.h"
 #include "present/Display.h"
-#include "present/Screen.h"
+#include "present/Output.h"
 #include "render/TestRenderer.h"
 
 struct RenderOutput {
-    Screen* screen;
+    Output* output;
     vk::Rect2D region;
     TestRenderer renderer;
     std::vector<vk::UniqueFramebuffer> framebuffers;
 
-    RenderOutput(Device& device, Screen* screen);
+    RenderOutput(Device& device, Output* output);
     RenderOutput(RenderOutput&&) = default;
     RenderOutput& operator=(RenderOutput&&) = default;
 
@@ -27,13 +27,13 @@ struct DeviceRenderer {
 
     std::vector<RenderOutput> outputs;
 
-    DeviceRenderer(Display* display, size_t gpu, size_t screens);
+    DeviceRenderer(Display* display, size_t gpu, size_t outputs);
     DeviceRenderer(DeviceRenderer&&) = default;
     DeviceRenderer& operator=(DeviceRenderer&&) = default;
     ~DeviceRenderer();
 
     void render();
-    void recreate(size_t screen);
+    void recreate(size_t output);
 };
 
 #endif

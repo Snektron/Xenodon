@@ -7,8 +7,8 @@
 #include "graphics/Swapchain.h"
 #include "math/Vec.h"
 
-struct Screen {
-    virtual ~Screen() = default;
+struct Output {
+    virtual ~Output() = default;
 
     virtual uint32_t num_swap_images() const = 0;
     virtual SwapImage swap_image(uint32_t index) const = 0;

@@ -5,14 +5,14 @@
 #include <vulkan/vulkan.hpp>
 #include "graphics/Device.h"
 #include "graphics/Swapchain.h"
-#include "present/Screen.h"
+#include "present/Output.h"
 
-class DirectScreen final: public Screen {
+class DirectOutput final: public Output {
     vk::Offset2D offset;
     Swapchain swapchain;
 
 public:
-    DirectScreen(Device& device, vk::SurfaceKHR surface, vk::Offset2D offset);
+    DirectOutput(Device& device, vk::SurfaceKHR surface, vk::Offset2D offset);
 
     uint32_t num_swap_images() const override;
     SwapImage swap_image(uint32_t index) const override;

@@ -14,7 +14,7 @@ class Renderer {
 public:
     Renderer(Display* display);
     void render();
-    void recreate(size_t gpu, size_t screen);
+    void recreate(size_t gpu, size_t output);
 };
 
 #endif

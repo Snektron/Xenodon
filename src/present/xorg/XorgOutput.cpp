@@ -1,4 +1,4 @@
-#include "present/xorg/XorgScreen.h"
+#include "present/xorg/XorgOutput.h"
 #include <algorithm>
 #include <array>
 #include <vector>
@@ -44,7 +44,7 @@ namespace {
     }
 }
 
-XorgScreen::XorgScreen(Instance& instance, EventDispatcher& dispatcher, vk::Extent2D extent):
+XorgOutput::XorgOutput(Instance& instance, EventDispatcher& dispatcher, vk::Extent2D extent):
     window(dispatcher, extent),
     surface(create_surface(instance, this->window)),
     device(create_device(instance, this->surface.get())),
@@ -52,7 +52,7 @@ XorgScreen::XorgScreen(Instance& instance, EventDispatcher& dispatcher, vk::Exte
     this->log();
 }
 
-XorgScreen::XorgScreen(Instance& instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Screen& config):
+XorgOutput::XorgOutput(Instance& instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Output& config):
     window(dispatcher, config.displayname.c_str(), true),
     surface(create_surface(instance, this->window)),
     device(create_device(instance, this->surface.get())),
@@ -60,34 +60,34 @@ XorgScreen::XorgScreen(Instance& instance, EventDispatcher& dispatcher, const Xo
     this->log();
 }
 
-XorgScreen::~XorgScreen() {
+XorgOutput::~XorgOutput() {
     this->device.logical->waitIdle();
 }
 
-void XorgScreen::poll_events() {
+void XorgOutput::poll_events() {
     this->window.poll_events([this](vk::Extent2D new_extent) {
         this->device.logical->waitIdle();
         this->swapchain.recreate(new_extent);
     });
 }
 
-uint32_t XorgScreen::num_swap_images() const {
+uint32_t XorgOutput::num_swap_images() const {
     return this->swapchain.num_images();
 }
 
-SwapImage XorgScreen::swap_image(uint32_t index) const {
+SwapImage XorgOutput::swap_image(uint32_t index) const {
     return this->swapchain.image(index);
 }
 
-vk::Result XorgScreen::present(Swapchain::PresentCallback f) {
+vk::Result XorgOutput::present(Swapchain::PresentCallback f) {
     return this->swapchain.present(f);
 }
 
-vk::Rect2D XorgScreen::region() const {
+vk::Rect2D XorgOutput::region() const {
     return {{0, 0}, this->swapchain.surface_extent()};
 }
 
-vk::AttachmentDescription XorgScreen::color_attachment_descr() const {
+vk::AttachmentDescription XorgOutput::color_attachment_descr() const {
     auto descr = vk::AttachmentDescription();
     descr.format = this->swapchain.surface_format().format;
     descr.loadOp = vk::AttachmentLoadOp::eClear;
@@ -95,8 +95,8 @@ vk::AttachmentDescription XorgScreen::color_attachment_descr() const {
     return descr;
 }
 
-void XorgScreen::log() const {
-    LOGGER.log("Screen info:");
+void XorgOutput::log() const {
+    LOGGER.log("Output info:");
     LOGGER.log("\tPresent mode: {}", vk::to_string(this->swapchain.surface_present_mode()));
     auto surface_format = this->swapchain.surface_format();
     LOGGER.log("\tFormat: {}", vk::to_string(surface_format.format));

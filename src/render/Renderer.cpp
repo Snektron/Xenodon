@@ -15,6 +15,6 @@ void Renderer::render() {
     }
 }
 
-void Renderer::recreate(size_t gpu, size_t screen) {
-    this->devices[gpu].recreate(screen);
+void Renderer::recreate(size_t gpu, size_t output) {
+    this->devices[gpu].recreate(output);
 }
