@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <vulkan/vulkan.hpp>
+#include "graphics/core/Instance.h"
+#include "graphics/core/PhysicalDevice.h"
 #include "graphics/Device.h"
 #include "present/direct/DirectScreen.h"
 #include "present/direct/DirectConfig.h"
@@ -13,7 +15,7 @@ class ScreenGroup {
     std::vector<DirectScreen> screens;
 
 public:
-    ScreenGroup(vk::Instance instance, vk::PhysicalDevice gpu, const std::vector<DirectConfig::Screen>& screens);
+    ScreenGroup(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Screen>& screens);
     ScreenGroup(ScreenGroup&&) = default;
     ScreenGroup& operator=(ScreenGroup&&) = default;
     ~ScreenGroup();

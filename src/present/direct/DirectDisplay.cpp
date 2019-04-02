@@ -14,15 +14,16 @@ namespace {
 DirectDisplay::DirectDisplay(EventDispatcher& dispatcher, const DirectConfig& display_config):
     instance(REQUIRED_INSTANCE_EXTENSIONS),
     input(dispatcher, display_config.input) {
+
+    const auto& gpus = this->instance.physical_devices();
     this->screen_groups.reserve(display_config.gpus.size());
 
-    auto gpus = this->instance.get().enumeratePhysicalDevices();
     for (const auto& device : display_config.gpus) {
         if (device.vulkan_index >= gpus.size()) {
             throw Error("Vulkan device index {} out of range", device.vulkan_index);
         }
 
-        this->screen_groups.emplace_back(this->instance.get(), gpus[device.vulkan_index], device.screens);
+        this->screen_groups.emplace_back(this->instance, gpus[device.vulkan_index], device.screens);
     }
 
     for (size_t i = 0; i < this->screen_groups.size(); ++i) {
