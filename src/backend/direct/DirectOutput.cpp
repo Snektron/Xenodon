@@ -2,7 +2,7 @@
 #include <vector>
 #include "core/Logger.h"
 
-DirectOutput::DirectOutput(Device2& device, Queue2& graphics_queue, vk::SurfaceKHR surface, vk::Offset2D offset):
+DirectOutput::DirectOutput(Device& device, Queue& graphics_queue, vk::SurfaceKHR surface, vk::Offset2D offset):
     offset(offset),
     swapchain(device, graphics_queue, surface, vk::Extent2D{0, 0}) {
 }
@@ -19,8 +19,8 @@ uint32_t DirectOutput::current_swap_index() const {
     return this->swapchain.current_index();
 }
 
-SwapImage2 DirectOutput::swap_image(uint32_t index) {
-    return SwapImage2(this->swapchain.image(index));
+SwapImage DirectOutput::swap_image(uint32_t index) {
+    return SwapImage(this->swapchain.image(index));
 }
 
 vk::Rect2D DirectOutput::region() const {

@@ -1,6 +1,6 @@
 #include "graphics/memory/Image.h"
 
-Image2::Image2(const Device2& device, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags flags) {
+Image::Image(const Device& device, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags flags) {
     auto image_create_info = vk::ImageCreateInfo(
         {},
         vk::ImageType::e2D,

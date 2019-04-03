@@ -21,7 +21,7 @@ namespace {
     }
 }
 
-TestRenderer::TestRenderer(const Device2& device, vk::Rect2D region, vk::AttachmentDescription output_attachment):
+TestRenderer::TestRenderer(const Device& device, vk::Rect2D region, vk::AttachmentDescription output_attachment):
     device(device),
     region(region),
     output_region(device, sizeof(OutputRegion), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) {

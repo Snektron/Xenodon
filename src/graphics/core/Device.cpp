@@ -2,7 +2,7 @@
 #include <vector>
 #include <algorithm>
 
-Device2::Device2(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions):
+Device::Device(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions):
     physdev(physdev.get()) {
     this->dev = this->physdev.createDeviceUnique({
         {},
@@ -16,7 +16,7 @@ Device2::Device2(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> 
     });
 }
 
-Device2::Device2(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Span<const char* const> extensions):
+Device::Device(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Span<const char* const> extensions):
     physdev(physdev.get()) {
     float priority = 1.0f;
     auto queue_create_infos = std::vector<vk::DeviceQueueCreateInfo>(queue_families.size());
@@ -47,7 +47,7 @@ Device2::Device2(const PhysicalDevice& physdev, Span<uint32_t> queue_families, S
     });
 }
 
-std::optional<uint32_t> Device2::find_memory_type(uint32_t filter, vk::MemoryPropertyFlags flags) const {
+std::optional<uint32_t> Device::find_memory_type(uint32_t filter, vk::MemoryPropertyFlags flags) const {
     auto mem_props = this->physdev.getMemoryProperties();
     for (uint32_t i = 0; i < mem_props.memoryTypeCount; ++i) {
         if (filter & (1 << i) && (mem_props.memoryTypes[i].propertyFlags & flags) == flags) {
@@ -58,7 +58,7 @@ std::optional<uint32_t> Device2::find_memory_type(uint32_t filter, vk::MemoryPro
     return std::nullopt;
 }
 
-vk::UniqueDeviceMemory Device2::allocate(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const {
+vk::UniqueDeviceMemory Device::allocate(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const {
     auto alloc_info = vk::MemoryAllocateInfo(
         requirements.size,
         this->find_memory_type(requirements.memoryTypeBits, flags).value()

@@ -42,14 +42,14 @@ namespace {
     }
 }
 
-Swapchain2::Swapchain2(Device2& device, Queue2 graphics_queue, vk::SurfaceKHR surface, vk::Extent2D surface_extent):
+Swapchain::Swapchain(Device& device, Queue graphics_queue, vk::SurfaceKHR surface, vk::Extent2D surface_extent):
     device(&device),
     graphics_queue(graphics_queue),
     surface(surface) {
     this->recreate(surface_extent);
 }
 
-void Swapchain2::recreate(vk::Extent2D surface_extent) {
+void Swapchain::recreate(vk::Extent2D surface_extent) {
     auto caps = this->device->physical_device().getSurfaceCapabilitiesKHR(this->surface);
     this->format = find_surface_format(this->device->physical_device(), surface);
     this->present_mode = find_present_mode(this->device->physical_device(), surface);
@@ -148,7 +148,7 @@ void Swapchain2::recreate(vk::Extent2D surface_extent) {
     );
 }
 
-vk::Result Swapchain2::swap_buffers() {
+vk::Result Swapchain::swap_buffers() {
     auto& current_image = this->current_image();
     auto dev = this->device->get();
 

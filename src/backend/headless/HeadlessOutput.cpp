@@ -14,7 +14,7 @@ namespace {
     RenderDevice create_render_device(const PhysicalDevice& physdev) {
         if (auto family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics)) {
             return RenderDevice(
-                Device2(physdev, family.value()),
+                Device(physdev, family.value()),
                 family.value(),
                 1
             );
@@ -59,9 +59,9 @@ uint32_t HeadlessOutput::current_swap_index() const {
     return 0;
 }
 
-SwapImage2 HeadlessOutput::swap_image(uint32_t index) {
+SwapImage HeadlessOutput::swap_image(uint32_t index) {
     assert(index == 0);
-    return SwapImage2(this->render_target.get(), this->render_target_view.get(), this->frame_fence.get());
+    return SwapImage(this->render_target.get(), this->render_target_view.get(), this->frame_fence.get());
 }
 
 vk::Rect2D HeadlessOutput::region() const {
@@ -86,7 +86,7 @@ void HeadlessOutput::download(Pixel* pixels, size_t stride) {
     const size_t size = n_pixels * sizeof(Pixel);
     const auto memory_bits = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
-    auto staging_buffer = Buffer2(this->rendev.device, size, vk::BufferUsageFlagBits::eTransferDst, memory_bits);
+    auto staging_buffer = Buffer(this->rendev.device, size, vk::BufferUsageFlagBits::eTransferDst, memory_bits);
 
     this->rendev.graphics_one_time_submit([this, &staging_buffer](vk::CommandBuffer cmd_buf) {
         auto copy_info = vk::BufferImageCopy(

@@ -17,7 +17,7 @@ class HeadlessOutput final: public Output {
     RenderDevice rendev;
     vk::UniqueFence frame_fence;
 
-    Image2 render_target;
+    Image render_target;
     vk::UniqueImageView render_target_view;
 
 public:
@@ -25,7 +25,7 @@ public:
 
     uint32_t num_swap_images() const override;
     uint32_t current_swap_index() const override;
-    SwapImage2 swap_image(uint32_t index) override;
+    SwapImage swap_image(uint32_t index) override;
     vk::Rect2D region() const override;
     vk::AttachmentDescription color_attachment_descr() const override;
 

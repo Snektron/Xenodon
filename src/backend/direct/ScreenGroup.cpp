@@ -76,7 +76,7 @@ namespace {
 
         if (auto family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics, surfaces)) {
             return RenderDevice(
-                Device2(physdev, family.value(), DEVICE_EXTENSIONS),
+                Device(physdev, family.value(), DEVICE_EXTENSIONS),
                 family.value(),
                 surfaces.size()
             );

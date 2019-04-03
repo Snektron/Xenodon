@@ -10,17 +10,17 @@
 
 class DirectOutput final: public Output {
     vk::Offset2D offset;
-    Swapchain2 swapchain;
+    Swapchain swapchain;
 
 public:
-    DirectOutput(Device2& device, Queue2& graphics_queue, vk::SurfaceKHR surface, vk::Offset2D offset);
+    DirectOutput(Device& device, Queue& graphics_queue, vk::SurfaceKHR surface, vk::Offset2D offset);
 
     void swap_buffers();
     void log() const;
 
     uint32_t num_swap_images() const override;
     uint32_t current_swap_index() const override;
-    SwapImage2 swap_image(uint32_t index) override;
+    SwapImage swap_image(uint32_t index) override;
     vk::Rect2D region() const override;
     vk::AttachmentDescription color_attachment_descr() const override;
 };

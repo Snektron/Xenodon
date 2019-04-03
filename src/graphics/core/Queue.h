@@ -4,13 +4,13 @@
 #include <vulkan/vulkan.hpp>
 #include "graphics/core/Device.h"
 
-class Queue2 {
+class Queue {
     vk::Queue queue;
     uint32_t family_index;
     uint32_t index;
 
 public:
-    Queue2(const Device2& device, uint32_t family_index, uint32_t index = 0):
+    Queue(const Device& device, uint32_t family_index, uint32_t index = 0):
         queue(device->getQueue(family_index, index)),
         family_index(family_index),
         index(index) {

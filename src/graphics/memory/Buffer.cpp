@@ -1,6 +1,6 @@
 #include "graphics/memory/Buffer.h"
 
-Buffer2::Buffer2(const Device2& device, vk::DeviceSize size, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags) {
+Buffer::Buffer(const Device& device, vk::DeviceSize size, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags) {
     auto buffer_create_info = vk::BufferCreateInfo(
         {},
         size,

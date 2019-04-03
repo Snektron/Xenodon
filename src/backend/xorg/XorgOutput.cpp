@@ -35,7 +35,7 @@ namespace {
                     LOGGER.log("Picked GPU {}: '{}'", i, physdev.name());
                     LOGGER.log("Graphics queue family: {}", family.value());
                     return RenderDevice(
-                        Device2(physdev, family.value(), DEVICE_EXTENSIONS),
+                        Device(physdev, family.value(), DEVICE_EXTENSIONS),
                         family.value(),
                         1
                     );
@@ -82,8 +82,8 @@ uint32_t XorgOutput::current_swap_index() const {
     return this->swapchain.current_index();
 }
 
-SwapImage2 XorgOutput::swap_image(uint32_t index) {
-    return SwapImage2(this->swapchain.image(index));
+SwapImage XorgOutput::swap_image(uint32_t index) {
+    return SwapImage(this->swapchain.image(index));
 }
 
 void XorgOutput::swap_buffers() {

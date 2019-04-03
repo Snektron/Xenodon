@@ -13,17 +13,17 @@ class TestRenderer {
         Vec2F resolution;
     };
 
-    const Device2& device;
+    const Device& device;
     vk::Rect2D region;
 
     vk::UniqueDescriptorSetLayout descriptor_layout;
     vk::UniquePipelineLayout layout;
     vk::UniqueRenderPass render_pass;
     vk::UniquePipeline pipeline;
-    Buffer2 output_region;
+    Buffer output_region;
 
 public:
-    TestRenderer(const Device2& device, vk::Rect2D region, vk::AttachmentDescription output_attachment);
+    TestRenderer(const Device& device, vk::Rect2D region, vk::AttachmentDescription output_attachment);
 
     void present(vk::CommandBuffer cmd, vk::Framebuffer target);
     vk::RenderPass final_render_pass() const;

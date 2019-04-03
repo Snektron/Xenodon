@@ -4,11 +4,11 @@
 #include <vulkan/vulkan.hpp>
 #include "graphics/core/Device.h"
 
-struct Buffer2 {
+struct Buffer {
     vk::UniqueBuffer buffer;
     vk::UniqueDeviceMemory mem;
 
-    Buffer2(const Device2& device, vk::DeviceSize size, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags);
+    Buffer(const Device& device, vk::DeviceSize size, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags);
 
     vk::Buffer get() const {
         return this->buffer.get();

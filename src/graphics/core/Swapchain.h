@@ -8,7 +8,7 @@
 
 // Implementation inspired by
 // https://chromium.googlesource.com/chromium/src/gpu/+/45b0f5183d399bed91c38c1ac869b7ce05f72d14/vulkan/vulkan_swap_chain.cc
-class Swapchain2 {
+class Swapchain {
 public:
     struct SwapImageResources {
         vk::Image image;
@@ -19,8 +19,8 @@ public:
     };
 
 private:
-    Device2* device;
-    Queue2 graphics_queue;
+    Device* device;
+    Queue graphics_queue;
 
     vk::SurfaceKHR surface;
     vk::SurfaceFormatKHR format;
@@ -32,7 +32,7 @@ private:
     vk::UniqueSemaphore current_image_acquired_sem;
 
 public:
-    Swapchain2(Device2& device, Queue2 graphics_queue, vk::SurfaceKHR surface, vk::Extent2D surface_extent);
+    Swapchain(Device& device, Queue graphics_queue, vk::SurfaceKHR surface, vk::Extent2D surface_extent);
     void recreate(vk::Extent2D surface_extent);
     vk::Result swap_buffers();
 

@@ -13,7 +13,7 @@ struct Output {
 
     virtual uint32_t num_swap_images() const = 0;
     virtual uint32_t current_swap_index() const = 0;
-    virtual SwapImage2 swap_image(uint32_t index) = 0;
+    virtual SwapImage swap_image(uint32_t index) = 0;
     virtual vk::Rect2D region() const = 0;
     virtual vk::AttachmentDescription color_attachment_descr() const = 0;
 };

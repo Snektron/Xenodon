@@ -7,13 +7,13 @@
 #include "graphics/core/PhysicalDevice.h"
 #include "utility/Span.h"
 
-class Device2 {
+class Device {
     vk::PhysicalDevice physdev;
     vk::UniqueDevice dev;
 
 public:
-    Device2(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions = nullptr);
-    Device2(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Span<const char* const> extensions = nullptr);
+    Device(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions = nullptr);
+    Device(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Span<const char* const> extensions = nullptr);
 
     std::optional<uint32_t> find_memory_type(uint32_t filter, vk::MemoryPropertyFlags flags) const;
     vk::UniqueDeviceMemory allocate(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const;
