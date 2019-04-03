@@ -36,3 +36,15 @@ struct DeviceRenderer {
 };
 
 #endif
+
+// struct Renderer {
+//     const RenderDevice& rendev;
+//     Output* output;
+//     vk::Rect2D region;
+//     std::vector<vk::UniqueCommandBuffer> command_buffers;
+//     std::vector<vk::UniqueFramebuffer> framebuffers;
+// };
+
+// struct RenderManager {
+//     std::vector<std::vector<Renderer>> renderers;
+// };

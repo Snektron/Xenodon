@@ -9,14 +9,14 @@ PhysicalDevice::PhysicalDevice(vk::PhysicalDevice physdev):
 }
 
 bool PhysicalDevice::supports_extensions(Span<const char* const> extensions) const {
-    const auto ext_props = this->physdev.enumerateDeviceExtensionProperties();
+    const auto supported_extensions = this->physdev.enumerateDeviceExtensionProperties();
 
     for (const char* const ext_name : extensions) {
         auto cmp_ext = [&ext_name](auto& properties) {
             return std::strcmp(ext_name, properties.extensionName) == 0;
         };
 
-        if (std::none_of(ext_props.begin(), ext_props.end(), cmp_ext)) {
+        if (std::none_of(supported_extensions.begin(), supported_extensions.end(), cmp_ext)) {
             return false;
         }
     }

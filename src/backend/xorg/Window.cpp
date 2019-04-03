@@ -40,13 +40,13 @@ namespace {
 }
 
 Window::Window(EventDispatcher& dispatcher, vk::Extent2D extent):
-    dispatcher(dispatcher) {
+    dispatcher(&dispatcher) {
     xcb_screen_t* screen = this->init_connection(nullptr);
     this->init_window(screen, extent, false);
 }
 
 Window::Window(EventDispatcher& dispatcher, const char* displayname, bool override_redirect):
-    dispatcher(dispatcher) {
+    dispatcher(&dispatcher) {
     xcb_screen_t* screen = this->init_connection(displayname);
     this->init_window(screen, {screen->width_in_pixels, screen->height_in_pixels}, override_redirect);
 }
@@ -74,7 +74,7 @@ void Window::handle_event(ResizeCallback cbk, const xcb_generic_event_t& event) 
     auto dispatch_key_event = [this](Action action, xcb_keycode_t kc) {
         xcb_keysym_t keysym = xcb_key_symbols_get_keysym(this->key_symbols.get(), kc, 0);
         Key key = xorg_translate_key(keysym);
-        this->dispatcher.dispatch_key_event(key, action);
+        this->dispatcher->dispatch_key_event(key, action);
     };
 
     switch (static_cast<int>(event.response_type) & ~0x80) {
@@ -82,7 +82,7 @@ void Window::handle_event(ResizeCallback cbk, const xcb_generic_event_t& event) 
             const auto& event_args = reinterpret_cast<const xcb_client_message_event_t&>(event);
 
             if (event_args.data.data32[0] == this->atom_wm_delete_window->atom) {
-                this->dispatcher.dispatch_close_event();
+                this->dispatcher->dispatch_close_event();
             }
 
             break;
@@ -118,7 +118,7 @@ void Window::handle_event(ResizeCallback cbk, const xcb_generic_event_t& event) 
             cbk(extent);
 
             // Theres only a single gpu and screen at all times
-            this->dispatcher.dispatch_swapchain_recreate_event(0, 0);
+            this->dispatcher->dispatch_swapchain_recreate_event(0, 0);
 
             break;
         }

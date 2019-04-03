@@ -32,7 +32,7 @@ class Window {
     XcbConnectionPtr connection;
     xcb_window_t window;
     AtomReply atom_wm_delete_window;
-    EventDispatcher& dispatcher;
+    EventDispatcher* dispatcher;
     uint16_t width, height;
     XcbKeySymbolsPtr key_symbols;
 
