@@ -21,7 +21,12 @@ namespace {
             {vk::Result::eSuccess, vk::Result::eIncomplete}
         );
 
-        auto [plane_index, stack_index] = gpu.find_display_plane(display).value();
+        auto opt = gpu.find_display_plane(display);
+        if (!opt) {
+            throw Error("Failed to find display plane");
+        }
+
+        auto [plane_index, stack_index] = opt.value();
 
         auto create_info = vk::DisplaySurfaceCreateInfoKHR();
         create_info.flags = {};

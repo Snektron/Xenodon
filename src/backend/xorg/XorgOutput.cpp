@@ -5,14 +5,13 @@
 #include <cstring>
 #include "core/Error.h"
 #include "core/Logger.h"
-#include "backend/xorg/XorgWindow.h"
 
 namespace {
     constexpr const std::array DEVICE_EXTENSIONS = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
-    vk::UniqueSurfaceKHR create_surface(Instance& instance, XorgWindow& window) {
+    vk::UniqueSurfaceKHR create_surface(Instance& instance, Window& window) {
         auto [connection, xid] = window.x_handles();
         return instance->createXcbSurfaceKHRUnique({
             {},

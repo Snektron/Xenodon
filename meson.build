@@ -127,7 +127,7 @@ if (get_option('present-xorg').enabled())
         'src/backend/xorg/xorg.cpp',
         'src/backend/xorg/XorgDisplay.cpp',
         'src/backend/xorg/XorgOutput.cpp',
-        'src/backend/xorg/XorgWindow.cpp',
+        'src/backend/xorg/Window.cpp',
         'src/backend/xorg/XorgMultiGpuConfig.cpp',
         'src/backend/xorg/xorg_translate_key.cpp'
     ]

@@ -45,7 +45,7 @@ namespace {
                 return nullptr;
             #endif
         } else {
-            fmt::print("Error: no such presenting backend '{}'", backend);
+            fmt::print("Error: no such presenting backend '{}'\n", backend);
             return nullptr;
         }
     }

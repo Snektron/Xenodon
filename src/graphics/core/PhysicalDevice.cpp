@@ -69,13 +69,13 @@ std::optional<std::pair<uint32_t, uint32_t>> PhysicalDevice::find_display_plane(
     const auto plane_props = this->physdev.getDisplayPlanePropertiesKHR();
 
     for (uint32_t plane = 0; plane < plane_props.size(); ++plane) {
-        if (plane_props[plane].currentDisplay != display)
+        if (plane_props[plane].currentDisplay != vk::DisplayKHR() && plane_props[plane].currentDisplay != display)
             continue;
 
         auto supported_displays = this->physdev.getDisplayPlaneSupportedDisplaysKHR(plane);
         for (uint32_t i = 0; i < supported_displays.size(); ++i) {
             if (supported_displays[i] == display) {
-                return std::make_pair(plane, plane_props[plane].currentStackIndex);
+                return {{plane, plane_props[plane].currentStackIndex}};
             }
         }
     }

@@ -1,4 +1,4 @@
-#include "backend/xorg/XorgWindow.h"
+#include "backend/xorg/Window.h"
 #include <cstring>
 #include "core/Error.h"
 #include "backend/xorg/xorg_translate_key.h"
@@ -39,25 +39,25 @@ namespace {
     }
 }
 
-XorgWindow::XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent):
+Window::Window(EventDispatcher& dispatcher, vk::Extent2D extent):
     dispatcher(dispatcher) {
     xcb_screen_t* screen = this->init_connection(nullptr);
     this->init_window(screen, extent, false);
 }
 
-XorgWindow::XorgWindow(EventDispatcher& dispatcher, const char* displayname, bool override_redirect):
+Window::Window(EventDispatcher& dispatcher, const char* displayname, bool override_redirect):
     dispatcher(dispatcher) {
     xcb_screen_t* screen = this->init_connection(displayname);
     this->init_window(screen, {screen->width_in_pixels, screen->height_in_pixels}, override_redirect);
 }
 
-XorgWindow::~XorgWindow() {
+Window::~Window() {
     if (this->connection.get()) {
         xcb_destroy_window(this->connection.get(), this->window);
     }
 }
 
-void XorgWindow::poll_events(ResizeCallback cbk) {
+void Window::poll_events(ResizeCallback cbk) {
     while (true) {
         auto event = MallocPtr<xcb_generic_event_t>(
             xcb_poll_for_event(this->connection.get())
@@ -70,7 +70,7 @@ void XorgWindow::poll_events(ResizeCallback cbk) {
     }
 }
 
-void XorgWindow::handle_event(ResizeCallback cbk, const xcb_generic_event_t& event) {
+void Window::handle_event(ResizeCallback cbk, const xcb_generic_event_t& event) {
     auto dispatch_key_event = [this](Action action, xcb_keycode_t kc) {
         xcb_keysym_t keysym = xcb_key_symbols_get_keysym(this->key_symbols.get(), kc, 0);
         Key key = xorg_translate_key(keysym);
@@ -125,18 +125,18 @@ void XorgWindow::handle_event(ResizeCallback cbk, const xcb_generic_event_t& eve
     }
 }
 
-std::pair<xcb_connection_t*, xcb_window_t> XorgWindow::x_handles() {
+std::pair<xcb_connection_t*, xcb_window_t> Window::x_handles() {
     return {
         this->connection.get(),
         this->window
     };
 }
 
-vk::Extent2D XorgWindow::extent() const {
+vk::Extent2D Window::extent() const {
     return {this->width, this->height};
 }
 
-xcb_screen_t* XorgWindow::init_connection(const char* displayname) {
+xcb_screen_t* Window::init_connection(const char* displayname) {
     int preferred_screen_index;
 
     {
@@ -158,7 +158,7 @@ xcb_screen_t* XorgWindow::init_connection(const char* displayname) {
     return it.data;
 }
 
-void XorgWindow::init_window(xcb_screen_t* screen, vk::Extent2D extent, bool override_redirect) {
+void Window::init_window(xcb_screen_t* screen, vk::Extent2D extent, bool override_redirect) {
     this->width = static_cast<uint16_t>(extent.width);
     this->height = static_cast<uint16_t>(extent.height);
 
@@ -239,7 +239,7 @@ void XorgWindow::init_window(xcb_screen_t* screen, vk::Extent2D extent, bool ove
     );
 }
 
-XorgWindow::AtomReply XorgWindow::atom(bool only_if_exists, const std::string_view& str) const {
+Window::AtomReply Window::atom(bool only_if_exists, const std::string_view& str) const {
     xcb_intern_atom_cookie_t cookie = xcb_intern_atom(
         this->connection.get(),
         uint8_t(only_if_exists),

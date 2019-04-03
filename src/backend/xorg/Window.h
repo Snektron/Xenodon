@@ -1,5 +1,5 @@
-#ifndef _XENODON_PRESENT_XORG_XORGWINDOW_H
-#define _XENODON_PRESENT_XORG_XORGWINDOW_H
+#ifndef _XENODON_BACKEND_XORG_WINDOW_H
+#define _XENODON_BACKEND_XORG_WINDOW_H
 
 #include <functional>
 #include <memory>
@@ -11,7 +11,7 @@
 #include "backend/Event.h"
 #include "utility/MallocPtr.h"
 
-class XorgWindow {
+class Window {
     using AtomReply = MallocPtr<xcb_intern_atom_reply_t>;
 
     struct XcbDisconnect {
@@ -39,16 +39,16 @@ class XorgWindow {
 public:
     using ResizeCallback = std::function<void(vk::Extent2D resize_callback)>;
 
-    XorgWindow(EventDispatcher& dispatcher, vk::Extent2D extent);
-    XorgWindow(EventDispatcher& dispatcher, const char* displayname, bool override_redirect);
+    Window(EventDispatcher& dispatcher, vk::Extent2D extent);
+    Window(EventDispatcher& dispatcher, const char* displayname, bool override_redirect);
 
-    XorgWindow(const XorgWindow&) = delete;
-    XorgWindow& operator=(const XorgWindow&) = delete;
+    Window(const Window&) = delete;
+    Window& operator=(const Window&) = delete;
 
-    XorgWindow(XorgWindow&& other) = default;
-    XorgWindow& operator=(XorgWindow&& other) = default;
+    Window(Window&& other) = default;
+    Window& operator=(Window&& other) = default;
 
-    ~XorgWindow();
+    ~Window();
 
     void poll_events(ResizeCallback cbk);
     void handle_event(ResizeCallback cbk, const xcb_generic_event_t& event);

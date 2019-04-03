@@ -8,11 +8,11 @@
 #include "graphics/Swapchain.h"
 #include "backend/Event.h"
 #include "backend/Output.h"
-#include "backend/xorg/XorgWindow.h"
+#include "backend/xorg/Window.h"
 #include "backend/xorg/XorgMultiGpuConfig.h"
 
 class XorgOutput final: public Output {
-    XorgWindow window;
+    Window window;
     vk::UniqueSurfaceKHR surface;
     Device device;
     Swapchain swapchain;
