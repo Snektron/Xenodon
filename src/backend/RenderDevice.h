@@ -1,5 +1,5 @@
-#ifndef _XENODON_BACKEND_RENDERRESOURCES_H
-#define _XENODON_BACKEND_RENDERRESOURCES_H
+#ifndef _XENODON_BACKEND_RENDERDEVICE_H
+#define _XENODON_BACKEND_RENDERDEVICE_H
 
 #include <cstdint>
 #include "graphics/core/Device.h"

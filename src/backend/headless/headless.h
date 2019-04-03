@@ -1,5 +1,5 @@
-#ifndef _XENODON_PRESENT_HEADLESS_HEADLESS_H
-#define _XENODON_PRESENT_HEADLESS_HEADLESS_H
+#ifndef _XENODON_BACKEND_HEADLESS_HEADLESS_H
+#define _XENODON_BACKEND_HEADLESS_HEADLESS_H
 
 #include <memory>
 #include "backend/headless/HeadlessDisplay.h"

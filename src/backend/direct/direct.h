@@ -1,5 +1,5 @@
-#ifndef _XENODON_PRESENT_DIRECT_DIRECT_MAIN_H
-#define _XENODON_PRESENT_DIRECT_DIRECT_MAIN_H
+#ifndef _XENODON_BACKEND_DIRECT_DIRECT_H
+#define _XENODON_BACKEND_DIRECT_DIRECT_H
 
 #include <memory>
 #include "backend/direct/DirectDisplay.h"

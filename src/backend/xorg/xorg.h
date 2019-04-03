@@ -1,5 +1,5 @@
-#ifndef _XENODON_PRESENT_XORG_XORG_MAIN_H
-#define _XENODON_PRESENT_XORG_XORG_MAIN_H
+#ifndef _XENODON_BACKEND_XORG_XORG_H
+#define _XENODON_BACKEND_XORG_XORG_H
 
 #include <memory>
 #include "backend/xorg/XorgDisplay.h"

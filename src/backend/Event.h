@@ -1,5 +1,5 @@
-#ifndef _XENODON_PRESENT_EVENT_H
-#define _XENODON_PRESENT_EVENT_H
+#ifndef _XENODON_BACKEND_EVENT_H
+#define _XENODON_BACKEND_EVENT_H
 
 #include <functional>
 #include <unordered_map>

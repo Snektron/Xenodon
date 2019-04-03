@@ -1,5 +1,5 @@
-#ifndef _XENODON_PRESENT_SCREEN_H
-#define _XENODON_PRESENT_SCREEN_H
+#ifndef _XENODON_BACKEND_OUTPUT_H
+#define _XENODON_BACKEND_OUTPUT_H
 
 #include <vector>
 #include <cstddef>

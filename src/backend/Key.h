@@ -1,5 +1,5 @@
-#ifndef _XENODON_PRESENT_KEY_H
-#define _XENODON_PRESENT_KEY_H
+#ifndef _XENODON_BACKEND_KEY_H
+#define _XENODON_BACKEND_KEY_H
 
 // Keycodes inspired from GLFW, but this is not an exact copy:
 // WORLD_1, WORLD_2, F13 - F15, PRINT_SCREEN, LEFT_SUPER and RIGHT_SUPER have been removed.

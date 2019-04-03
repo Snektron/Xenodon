@@ -1,5 +1,5 @@
-#ifndef _XENODON_PRESENT_XORG_XORGDISPLAY_H
-#define _XENODON_PRESENT_XORG_XORGDISPLAY_H
+#ifndef _XENODON_BACKEND_XORG_XORGDISPLAY_H
+#define _XENODON_BACKEND_XORG_XORGDISPLAY_H
 
 #include <cstdint>
 #include <vulkan/vulkan.hpp>

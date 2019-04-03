@@ -1,5 +1,5 @@
-#ifndef _XENODON_GRAPHICS_DEVICE_CPP
-#define _XENODON_GRAPHICS_DEVICE_CPP
+#ifndef _XENODON_GRAPHICS_DEVICE_H
+#define _XENODON_GRAPHICS_DEVICE_H
 
 #include <optional>
 #include <utility>

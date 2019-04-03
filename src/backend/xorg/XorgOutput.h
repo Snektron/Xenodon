@@ -1,5 +1,5 @@
-#ifndef _XENODON_PRESENT_XORG_XORGSCREEN_H
-#define _XENODON_PRESENT_XORG_XORGSCREEN_H
+#ifndef _XENODON_BACKEND_XORG_XORGOUTPUT_H
+#define _XENODON_BACKEND_XORG_XORGOUTPUT_H
 
 #include <vulkan/vulkan.hpp>
 #include <xcb/xcb.h>
