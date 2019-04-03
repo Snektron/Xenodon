@@ -21,6 +21,10 @@ public:
     const vk::Device* operator->() const {
         return &*this->dev;
     }
+
+    vk::PhysicalDevice physical_device() const {
+        return this->physdev;
+    }
 };
 
 #endif

@@ -23,6 +23,7 @@ sources = [
     'src/graphics/core/PhysicalDevice.cpp',
     'src/graphics/core/Device.cpp',
     'src/graphics/core/Queue.cpp',
+    'src/graphics/core/Swapchain.cpp',
     'src/graphics/Device.cpp',
     'src/graphics/Swapchain.cpp',
     'src/graphics/Image.cpp',

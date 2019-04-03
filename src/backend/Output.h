@@ -7,6 +7,12 @@
 #include "graphics/Swapchain.h"
 #include "math/Vec.h"
 
+struct SwapImage2 {
+    vk::CommandBuffer command_buffer;
+    vk::Image image;
+    vk::ImageView view;
+};
+
 struct Output {
     virtual ~Output() = default;
 

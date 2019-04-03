@@ -16,11 +16,15 @@ public:
         return this->queue;
     }
 
-    uint32_t queue_family_index() const {
+    const vk::Queue* operator->() const {
+        return &this->queue;
+    }
+
+    const uint32_t& queue_family_index() const {
         return this->family_index;
     }
 
-    uint32_t queue_index() const {
+    const uint32_t& queue_index() const {
         return this->index;
     }
 };
