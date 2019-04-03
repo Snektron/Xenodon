@@ -5,7 +5,6 @@
 #include <array>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
-#include "graphics/Swapchain.h"
 #include "graphics/core/Queue.h"
 #include "backend/SwapImage.h"
 

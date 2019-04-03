@@ -4,12 +4,8 @@
 #include <vector>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
-#include "graphics/Device.h"
 #include "backend/Output.h"
 #include "backend/RenderDevice.h"
-#include "utility/Span.h"
-
-using Setup = std::vector<size_t>;
 
 struct Display {
     virtual ~Display() = default;

@@ -5,7 +5,6 @@
 #include <vector>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
-#include "graphics/Device.h"
 #include "backend/Display.h"
 #include "render/DeviceRenderer.h"
 
