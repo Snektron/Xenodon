@@ -20,7 +20,7 @@ class TestRenderer {
     vk::UniquePipelineLayout layout;
     vk::UniqueRenderPass render_pass;
     vk::UniquePipeline pipeline;
-    Buffer output_region;
+    Buffer<OutputRegion> output_region;
 
 public:
     TestRenderer(const Device& device, vk::Rect2D region, vk::AttachmentDescription output_attachment);

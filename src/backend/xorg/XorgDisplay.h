@@ -12,7 +12,6 @@
 #include "backend/xorg/XorgOutput.h"
 #include "backend/xorg/XorgMultiGpuConfig.h"
 
-struct Device;
 struct Output;
 
 class XorgDisplay final: public Display {

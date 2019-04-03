@@ -11,7 +11,6 @@
 #include "backend/direct/ScreenGroup.h"
 #include "backend/direct/input/LinuxInput.h"
 
-struct Device;
 struct Output;
 
 class DirectDisplay final: public Display {

@@ -10,7 +10,6 @@
 #include "backend/headless/HeadlessConfig.h"
 #include "backend/headless/HeadlessOutput.h"
 
-struct Device;
 struct Output;
 
 class HeadlessDisplay final: public Display {

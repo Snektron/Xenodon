@@ -26,9 +26,8 @@ TestRenderer::TestRenderer(const Device& device, vk::Rect2D region, vk::Attachme
     region(region),
     output_region(device, sizeof(OutputRegion), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) {
 
-    auto* output_region = reinterpret_cast<OutputRegion*>(this->device->mapMemory(this->output_region.memory(), 0, sizeof(OutputRegion)));
-
-    this->device->unmapMemory(this->output_region.memory());
+    OutputRegion* output_region = this->output_region.map(0, 1);
+    this->output_region.unmap();
 
     const auto vertex_shader = create_shader(this->device.get(), resources::open("resources/test.vert"));
     const auto fragment_shader = create_shader(this->device.get(), resources::open("resources/test.frag"));

@@ -58,7 +58,16 @@ std::optional<uint32_t> Device::find_memory_type(uint32_t filter, vk::MemoryProp
     return std::nullopt;
 }
 
-vk::UniqueDeviceMemory Device::allocate(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const {
+vk::DeviceMemory Device::allocate(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const {
+    auto alloc_info = vk::MemoryAllocateInfo(
+        requirements.size,
+        this->find_memory_type(requirements.memoryTypeBits, flags).value()
+    );
+
+    return this->dev->allocateMemory(alloc_info);
+}
+
+vk::UniqueDeviceMemory Device::allocate_unique(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const {
     auto alloc_info = vk::MemoryAllocateInfo(
         requirements.size,
         this->find_memory_type(requirements.memoryTypeBits, flags).value()
@@ -66,3 +75,4 @@ vk::UniqueDeviceMemory Device::allocate(vk::MemoryRequirements requirements, vk:
 
     return this->dev->allocateMemoryUnique(alloc_info);
 }
+

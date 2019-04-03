@@ -81,12 +81,15 @@ void HeadlessOutput::synchronize() const {
     this->rendev.device->resetFences(this->frame_fence.get());
 }
 
-void HeadlessOutput::download(Pixel* pixels, size_t stride) {
-    const size_t n_pixels = this->render_region.extent.width * this->render_region.extent.height;
-    const size_t size = n_pixels * sizeof(Pixel);
+void HeadlessOutput::download(Pixel* output, size_t stride) {
+    if (stride == 0) {
+        stride = this->render_region.extent.width;
+    }
+
+    const size_t size = this->render_region.extent.width * this->render_region.extent.height;
     const auto memory_bits = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
-    auto staging_buffer = Buffer(this->rendev.device, size, vk::BufferUsageFlagBits::eTransferDst, memory_bits);
+    auto staging_buffer = Buffer<Pixel>(this->rendev.device, size, vk::BufferUsageFlagBits::eTransferDst, memory_bits);
 
     this->rendev.graphics_one_time_submit([this, &staging_buffer](vk::CommandBuffer cmd_buf) {
         auto copy_info = vk::BufferImageCopy(
@@ -106,17 +109,13 @@ void HeadlessOutput::download(Pixel* pixels, size_t stride) {
         );
     });
 
-    Pixel* staging_pixels = reinterpret_cast<Pixel*>(this->rendev.device->mapMemory(staging_buffer.memory(), 0, size));
-
-    if (stride == 0) {
-        stride = this->render_region.extent.width;
-    }
+    Pixel* pixels = staging_buffer.map(0, size);
 
     for (size_t y = 0; y < this->render_region.extent.height; ++y) {
         for (size_t x = 0; x < this->render_region.extent.width; ++x) {
-            pixels[y * stride + x] = staging_pixels[y * this->render_region.extent.width + x];
+            output[y * stride + x] = pixels[y * this->render_region.extent.width + x];
         }
     }
 
-    this->rendev.device->unmapMemory(staging_buffer.memory());
+    staging_buffer.unmap();
 }

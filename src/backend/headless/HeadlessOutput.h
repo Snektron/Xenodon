@@ -30,7 +30,7 @@ public:
     vk::AttachmentDescription color_attachment_descr() const override;
 
     void synchronize() const;
-    void download(Pixel* pixels, size_t stride);
+    void download(Pixel* output, size_t stride);
 
     RenderDevice& render_device() {
         return this->rendev;

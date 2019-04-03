@@ -1,7 +1,8 @@
 #include "graphics/memory/Image.h"
 
-Image::Image(const Device& device, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags flags) {
-    auto image_create_info = vk::ImageCreateInfo(
+Image::Image(const Device& device, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags flags):
+    device(device.get()) {
+    this->image = device->createImage({
         {},
         vk::ImageType::e2D,
         format,
@@ -12,10 +13,15 @@ Image::Image(const Device& device, vk::Extent2D extent, vk::Format format, vk::I
         vk::ImageTiling::eOptimal,
         flags,
         vk::SharingMode::eExclusive
-    );
+    });
 
-    this->image = device->createImageUnique(image_create_info);
-    auto reqs = device->getImageMemoryRequirements(this->image.get());
+    const auto reqs = device->getImageMemoryRequirements(this->image);
+
     this->mem = device.allocate(reqs, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    device->bindImageMemory(this->image.get(), this->mem.get(), 0);
+    device->bindImageMemory(this->image, this->mem, 0);
+}
+
+Image::~Image() {
+    this->device.freeMemory(this->mem);
+    this->device.destroyImage(this->image);
 }

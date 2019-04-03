@@ -24,7 +24,6 @@ sources = [
     'src/graphics/core/Device.cpp',
     'src/graphics/core/Swapchain.cpp',
     'src/graphics/memory/Image.cpp',
-    'src/graphics/memory/Buffer.cpp',
     'src/render/Renderer.cpp',
     'src/render/DeviceRenderer.cpp',
     'src/render/TestRenderer.cpp',
