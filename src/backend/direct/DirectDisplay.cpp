@@ -23,42 +23,44 @@ DirectDisplay::DirectDisplay(EventDispatcher& dispatcher, const DirectConfig& di
             throw Error("Vulkan device index {} out of range", device.vulkan_index);
         }
 
-        this->screen_groups.emplace_back(this->instance, gpus[device.vulkan_index], device.outputs);
+        this->screen_groups.push_back(std::make_unique<ScreenGroup>(this->instance, gpus[device.vulkan_index], device.outputs));
     }
 
     for (size_t i = 0; i < this->screen_groups.size(); ++i) {
-        for (size_t j = 0; j < this->screen_groups[i].outputs.size(); ++j) {
-            LOGGER.log("Screen {} {} info:", i, j);
-            const auto& swapchain = this->screen_groups[i].outputs[j].swapchain;
+        LOGGER.log("Render device {}:", i);
+        this->screen_groups[i]->log();
 
-            LOGGER.log("\tPresent mode: {}", vk::to_string(swapchain.surface_present_mode()));
-            auto extent = swapchain.surface_extent();
-            LOGGER.log("\tExtent: {}x{}", extent.width, extent.height);
-            auto surface_format = swapchain.surface_format();
-            LOGGER.log("\tFormat: {}", vk::to_string(surface_format.format));
-            LOGGER.log("\tColorspace: {}", vk::to_string(surface_format.colorSpace));
-            LOGGER.log("\tSwapchain images: {}", swapchain.num_images());
-        }
+        // for (size_t j = 0; j < this->screen_groups[i].outputs.size(); ++j) {
+        //     LOGGER.log("Screen {} {} info:", i, j);
+        //     const auto& swapchain = this->screen_groups[i].outputs[j].swapchain;
+
+        //     LOGGER.log("\tPresent mode: {}", vk::to_string(swapchain.surface_present_mode()));
+        //     auto extent = swapchain.surface_extent();
+        //     LOGGER.log("\tExtent: {}x{}", extent.width, extent.height);
+        //     auto surface_format = swapchain.surface_format();
+        //     LOGGER.log("\tFormat: {}", vk::to_string(surface_format.format));
+        //     LOGGER.log("\tColorspace: {}", vk::to_string(surface_format.colorSpace));
+        //     LOGGER.log("\tSwapchain images: {}", swapchain.num_images());
+        // }
     }
 }
 
-Setup DirectDisplay::setup() const {
-    auto setup = Setup();
-    setup.resize(this->screen_groups.size());
+size_t DirectDisplay::num_render_devices() const {
+    return this->screen_groups.size();
+}
 
-    for (size_t i = 0; i < this->screen_groups.size(); ++i) {
-        setup[i] = this->screen_groups[i].outputs.size();
+const RenderDevice& DirectDisplay::render_device(size_t device_index) {
+    return this->screen_groups[device_index]->render_device();
+}
+
+Output* DirectDisplay::output(size_t device_index, size_t output_index) {
+    return &this->screen_groups[device_index]->output(output_index);
+}
+
+void DirectDisplay::swap_buffers()  {
+    for (auto& screen_group : this->screen_groups) {
+        screen_group->swap_buffers();
     }
-
-    return setup;
-}
-
-Device& DirectDisplay::device(size_t gpu_index) {
-    return this->screen_groups[gpu_index].device;
-}
-
-Output* DirectDisplay::output(size_t gpu_index, size_t output_index) {
-    return &this->screen_groups[gpu_index].outputs[output_index];
 }
 
 void DirectDisplay::poll_events() {

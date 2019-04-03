@@ -1,5 +1,6 @@
 #include "backend/direct/ScreenGroup.h"
 #include <array>
+#include "core/Logger.h"
 
 namespace {
     constexpr const std::array DEVICE_EXTENSIONS = {
@@ -7,12 +8,12 @@ namespace {
         VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME
     };
 
-    vk::UniqueSurfaceKHR create_surface(Instance& instance, const PhysicalDevice& gpu, vk::DisplayKHR display) {
+    vk::UniqueSurfaceKHR create_surface(Instance& instance, const PhysicalDevice& physdev, vk::DisplayKHR display) {
         vk::DisplayModePropertiesKHR mode_props;
         uint32_t property_count = 1;
 
         vk::createResultValue(
-            gpu->getDisplayModePropertiesKHR(
+            physdev->getDisplayModePropertiesKHR(
                 display,
                 &property_count,
                 &mode_props
@@ -21,7 +22,7 @@ namespace {
             {vk::Result::eSuccess, vk::Result::eIncomplete}
         );
 
-        auto opt = gpu.find_display_plane(display);
+        auto opt = physdev.find_display_plane(display);
         if (!opt) {
             throw Error("Failed to find display plane");
         }
@@ -41,10 +42,10 @@ namespace {
         return instance->createDisplayPlaneSurfaceKHRUnique(create_info);
     }
 
-    std::vector<vk::UniqueSurfaceKHR> create_surfaces(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Output>& outputs) {
+    std::vector<vk::UniqueSurfaceKHR> create_surfaces(Instance& instance, const PhysicalDevice& physdev, const std::vector<DirectConfig::Output>& outputs) {
         auto surfaces = std::vector<vk::UniqueSurfaceKHR>();
 
-        auto displays = gpu->getDisplayPropertiesKHR();
+        auto displays = physdev->getDisplayPropertiesKHR();
         surfaces.reserve(outputs.size());
         for (size_t i = 0; i < outputs.size(); ++i) {
             if (outputs[i].vulkan_index >= displays.size()) {
@@ -52,46 +53,61 @@ namespace {
             }
 
             auto display_props = displays[outputs[i].vulkan_index];
-            surfaces.push_back(create_surface(instance, gpu, display_props.display));
+            surfaces.push_back(create_surface(instance, physdev, display_props.display));
         }
 
         return surfaces;
     }
 
-    Device create_device(const PhysicalDevice& gpu, const std::vector<vk::UniqueSurfaceKHR>& unique_surfaces) {
-        if (!gpu.supports_extensions(DEVICE_EXTENSIONS)) {
+    RenderDevice create_render_device(const PhysicalDevice& physdev, const std::vector<vk::UniqueSurfaceKHR>& unique_surfaces) {
+        if (!physdev.supports_extensions(DEVICE_EXTENSIONS)) {
             throw Error("Gpu does not support required extensions");
         }
 
         auto surfaces = std::vector<vk::SurfaceKHR>();
         surfaces.reserve(unique_surfaces.size());
         for (auto& surface : unique_surfaces) {
-            if (!gpu.supports_surface(surface.get())) {
+            if (!physdev.supports_surface(surface.get())) {
                 throw Error("Gpu doesnt support surface");
             }
 
             surfaces.push_back(surface.get());
         }
 
-        if (auto queue = gpu.find_queue_family(vk::QueueFlagBits::eGraphics, surfaces)) {
-            return Device(gpu.get(), DEVICE_EXTENSIONS, queue.value());
+        if (auto family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics, surfaces)) {
+            return RenderDevice(
+                Device2(physdev, family.value(), DEVICE_EXTENSIONS),
+                family.value(),
+                surfaces.size()
+            );
         } else {
             throw Error("Gpu does not support graphics/present queue");
         }
     }
 }
 
-ScreenGroup::ScreenGroup(Instance& instance, const PhysicalDevice& gpu, const std::vector<DirectConfig::Output>& outputs):
-    surfaces(create_surfaces(instance, gpu, outputs)),
-    device(create_device(gpu, this->surfaces)) {
+ScreenGroup::ScreenGroup(Instance& instance, const PhysicalDevice& physdev, const std::vector<DirectConfig::Output>& outputs):
+    surfaces(create_surfaces(instance, physdev, outputs)),
+    rendev(create_render_device(physdev, this->surfaces)) {
 
     this->outputs.reserve(outputs.size());
     for (size_t i = 0; i < outputs.size(); ++i) {
-        this->outputs.emplace_back(this->device, this->surfaces[i].get(), outputs[i].offset);
+        this->outputs.emplace_back(this->rendev.device, this->rendev.graphics_queue, this->surfaces[i].get(), outputs[i].offset);
     }
 }
 
 ScreenGroup::~ScreenGroup() {
-    if (this->device.logical)
-        this->device.logical->waitIdle();
+    this->rendev.device->waitIdle();
+}
+
+void ScreenGroup::swap_buffers() {
+    for (auto& output : this->outputs) {
+        output.swap_buffers();
+    }
+}
+
+void ScreenGroup::log() const {
+    for (size_t i = 0; i < this->outputs.size(); ++i) {
+        LOGGER.log("\tOutput {}:", i);
+    }
 }

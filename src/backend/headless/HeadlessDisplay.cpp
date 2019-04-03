@@ -21,22 +21,29 @@ HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConf
     }
 }
 
-Setup HeadlessDisplay::setup() const {
-    return Setup(this->outputs.size(), 1);
+size_t HeadlessDisplay::num_render_devices() const {
+    return this->outputs.size();
 }
 
-Device& HeadlessDisplay::device(size_t gpu_index) {
-    return this->outputs[gpu_index].device;
+const RenderDevice& HeadlessDisplay::render_device(size_t device_index) {
+    return this->outputs[device_index].render_device();
 }
 
-Output* HeadlessDisplay::output(size_t gpu_index, size_t output_index) {
-    // output index should always be 0 because there is always one output per render device.
+Output* HeadlessDisplay::output(size_t device_index, size_t output_index) {
     assert(output_index == 0);
-    return &this->outputs[gpu_index];
+    return &this->outputs[device_index];
+}
+
+void HeadlessDisplay::swap_buffers() {
+    // TODO: make sure every frame is rendered
+    for (const auto& output : this->outputs) {
+        output.synchronize();
+    }
+
+    this->save();
 }
 
 void HeadlessDisplay::poll_events() {
-    this->save();
     this->dispatcher.dispatch_close_event();
 }
 

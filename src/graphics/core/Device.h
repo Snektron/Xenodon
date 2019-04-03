@@ -1,6 +1,7 @@
 #ifndef _XENODON_GRAPHICS_CORE_DEVICE_H
 #define _XENODON_GRAPHICS_CORE_DEVICE_H
 
+#include <optional>
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include "graphics/core/PhysicalDevice.h"
@@ -13,6 +14,9 @@ class Device2 {
 public:
     Device2(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions = nullptr);
     Device2(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Span<const char* const> extensions = nullptr);
+
+    std::optional<uint32_t> find_memory_type(uint32_t filter, vk::MemoryPropertyFlags flags) const;
+    vk::UniqueDeviceMemory allocate(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const;
 
     vk::Device get() const {
         return this->dev.get();

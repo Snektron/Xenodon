@@ -1,65 +1,67 @@
 #include "backend/headless/HeadlessOutput.h"
 #include <cassert>
 #include "core/Error.h"
-#include "graphics/Swapchain.h"
-#include "graphics/Buffer.h"
+#include "graphics/memory/Buffer.h"
 
 namespace {
     constexpr const auto RENDER_TARGET_FORMAT = vk::Format::eR8G8B8A8Unorm;
 
-    Device create_device(const PhysicalDevice& gpu) {
-        if (auto queue = gpu.find_queue_family(vk::QueueFlagBits::eGraphics)) {
-            return Device(gpu.get(), nullptr, queue.value());
+    const vk::ImageUsageFlags RENDER_TARGET_USAGE = vk::ImageUsageFlagBits::eColorAttachment
+        | vk::ImageUsageFlagBits::eSampled
+        | vk::ImageUsageFlagBits::eTransferSrc;
+
+
+    RenderDevice create_render_device(const PhysicalDevice& physdev) {
+        if (auto family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics)) {
+            return RenderDevice(
+                Device2(physdev, family.value()),
+                family.value(),
+                1
+            );
         } else {
             throw Error("Gpu does not support graphics/present queue");
         }
     }
 }
 
-HeadlessOutput::HeadlessOutput(const PhysicalDevice& gpu, vk::Rect2D render_region):
+HeadlessOutput::HeadlessOutput(const PhysicalDevice& physdev, vk::Rect2D render_region):
     render_region(render_region),
-    device(create_device(gpu)),
-    render_target(this->device, render_region.extent, RENDER_TARGET_FORMAT) {
+    rendev(create_render_device(physdev)),
+    frame_fence(this->rendev.device->createFenceUnique({})),
+    render_target(this->rendev.device, render_region.extent, RENDER_TARGET_FORMAT, RENDER_TARGET_USAGE) {
 
-    auto command_buffer_info = vk::CommandBufferAllocateInfo(this->device.graphics.command_pool.get());
-    command_buffer_info.commandBufferCount = 1;
-    this->command_buffer = std::move(this->device.logical->allocateCommandBuffersUnique(command_buffer_info).front());
+    auto sub_resource_range = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+
+    auto component_mapping = vk::ComponentMapping(
+        vk::ComponentSwizzle::eR,
+        vk::ComponentSwizzle::eG,
+        vk::ComponentSwizzle::eB,
+        vk::ComponentSwizzle::eA
+    );
+
+    auto view_create_info = vk::ImageViewCreateInfo(
+        {},
+        this->render_target.get(),
+        vk::ImageViewType::e2D,
+        RENDER_TARGET_FORMAT,
+        component_mapping,
+        sub_resource_range
+    );
+
+    this->render_target_view = this->rendev.device->createImageViewUnique(view_create_info);
 }
 
 uint32_t HeadlessOutput::num_swap_images() const {
     return 1;
 }
 
-SwapImage HeadlessOutput::swap_image(uint32_t index) const {
-    // There is only one image per output
-    assert(index == 0);
-    return {
-        this->command_buffer.get(),
-        this->render_target.image(),
-        this->render_target.view()
-    };
+uint32_t HeadlessOutput::current_swap_index() const {
+    return 0;
 }
 
-vk::Result HeadlessOutput::present(Swapchain::PresentCallback f) {
-    f(0, this->swap_image(0));
-
-    auto wait_stages = std::array{
-        vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-    };
-
-    auto submit_info = vk::SubmitInfo(
-        0,
-        nullptr,
-        wait_stages.data(),
-        1,
-        &this->command_buffer.get(),
-        0,
-        nullptr
-    );
-
-    this->device.graphics.queue.submit(1, &submit_info, vk::Fence());
-
-    return vk::Result::eSuccess;
+SwapImage2 HeadlessOutput::swap_image(uint32_t index) {
+    assert(index == 0);
+    return SwapImage2(this->render_target.get(), this->render_target_view.get(), this->frame_fence.get());
 }
 
 vk::Rect2D HeadlessOutput::region() const {
@@ -74,14 +76,19 @@ vk::AttachmentDescription HeadlessOutput::color_attachment_descr() const {
     return descr;
 }
 
+void HeadlessOutput::synchronize() const {
+    this->rendev.device->waitForFences(this->frame_fence.get(), true, std::numeric_limits<uint64_t>::max());
+    this->rendev.device->resetFences(this->frame_fence.get());
+}
+
 void HeadlessOutput::download(Pixel* pixels, size_t stride) {
     const size_t n_pixels = this->render_region.extent.width * this->render_region.extent.height;
     const size_t size = n_pixels * sizeof(Pixel);
     const auto memory_bits = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
-    auto staging_buffer = Buffer(this->device, size, vk::BufferUsageFlagBits::eTransferDst, memory_bits);
+    auto staging_buffer = Buffer2(this->rendev.device, size, vk::BufferUsageFlagBits::eTransferDst, memory_bits);
 
-    this->device.single_graphics_submit([this, &staging_buffer](vk::CommandBuffer cmd_buf) {
+    this->rendev.graphics_one_time_submit([this, &staging_buffer](vk::CommandBuffer cmd_buf) {
         auto copy_info = vk::BufferImageCopy(
             0,
             0,
@@ -92,14 +99,14 @@ void HeadlessOutput::download(Pixel* pixels, size_t stride) {
         );
 
         cmd_buf.copyImageToBuffer(
-            this->render_target.image(),
+            this->render_target.get(),
             vk::ImageLayout::eTransferSrcOptimal,
-            staging_buffer.buffer(),
+            staging_buffer.get(),
             copy_info
         );
     });
 
-    Pixel* staging_pixels = reinterpret_cast<Pixel*>(this->device.logical->mapMemory(staging_buffer.memory(), 0, size));
+    Pixel* staging_pixels = reinterpret_cast<Pixel*>(this->rendev.device->mapMemory(staging_buffer.memory(), 0, size));
 
     if (stride == 0) {
         stride = this->render_region.extent.width;
@@ -111,5 +118,5 @@ void HeadlessOutput::download(Pixel* pixels, size_t stride) {
         }
     }
 
-    this->device.logical->unmapMemory(staging_buffer.memory());
+    this->rendev.device->unmapMemory(staging_buffer.memory());
 }

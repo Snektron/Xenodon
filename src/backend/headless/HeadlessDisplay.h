@@ -22,9 +22,10 @@ class HeadlessDisplay final: public Display {
 public:
     HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, const char* out_path);
 
-    Setup setup() const override;
-    Device& device(size_t gpu_index) override;
-    Output* output(size_t gpu_index, size_t output_index) override;
+    size_t num_render_devices() const override;
+    const RenderDevice& render_device(size_t device_index) override;
+    Output* output(size_t device_index, size_t output_index) override;
+    void swap_buffers() override;
     void poll_events() override;
 
 private:

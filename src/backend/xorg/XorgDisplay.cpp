@@ -14,35 +14,39 @@ namespace {
 XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, vk::Extent2D extent):
     instance(REQUIRED_INSTANCE_EXTENSIONS) {
 
-    this->outputs.generate_in_place(1, [&](XorgOutput* ptr, [[maybe_unused]] size_t i){
-        new (ptr) XorgOutput(this->instance, dispatcher, extent);
-    });
+    this->outputs.push_back(std::make_unique<XorgOutput>(this->instance, dispatcher, extent));
 }
 
 XorgDisplay::XorgDisplay(EventDispatcher& dispatcher, const XorgMultiGpuConfig& config):
     instance(REQUIRED_INSTANCE_EXTENSIONS) {
 
-    this->outputs.generate_in_place(config.outputs.size(), [&](XorgOutput* ptr, size_t i){
-        new (ptr) XorgOutput(this->instance, dispatcher, config.outputs[i]);
-    });
+    this->outputs.reserve(config.outputs.size());
+    for (const auto& output_conf : config.outputs) {
+        this->outputs.push_back(std::make_unique<XorgOutput>(this->instance, dispatcher, output_conf));
+    }
 }
 
-Setup XorgDisplay::setup() const {
-    return Setup(this->outputs.size(), 1);
+size_t XorgDisplay::num_render_devices() const {
+    return this->outputs.size();
 }
 
-Device& XorgDisplay::device(size_t gpu_index) {
-    return this->outputs[gpu_index].device;
+RenderDevice& XorgDisplay::render_device(size_t device_index) {
+    return this->outputs[device_index]->render_device();
 }
 
-Output* XorgDisplay::output(size_t gpu_index, size_t output_index) {
-    /// output index should always be 0 because there is always one output per render device.
+Output* XorgDisplay::output(size_t device_index, size_t output_index) {
     assert(output_index == 0);
-    return &this->outputs[gpu_index];
+    return this->outputs[device_index].get();
+}
+
+void XorgDisplay::swap_buffers() {
+    for (auto& output : this->outputs) {
+        output->swap_buffers();
+    }
 }
 
 void XorgDisplay::poll_events() {
     for (auto& output : this->outputs) {
-        output.poll_events();
+        output->poll_events();
     }
 }

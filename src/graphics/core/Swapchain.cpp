@@ -117,7 +117,7 @@ void Swapchain2::recreate(vk::Extent2D surface_extent) {
 
         for (size_t i = 0; i < this->images.size(); ++i) {
             create_info.image = this->images[i].image;
-            this->images[i].image_view = dev.createImageViewUnique(create_info);
+            this->images[i].view = dev.createImageViewUnique(create_info);
         }
     }
 
@@ -126,7 +126,7 @@ void Swapchain2::recreate(vk::Extent2D surface_extent) {
         for (size_t i = 0; i < this->images.size(); ++i) {
             this->images[i].image_acquired = dev.createSemaphoreUnique(vk::SemaphoreCreateInfo());
             this->images[i].render_finished = dev.createSemaphoreUnique(vk::SemaphoreCreateInfo());
-            this->images[i].fence = dev.createFenceUnique({vk::FenceCreateFlagBits::eSignaled});
+            this->images[i].frame_fence = dev.createFenceUnique({});
         }
     }
 
@@ -152,8 +152,8 @@ vk::Result Swapchain2::swap_buffers() {
     auto& current_image = this->current_image();
     auto dev = this->device->get();
 
-    dev.waitForFences(current_image.fence.get(), true, std::numeric_limits<uint64_t>::max());
-    dev.resetFences(current_image.fence.get());
+    dev.waitForFences(current_image.frame_fence.get(), true, std::numeric_limits<uint64_t>::max());
+    dev.resetFences(current_image.frame_fence.get());
 
     auto present_info = vk::PresentInfoKHR(
         1,

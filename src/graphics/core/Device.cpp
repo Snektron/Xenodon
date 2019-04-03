@@ -46,3 +46,23 @@ Device2::Device2(const PhysicalDevice& physdev, Span<uint32_t> queue_families, S
         nullptr
     });
 }
+
+std::optional<uint32_t> Device2::find_memory_type(uint32_t filter, vk::MemoryPropertyFlags flags) const {
+    auto mem_props = this->physdev.getMemoryProperties();
+    for (uint32_t i = 0; i < mem_props.memoryTypeCount; ++i) {
+        if (filter & (1 << i) && (mem_props.memoryTypes[i].propertyFlags & flags) == flags) {
+            return i;
+        }
+    }
+
+    return std::nullopt;
+}
+
+vk::UniqueDeviceMemory Device2::allocate(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const {
+    auto alloc_info = vk::MemoryAllocateInfo(
+        requirements.size,
+        this->find_memory_type(requirements.memoryTypeBits, flags).value()
+    );
+
+    return this->dev->allocateMemoryUnique(alloc_info);
+}

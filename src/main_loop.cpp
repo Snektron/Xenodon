@@ -5,39 +5,38 @@
 #include "backend/Display.h"
 #include "render/Renderer.h"
 #include "core/Logger.h"
+#include "core/Error.h"
 
 namespace {
-    void report_setup(const Setup& setup) {
-        size_t ngpus = setup.size();
+    void check_setup(Display* display) {
+        size_t num_devices = display->num_render_devices();
+        if (num_devices == 0) {
+            throw Error("Invalid setup (no render devices)");
+        }
 
         auto buf = fmt::memory_buffer();
 
-        fmt::format_to(buf, "Setup: {}{}, with {}", ngpus, ngpus > 1 ? " devices" : " device", setup[0]);
+        fmt::format_to(buf, "Setup: {} {}, with ", num_devices, num_devices > 1 ? "devices" : "device");
 
-        for (size_t i = 1; i < setup.size(); ++i) {
-            fmt::format_to(buf, ", {}", setup[i]);
+        for (size_t i = 0; i < num_devices; ++i) {
+            size_t outputs = display->render_device(i).outputs;
+            if (outputs == 0) {
+                throw Error("Invalid setup (device {} has no outputs)", i);
+            }
+            if (i == 0) {
+                fmt::format_to(buf, "{}", outputs);
+            } else {
+                fmt::format_to(buf, ", {}", outputs);
+            }
         }
 
-        fmt::format_to(buf, " {}", ngpus > 1 || setup[0] > 1 ? "outputs" : "output");
+        fmt::format_to(buf, " {}", num_devices > 1 || display->render_device(0).outputs > 1 ? "outputs" : "output");
         LOGGER.log(fmt::to_string(buf));
     }
 }
 
 void main_loop(EventDispatcher& dispatcher, Display* display) {
-    auto setup = display->setup();
-    if (setup.empty()) {
-        LOGGER.log("Error: Invalid setup (no devices)");
-        return;
-    }
-
-    for (size_t i = 0; i < setup.size(); ++i) {
-        if (setup[i] == 0) {
-            LOGGER.log("Error: Invalid setup (device {} has no outputs)", i);
-            return;
-        }
-    }
-
-    report_setup(setup);
+    check_setup(display);
 
     auto renderer = Renderer(display);
 
@@ -72,6 +71,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
             start = now;
         }
 
+        display->swap_buffers();
         display->poll_events();
     }
 }

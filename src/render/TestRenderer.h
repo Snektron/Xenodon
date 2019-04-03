@@ -2,8 +2,8 @@
 #define _XENODON_RENDER_TESTRENDERER_H
 
 #include <vulkan/vulkan.hpp>
-#include "graphics/Device.h"
-#include "graphics/Buffer.h"
+#include "graphics/core/Device.h"
+#include "graphics/memory/Buffer.h"
 #include "math/Vec.h"
 
 class TestRenderer {
@@ -13,19 +13,17 @@ class TestRenderer {
         Vec2F resolution;
     };
 
-    Device* device;
+    const Device2& device;
     vk::Rect2D region;
 
     vk::UniqueDescriptorSetLayout descriptor_layout;
     vk::UniquePipelineLayout layout;
     vk::UniqueRenderPass render_pass;
     vk::UniquePipeline pipeline;
-    Buffer output_region;
+    Buffer2 output_region;
 
 public:
-    TestRenderer(Device& device, vk::Rect2D region, vk::AttachmentDescription output_attachment);
-    TestRenderer(TestRenderer&&) = default;
-    TestRenderer& operator=(TestRenderer&&) = default;
+    TestRenderer(const Device2& device, vk::Rect2D region, vk::AttachmentDescription output_attachment);
 
     void present(vk::CommandBuffer cmd, vk::Framebuffer target);
     vk::RenderPass final_render_pass() const;

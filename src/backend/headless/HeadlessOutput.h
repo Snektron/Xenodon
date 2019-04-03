@@ -4,8 +4,9 @@
 #include <functional>
 #include <cstdint>
 #include "graphics/core/PhysicalDevice.h"
-#include "graphics/Device.h"
-#include "graphics/RenderTarget.h"
+#include "graphics/core/Device.h"
+#include "graphics/memory/Image.h"
+#include "backend/RenderDevice.h"
 #include "backend/Output.h"
 #include "backend/headless/HeadlessConfig.h"
 
@@ -13,23 +14,27 @@ using Pixel = uint32_t;
 
 class HeadlessOutput final: public Output {
     vk::Rect2D render_region;
-    Device device;
-    RenderTarget render_target;
-    vk::UniqueCommandBuffer command_buffer;
+    RenderDevice rendev;
+    vk::UniqueFence frame_fence;
+
+    Image2 render_target;
+    vk::UniqueImageView render_target_view;
 
 public:
-    HeadlessOutput(const PhysicalDevice& gpu, vk::Rect2D render_region);
+    HeadlessOutput(const PhysicalDevice& physdev, vk::Rect2D render_region);
 
     uint32_t num_swap_images() const override;
-    SwapImage swap_image(uint32_t index) const override;
-    vk::Result present(Swapchain::PresentCallback f) override;
-
+    uint32_t current_swap_index() const override;
+    SwapImage2 swap_image(uint32_t index) override;
     vk::Rect2D region() const override;
     vk::AttachmentDescription color_attachment_descr() const override;
 
+    void synchronize() const;
     void download(Pixel* pixels, size_t stride);
 
-    friend class HeadlessDisplay;
+    RenderDevice& render_device() {
+        return this->rendev;
+    }
 };
 
 #endif

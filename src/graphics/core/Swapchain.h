@@ -12,10 +12,10 @@ class Swapchain2 {
 public:
     struct SwapImageResources {
         vk::Image image;
-        vk::UniqueImageView image_view;
+        vk::UniqueImageView view;
         vk::UniqueSemaphore image_acquired;
         vk::UniqueSemaphore render_finished;
-        vk::UniqueFence fence;
+        vk::UniqueFence frame_fence;
     };
 
 private:

@@ -1,20 +1,19 @@
 #include "render/Renderer.h"
 
 Renderer::Renderer(Display* display) {
-    auto setup = display->setup();
-    this->devices.reserve(setup.size());
-
-    for (size_t i = 0; i < setup.size(); ++i) {
-        this->devices.emplace_back(display, i, setup[i]);
+    size_t n = display->num_render_devices();
+    this->devices.reserve(n);
+    for (size_t i = 0; i < n; ++i) {
+        this->devices.push_back(std::make_unique<DeviceRenderer>(display, i));
     }
 }
 
 void Renderer::render() {
     for (auto& device : this->devices) {
-        device.render();
+        device->render();
     }
 }
 
-void Renderer::recreate(size_t gpu, size_t output) {
-    this->devices[gpu].recreate(output);
+void Renderer::recreate(size_t device, size_t output) {
+    this->devices[device]->recreate(output);
 }

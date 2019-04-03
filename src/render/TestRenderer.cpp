@@ -21,17 +21,17 @@ namespace {
     }
 }
 
-TestRenderer::TestRenderer(Device& device, vk::Rect2D region, vk::AttachmentDescription output_attachment):
-    device(&device),
+TestRenderer::TestRenderer(const Device2& device, vk::Rect2D region, vk::AttachmentDescription output_attachment):
+    device(device),
     region(region),
     output_region(device, sizeof(OutputRegion), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) {
 
-    auto* output_region = reinterpret_cast<OutputRegion*>(this->device->logical->mapMemory(this->output_region.memory(), 0, sizeof(OutputRegion)));
+    auto* output_region = reinterpret_cast<OutputRegion*>(this->device->mapMemory(this->output_region.memory(), 0, sizeof(OutputRegion)));
 
-    this->device->logical->unmapMemory(this->output_region.memory());
+    this->device->unmapMemory(this->output_region.memory());
 
-    const auto vertex_shader = create_shader(this->device->logical.get(), resources::open("resources/test.vert"));
-    const auto fragment_shader = create_shader(this->device->logical.get(), resources::open("resources/test.frag"));
+    const auto vertex_shader = create_shader(this->device.get(), resources::open("resources/test.vert"));
+    const auto fragment_shader = create_shader(this->device.get(), resources::open("resources/test.frag"));
 
     auto render_region_binding = vk::DescriptorSetLayoutBinding(
         0,
@@ -46,7 +46,7 @@ TestRenderer::TestRenderer(Device& device, vk::Rect2D region, vk::AttachmentDesc
         &render_region_binding
     );
 
-    this->descriptor_layout = device.logical->createDescriptorSetLayoutUnique(layout_create_info);
+    this->descriptor_layout = device->createDescriptorSetLayoutUnique(layout_create_info);
 
     const auto shader_stages_infos = std::array{
         create_shader_info(vertex_shader.get(), vk::ShaderStageFlagBits::eVertex),
@@ -91,7 +91,7 @@ TestRenderer::TestRenderer(Device& device, vk::Rect2D region, vk::AttachmentDesc
         &this->descriptor_layout.get()
     );
 
-    this->layout = this->device->logical->createPipelineLayoutUnique(pipeline_layout_info);
+    this->layout = this->device->createPipelineLayoutUnique(pipeline_layout_info);
 
     auto attachment_ref = vk::AttachmentReference(
         0, // The layout(location = x) of the fragment shader
@@ -126,7 +126,7 @@ TestRenderer::TestRenderer(Device& device, vk::Rect2D region, vk::AttachmentDesc
         &dependency
     );
 
-    this->render_pass = this->device->logical->createRenderPassUnique(render_pass_info);
+    this->render_pass = this->device->createRenderPassUnique(render_pass_info);
 
     auto pipeline_info = vk::GraphicsPipelineCreateInfo(
         {},
@@ -145,7 +145,7 @@ TestRenderer::TestRenderer(Device& device, vk::Rect2D region, vk::AttachmentDesc
         this->render_pass.get()
     );
 
-    this->pipeline = this->device->logical->createGraphicsPipelineUnique(vk::PipelineCache(), pipeline_info);
+    this->pipeline = this->device->createGraphicsPipelineUnique(vk::PipelineCache(), pipeline_info);
 }
 
 void TestRenderer::present(vk::CommandBuffer buf, vk::Framebuffer target) {

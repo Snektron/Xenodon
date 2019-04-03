@@ -20,7 +20,7 @@ namespace {
         });
     }
 
-    Device create_device(Instance& instance, vk::SurfaceKHR surface) {
+    RenderDevice create_render_device(Instance& instance, vk::SurfaceKHR surface) {
         const auto& physdevs = instance.physical_devices();
         for (auto type : {vk::PhysicalDeviceType::eDiscreteGpu, vk::PhysicalDeviceType::eIntegratedGpu}) {
             for (size_t i = 0; i < physdevs.size(); ++i) {
@@ -34,7 +34,11 @@ namespace {
                 if (auto family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics, surface)) {
                     LOGGER.log("Picked GPU {}: '{}'", i, physdev.name());
                     LOGGER.log("Graphics queue family: {}", family.value());
-                    return Device(physdev.get(), DEVICE_EXTENSIONS, family.value());
+                    return RenderDevice(
+                        Device2(physdev, family.value(), DEVICE_EXTENSIONS),
+                        family.value(),
+                        1
+                    );
                 }
             }
         }
@@ -46,26 +50,26 @@ namespace {
 XorgOutput::XorgOutput(Instance& instance, EventDispatcher& dispatcher, vk::Extent2D extent):
     window(dispatcher, extent),
     surface(create_surface(instance, this->window)),
-    device(create_device(instance, this->surface.get())),
-    swapchain(this->device, this->surface.get(), extent) {
+    rendev(create_render_device(instance, this->surface.get())),
+    swapchain(this->rendev.device, this->rendev.graphics_queue, this->surface.get(), this->window.extent()) {
     this->log();
 }
 
 XorgOutput::XorgOutput(Instance& instance, EventDispatcher& dispatcher, const XorgMultiGpuConfig::Output& config):
     window(dispatcher, config.displayname.c_str(), true),
     surface(create_surface(instance, this->window)),
-    device(create_device(instance, this->surface.get())),
-    swapchain(this->device, this->surface.get(), this->window.extent()) {
+    rendev(create_render_device(instance, this->surface.get())),
+    swapchain(this->rendev.device, this->rendev.graphics_queue, this->surface.get(), this->window.extent()) {
     this->log();
 }
 
 XorgOutput::~XorgOutput() {
-    this->device.logical->waitIdle();
+    this->rendev.device->waitIdle();
 }
 
 void XorgOutput::poll_events() {
     this->window.poll_events([this](vk::Extent2D new_extent) {
-        this->device.logical->waitIdle();
+        this->rendev.device->waitIdle();
         this->swapchain.recreate(new_extent);
     });
 }
@@ -74,12 +78,19 @@ uint32_t XorgOutput::num_swap_images() const {
     return this->swapchain.num_images();
 }
 
-SwapImage XorgOutput::swap_image(uint32_t index) const {
-    return this->swapchain.image(index);
+uint32_t XorgOutput::current_swap_index() const {
+    return this->swapchain.current_index();
 }
 
-vk::Result XorgOutput::present(Swapchain::PresentCallback f) {
-    return this->swapchain.present(f);
+SwapImage2 XorgOutput::swap_image(uint32_t index) {
+    return SwapImage2(this->swapchain.image(index));
+}
+
+void XorgOutput::swap_buffers() {
+    auto res = this->swapchain.swap_buffers();
+    if (res != vk::Result::eSuccess) {
+        throw Error("Failed to swap image: {}", vk::to_string(res));
+    }
 }
 
 vk::Rect2D XorgOutput::region() const {

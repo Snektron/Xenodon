@@ -1,35 +1,34 @@
 #ifndef _XENODON_RENDER_DEVICERENDERER_H
 #define _XENODON_RENDER_DEVICERENDERER_H
 
+#include <memory>
 #include <vector>
 #include <cstddef>
 #include <vulkan/vulkan.h>
-#include "graphics/Device.h"
+#include "graphics/core/Device.h"
 #include "backend/Display.h"
 #include "backend/Output.h"
 #include "render/TestRenderer.h"
 
 struct RenderOutput {
+    const RenderDevice& rendev;
     Output* output;
     vk::Rect2D region;
-    TestRenderer renderer;
+    std::unique_ptr<TestRenderer> renderer;
+    std::vector<vk::UniqueCommandBuffer> command_buffers;
     std::vector<vk::UniqueFramebuffer> framebuffers;
 
-    RenderOutput(Device& device, Output* output);
-    RenderOutput(RenderOutput&&) = default;
-    RenderOutput& operator=(RenderOutput&&) = default;
+    RenderOutput(const RenderDevice& rendev, Output* output);
 
     void render();
 };
 
 struct DeviceRenderer {
-    Device& device;
+    const RenderDevice& rendev;
 
-    std::vector<RenderOutput> outputs;
+    std::vector<std::unique_ptr<RenderOutput>> outputs;
 
-    DeviceRenderer(Display* display, size_t gpu, size_t outputs);
-    DeviceRenderer(DeviceRenderer&&) = default;
-    DeviceRenderer& operator=(DeviceRenderer&&) = default;
+    DeviceRenderer(Display* display, size_t device);
     ~DeviceRenderer();
 
     void render();
