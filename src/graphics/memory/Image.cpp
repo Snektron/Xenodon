@@ -21,7 +21,25 @@ Image::Image(const Device& device, vk::Extent2D extent, vk::Format format, vk::I
     device->bindImageMemory(this->image, this->mem, 0);
 }
 
+Image::Image(Image&& other):
+    device(other.device),
+    image(other.image),
+    mem(other.mem) {
+    other.device = vk::Device();
+    other.image = vk::Image();
+    other.mem = vk::DeviceMemory();
+}
+
+Image& Image::operator=(Image&& other) {
+    std::swap(this->device, other.device);
+    std::swap(this->image, other.image);
+    std::swap(this->mem, other.mem);
+    return *this;
+}
+
 Image::~Image() {
-    this->device.freeMemory(this->mem);
-    this->device.destroyImage(this->image);
+    if (this->image != vk::Image()) {
+        this->device.freeMemory(this->mem);
+        this->device.destroyImage(this->image);
+    }
 }

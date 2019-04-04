@@ -14,6 +14,13 @@ public:
     constexpr const static vk::ImageUsageFlagBits DEFAULT_USAGE = vk::ImageUsageFlagBits::eSampled;
 
     Image(const Device& device, vk::Extent2D extent, vk::Format format = DEFAULT_FORMAT, vk::ImageUsageFlags usage = DEFAULT_USAGE);
+
+    Image(const Image&) = delete;
+    Image& operator=(const Image&) = delete;
+
+    Image(Image&& other);
+    Image& operator=(Image&& other);
+
     ~Image();
 
     vk::Image get() const {

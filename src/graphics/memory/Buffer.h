@@ -5,13 +5,20 @@
 #include <vulkan/vulkan.hpp>
 #include "graphics/core/Device.h"
 
-template <typename T = std::byte>
+template <typename T>
 struct Buffer {
     vk::Device device;
     vk::Buffer buffer;
     vk::DeviceMemory mem;
 
     Buffer(const Device& device, vk::DeviceSize elements, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags);
+
+    Buffer(const Buffer&) = delete;
+    Buffer& operator=(const Buffer&) = delete;
+
+    Buffer(Buffer&&);
+    Buffer& operator=(Buffer&&);
+
     ~Buffer();
 
     T* map(vk::DeviceSize offset, vk::DeviceSize size);
@@ -42,9 +49,29 @@ Buffer<T>::Buffer(const Device& device, vk::DeviceSize elements, vk::BufferUsage
 }
 
 template <typename T>
+Buffer<T>::Buffer(Buffer&& other):
+    device(other.device),
+    buffer(other.buffer),
+    mem(other.mem) {
+    other.device = vk::Device();
+    other.buffer = vk::Buffer();
+    other.mem = vk::DeviceMemory();
+}
+
+template <typename T>
+Buffer<T>& Buffer<T>::operator=(Buffer&& other) {
+    std::swap(this->device, other.device);
+    std::swap(this->buffer, other.buffer);
+    std::swap(this->mem, other.mem);
+    return *this;
+}
+
+template <typename T>
 Buffer<T>::~Buffer() {
-    this->device.freeMemory(this->mem);
-    this->device.destroyBuffer(this->buffer);
+    if (this->buffer != vk::Buffer()) {
+        this->device.freeMemory(this->mem);
+        this->device.destroyBuffer(this->buffer);
+    }
 }
 
 template <typename T>
