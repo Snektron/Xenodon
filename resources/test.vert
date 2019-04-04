@@ -13,8 +13,9 @@ const vec3 colors[] = vec3[](
 void main() {
     v_color = colors[gl_VertexIndex];
     v_pos = vec2(
-        1.0 - step(2, gl_VertexIndex) * 2.0,
-        1.0 - mod(gl_VertexIndex, 2) * 2.0
+        1.0 - step(2, gl_VertexIndex),
+        1.0 - mod(gl_VertexIndex, 2)
     );
-    gl_Position = vec4(v_pos, 0, 1);
+
+    gl_Position = vec4(v_pos * 2 - 1, 0, 1);
 }

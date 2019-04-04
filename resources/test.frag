@@ -3,7 +3,8 @@
 layout(binding = 0) uniform OutputRegionBuffer {
     vec2 min;
     vec2 max;
-    vec2 resolution;
+    vec2 offset;
+    vec2 extent;
 } output_region;
 
 layout(location = 0) in vec3 v_color;
@@ -62,9 +63,9 @@ vec3 nabla(in vec3 p) {
     return -normalize(vec3(dX - d0, dY - d0, dZ - d0));
 }
 
-vec3 ray(in vec3 dir, in vec3 up) {
-    vec2 uv = v_pos * 0.5;
-    uv.y *= ASPECT;
+vec3 ray(in vec3 dir, in vec3 up, vec2 uv) {
+    uv -= 0.5;
+    uv.y *= output_region.extent.y / output_region.extent.x;
 
     vec3 right = normalize(cross(up, dir));
     up = normalize(cross(right, dir));
@@ -73,16 +74,20 @@ vec3 ray(in vec3 dir, in vec3 up) {
 }
 
 void main() {
+    vec2 pixel = mix(output_region.min, output_region.max, v_pos);
+    vec2 uv = (pixel - output_region.offset) / output_region.extent;
+
     vec3 ro = vec3(0, 0, 5);
-    vec3 rd = ray(normalize(-ro), vec3(0, 1, 0));
+    vec3 rd = ray(normalize(-ro), vec3(0, 1, 0), uv);
 
     float dst = march(ro, rd);
     vec3 p = ro + dst * rd;
     vec3 normal = nabla(p);
 
-    if (dst >= 0.0)
+    if (dst >= 0.0) {
         f_color.xyz = vec3(dot(normal, LIGHT) * 0.5 + 0.5) / (dst * 0.1);
-    else
+    } else {
         f_color.xyz = vec3(0);
+    }
     f_color.w = 1.0;
 }

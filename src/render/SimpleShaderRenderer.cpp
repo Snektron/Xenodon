@@ -65,6 +65,7 @@ void SimpleShaderRenderer::render() {
 
                 cmd.beginRenderPass(&render_pass_begin_info, vk::SubpassContents::eInline);
                 cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, orsc.pipeline.get());
+                cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, drsc.pipeline_layout.get(), 0, orsc.output_region_set, nullptr);
                 cmd.draw(4, 1, 0, 0);
                 cmd.endRenderPass();
                 cmd.end();
@@ -83,13 +84,16 @@ void SimpleShaderRenderer::recreate(size_t device, size_t output) {
 
 void SimpleShaderRenderer::recalculate_enclosing_rect() {
     bool first = true;
-    for (const auto& drsc : this->device_resources) {
-        for (const auto& orsc : drsc.output_resources) {
+    const size_t n = this->display->num_render_devices();
+    for (size_t i = 0; i < n; ++i) {
+        const auto& rendev = this->display->render_device(i);
+        for (size_t j = 0; j < rendev.outputs; ++j) {
+            Output* output = this->display->output(i, j);
             if (first) {
-                this->enclosing = orsc.output->region();
+                this->enclosing = output->region();
                 first = false;
             } else {
-                this->enclosing = enclosing_rect(this->enclosing, orsc.output->region());
+                this->enclosing = enclosing_rect(this->enclosing, output->region());
             }
         }
     }
@@ -102,8 +106,29 @@ void SimpleShaderRenderer::create_resources() {
     for (size_t i = 0; i < n; ++i) {
         const auto& rendev = this->display->render_device(i);
         const auto& device = rendev.device;
+        uint32_t outputs = static_cast<uint32_t>(rendev.outputs);
 
         auto output_region_layout = create_descriptor_set(device);
+
+        const auto descr_pool_size = vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, outputs);
+        const auto descr_pool_create_info = vk::DescriptorPoolCreateInfo(
+            {},
+            outputs,
+            1,
+            &descr_pool_size
+        );
+
+        auto descr_pool = device->createDescriptorPoolUnique(descr_pool_create_info);
+
+        const auto output_region_layouts = std::vector<vk::DescriptorSetLayout>(outputs, output_region_layout.get());
+
+        const auto descr_alloc_info = vk::DescriptorSetAllocateInfo(
+            descr_pool.get(),
+            outputs,
+            output_region_layouts.data()
+        );
+
+        auto output_region_sets = device->allocateDescriptorSets(descr_alloc_info);
 
         auto pipeline_layout_info = vk::PipelineLayoutCreateInfo(
             {},
@@ -165,8 +190,8 @@ void SimpleShaderRenderer::create_resources() {
         );
 
         auto output_resources = std::vector<OutputResources>();
-        output_resources.reserve(rendev.outputs);
-        for (size_t j = 0; j < rendev.outputs; ++j) {
+        output_resources.reserve(outputs);
+        for (size_t j = 0; j < outputs; ++j) {
             Output* output = this->display->output(i, j);
             vk::Rect2D region = output->region();
 
@@ -188,6 +213,37 @@ void SimpleShaderRenderer::create_resources() {
                 vk::BufferUsageFlagBits::eUniformBuffer,
                 vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
             );
+
+            OutputRegionUbo* ubo = output_region_buffer.map(0, 1);
+
+            auto offset = Vec2F(static_cast<float>(region.offset.x), static_cast<float>(region.offset.y));
+            auto extent = Vec2F(static_cast<float>(region.extent.width), static_cast<float>(region.extent.height));
+
+            ubo->min = offset;
+            ubo->max = offset + extent;
+            ubo->offset = Vec2F(static_cast<float>(this->enclosing.offset.x), static_cast<float>(this->enclosing.offset.y));
+            ubo->extent = Vec2F(static_cast<float>(this->enclosing.extent.width), static_cast<float>(this->enclosing.extent.height));
+
+            output_region_buffer.unmap();
+
+            const auto buffer_info = vk::DescriptorBufferInfo(
+                output_region_buffer.get(),
+                0,
+                sizeof(OutputRegionUbo)
+            );
+
+            const auto descriptor_write = vk::WriteDescriptorSet(
+                output_region_sets[j],
+                0,
+                0,
+                1,
+                vk::DescriptorType::eUniformBuffer,
+                nullptr,
+                &buffer_info,
+                nullptr
+            );
+
+            device->updateDescriptorSets(descriptor_write, nullptr);
 
             const auto output_attachment = output->color_attachment_descr();
 
@@ -228,6 +284,7 @@ void SimpleShaderRenderer::create_resources() {
                 output,
                 region.extent,
                 std::move(output_region_buffer),
+                output_region_sets[j],
                 std::move(render_pass),
                 std::move(pipeline),
                 std::move(frame_resources)
@@ -237,6 +294,7 @@ void SimpleShaderRenderer::create_resources() {
         this->device_resources.emplace_back(DeviceResources{
             &rendev,
             std::move(output_region_layout),
+            std::move(descr_pool),
             std::move(pipeline_layout),
             std::move(output_resources)
         });

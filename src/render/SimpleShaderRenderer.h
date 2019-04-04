@@ -14,13 +14,15 @@ class SimpleShaderRenderer {
     struct OutputRegionUbo {
         Vec2F min;
         Vec2F max;
-        Vec2F resolution;
+        Vec2F offset;
+        Vec2F extent;
     };
 
     struct OutputResources {
         Output* output;
         vk::Extent2D extent;
         Buffer<OutputRegionUbo> output_region_buffer;
+        vk::DescriptorSet output_region_set;
         vk::UniqueRenderPass render_pass;
         vk::UniquePipeline pipeline;
         FrameResources frame_resources;
@@ -29,6 +31,7 @@ class SimpleShaderRenderer {
     struct DeviceResources {
         const RenderDevice* rendev;
         vk::UniqueDescriptorSetLayout output_region_layout;
+        vk::UniqueDescriptorPool descr_pool;
         vk::UniquePipelineLayout pipeline_layout;
         std::vector<OutputResources> output_resources;
     };
