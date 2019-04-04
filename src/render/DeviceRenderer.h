@@ -9,14 +9,12 @@
 #include "backend/Display.h"
 #include "backend/Output.h"
 #include "render/TestRenderer.h"
+#include "render/FrameResources.h"
 
 struct RenderOutput {
-    const RenderDevice& rendev;
     Output* output;
-    vk::Rect2D region;
     std::unique_ptr<TestRenderer> renderer;
-    std::vector<vk::UniqueCommandBuffer> command_buffers;
-    std::vector<vk::UniqueFramebuffer> framebuffers;
+    FrameResources resources;
 
     RenderOutput(const RenderDevice& rendev, Output* output);
 

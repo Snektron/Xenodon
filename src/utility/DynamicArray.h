@@ -9,9 +9,10 @@
 #include <memory>
 #include <stdexcept>
 
-template <typename T, typename Allocator = std::allocator<T>>
+template <typename T>
 class DynamicArray: private Allocator {
     size_t count;
+    size_t cap;
     T* items;
 
 public:
@@ -24,51 +25,42 @@ public:
     using iterator = T*;
     using const_iterator = const T*;
 
-    explicit DynamicArray(const Allocator& alloc = Allocator()):
+    explicit DynamicArray(size_t capacity, const Allocator& alloc = Allocator()):
         Allocator(alloc),
         count(0),
-        items(nullptr) {
+        cap(capacity),
+        items(this->allocate_or_null()) {
     }
 
-    // Requires T is default (optional) and copy constructable
-    explicit DynamicArray(size_t count, const T value = T(), const Allocator& alloc = Allocator()):
+    DynamicArray(size_t count, const T& value, const Allocator& alloc = Allocator()):
         Allocator(alloc),
         count(count),
-        items(this->allocate_or_null(this->count)) {
+        cap(count),
+        items(this->allocate_or_null()) {
 
-        std::uninitialized_fill(this->begin(), this->end(), value);
+        std::uninitialized_fill(this->begin, this->end, value);
     }
 
-    // Requires T is move constructable
-    DynamicArray(std::initializer_list<T> init, const Allocator& alloc = Allocator()):
+     DynamicArray(std::initializer_list<T> init, const Allocator& alloc = Allocator()):
         Allocator(alloc),
-        count(init.size()),
-        items(this->allocate_or_null(this->count)) {
+        count(init.size())
+        cap(init.size()),
+        items(this->allocate_or_null()) {
 
         std::uninitialized_move(init.begin(), init.end(), this->begin());
     }
 
-    DynamicArray(const DynamicArray& other):
-        Allocator(other.get_allocator()),
-        count(other.size()),
-        items(this->allocate_or_null(this->count)) {
-
-        std::uninitialized_copy(other.begin(), other.end(), this->begin());
-    }
-
-    DynamicArray& operator=(const DynamicArray& other) {
-        this->clear();
-        this->get_allocator() = other.get_allocator();
-        this->items = this->allocate_or_null(other.size());
-        this->count = other.size();
-        std::uninitialized_copy(other.begin(), other.end(), this->begin());
-    }
+    DynamicArray(const DynamicArray& other) = delete;
+    DynamicArray& operator=(const DynamicArray& other) = delete;
 
     DynamicArray(DynamicArray&& other):
         Allocator(std::move(other.get_allocator())),
         count(other.count),
+        cap(other.cap)
         items(other.items) {
+
         other.count = 0;
+        other.cap = 0;
         other.items = nullptr;
     }
 
@@ -112,11 +104,11 @@ public:
     }
 
     T& back() {
-        return *this->back();
+        return *(this->end() - 1);
     }
 
     const T& back() const {
-        return *this->back();
+        return *(this->end() - 1);
     }
 
     T& operator[](size_t i) {
@@ -159,51 +151,30 @@ public:
         return this->count;
     }
 
-    void clear() {
-        if (this->items != nullptr) {
-            this->deallocate(this->items, this->count);
-            this->count = 0;
-        }
-    }
-
-    // Requires T is default (optional) and copy constructable
-    void fill(size_t count, const T& value = T()) {
-        this->clear();
-        this->items = this->allocate_or_null(count);
-        this->count = count;
-
-        std::uninitialized_fill(this->begin(), this->end(), value);
-    }
-
-    template <typename F>
-    void generate_in_place(size_t count, F f) {
-        this->clear();
-        this->items = this->allocate_or_null(count);
-        this->count = count;
-
-        for (size_t i = 0; i < this->count; ++i) {
-            f(&this->items[i], i);
-        }
+    size_t capacity() const {
+        return this->cap;
     }
 
     template <typename... Args>
-    void emplace(size_t i, Args&&... args) {
-        std::destroy_at(this->items[i]);
-        new (&this->items[i]) T(std::forward<Args>(args)...);
+    T& emplace_back(Args&&... args) {
+        if (this->count == this->cap) {
+            throw std::out_of_range(__PRETTY_FUNCTION__);
+        }
+
+        new (&this->items[this->count]) T(std::forward<Args>(args)...);
+        return this->items[this->count++];
     }
 
-    const Allocator& get_allocator() const {
-        return *static_cast<const Allocator*>(this);
+    T& push_back(const T& item) {
+        return this->emplace_back(item);
     }
 
 private:
-    T* allocate_or_null(size_t count) {
-        return count > 0 ? this->allocate(count) : nullptr;
+    T* allocate_or_null() {
+        return this->cap > 0 ? this->allocate(this->cap) : nullptr;
     }
 
     Allocator& get_allocator() {
         return *static_cast<Allocator*>(this);
     }
 };
-
-#endif

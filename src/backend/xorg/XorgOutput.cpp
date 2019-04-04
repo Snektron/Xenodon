@@ -89,7 +89,7 @@ SwapImage XorgOutput::swap_image(uint32_t index) {
 void XorgOutput::swap_buffers() {
     auto res = this->swapchain.swap_buffers();
     if (res != vk::Result::eSuccess) {
-        throw Error("Failed to swap image: {}", vk::to_string(res));
+        LOGGER.log("Failed to swap image: {}", vk::to_string(res));
     }
 }
 

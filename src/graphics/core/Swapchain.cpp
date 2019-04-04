@@ -1,4 +1,5 @@
 #include "graphics/core/Swapchain.h"
+#include "core/Logger.h"
 
 namespace {
     constexpr const auto PREFERRED_FORMAT = vk::SurfaceFormatKHR{vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
@@ -56,6 +57,7 @@ void Swapchain::recreate(vk::Extent2D surface_extent) {
     this->extent = find_extent(caps, surface_extent);
 
     auto dev = this->device->get();
+    dev.waitIdle();
 
     // Create the swapchain itself
     {
@@ -154,6 +156,7 @@ vk::Result Swapchain::swap_buffers() {
 
     dev.waitForFences(current_image.frame_fence.get(), true, std::numeric_limits<uint64_t>::max());
     dev.resetFences(current_image.frame_fence.get());
+    // dev.waitIdle();
 
     auto present_info = vk::PresentInfoKHR(
         1,

@@ -2,11 +2,30 @@
 #define _XENODON_UTILITY_ENCLOSING_RECT_H
 
 #include <algorithm>
+#include <iterator>
+#include <type_traits>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include "core/Logger.h"
 
-template <typename It, typename F>
+inline vk::Rect2D enclosing_rect(vk::Rect2D left, vk::Rect2D right) {
+    int32_t x = std::min(left.offset.x, right.offset.x);
+    int32_t y = std::min(left.offset.y, right.offset.y);
+
+    uint32_t w = std::max(
+        static_cast<uint32_t>(left.offset.x) + left.extent.width,
+        static_cast<uint32_t>(right.offset.x) + right.extent.width
+    ) - static_cast<uint32_t>(x);
+
+    uint32_t h = std::max(
+        static_cast<uint32_t>(left.offset.y) + left.extent.height,
+        static_cast<uint32_t>(right.offset.y) + right.extent.height
+    ) - static_cast<uint32_t>(y);
+
+    return {{x, y}, {w, h}};
+}
+
+template <typename It, typename F, typename = std::enable_if_t<!std::is_same_v<typename std::iterator_traits<It>::value_type, void>>>
 vk::Rect2D enclosing_rect(It first, It last, F f) {
     if (first == last)
         return {{0, 0}, {0, 0}};

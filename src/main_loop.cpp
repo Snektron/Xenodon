@@ -3,7 +3,7 @@
 #include <fmt/format.h>
 #include "backend/Event.h"
 #include "backend/Display.h"
-#include "render/Renderer.h"
+#include "render/SimpleShaderRenderer.h"
 #include "core/Logger.h"
 #include "core/Error.h"
 
@@ -38,7 +38,7 @@ namespace {
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     check_setup(display);
 
-    auto renderer = Renderer(display);
+    auto renderer = SimpleShaderRenderer(display);
 
     bool quit = false;
     dispatcher.bind_close([&quit] {
@@ -71,7 +71,6 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
             start = now;
         }
 
-        display->swap_buffers();
         display->poll_events();
     }
 }
