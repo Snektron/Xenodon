@@ -1,26 +1,10 @@
 #include "render/SimpleShaderRenderer.h"
 #include <array>
+#include "graphics/shader/Shader.h"
 #include "utility/enclosing_rect.h"
 #include "resources.h"
 
 namespace {
-    vk::UniqueShaderModule create_shader(const Device& device, const std::string_view& code) {
-        return device->createShaderModuleUnique(vk::ShaderModuleCreateInfo(
-            {},
-            code.size(),
-            reinterpret_cast<const uint32_t*>(code.data())
-        ));
-    }
-
-    vk::PipelineShaderStageCreateInfo create_shader_info(const vk::ShaderModule& shader, vk::ShaderStageFlagBits stage) {
-        return vk::PipelineShaderStageCreateInfo(
-            {},
-            stage,
-            shader,
-            "main"
-        );
-    }
-
     vk::UniqueDescriptorSetLayout create_descriptor_set(const Device& device) {
         auto output_region_layout_binding = vk::DescriptorSetLayoutBinding(
             0,
@@ -138,12 +122,12 @@ void SimpleShaderRenderer::create_resources() {
 
         auto pipeline_layout = device->createPipelineLayoutUnique(pipeline_layout_info);
 
-        const auto vertex_shader = create_shader(device, resources::open("resources/test.vert"));
-        const auto fragment_shader = create_shader(device, resources::open("resources/test.frag"));
+        const auto vertex_shader = Shader(device, vk::ShaderStageFlagBits::eVertex, resources::open("resources/test.vert"));
+        const auto fragment_shader = Shader(device, vk::ShaderStageFlagBits::eFragment, resources::open("resources/test.frag"));
 
         const auto shader_stages_infos = std::array{
-            create_shader_info(vertex_shader.get(), vk::ShaderStageFlagBits::eVertex),
-            create_shader_info(fragment_shader.get(), vk::ShaderStageFlagBits::eFragment)
+            vertex_shader.info(),
+            fragment_shader.info()
         };
 
         const auto vertex_input_info = vk::PipelineVertexInputStateCreateInfo();
