@@ -1,5 +1,9 @@
 #version 450
 
+layout(push_constant) uniform PushConstant {
+    float time;
+} push;
+
 layout(binding = 0) uniform OutputRegionBuffer {
     vec2 min;
     vec2 max;
@@ -14,7 +18,7 @@ layout(location = 0) out vec4 f_color;
 
 const float ASPECT = 600. / 800.;
 const float EPSILON = 0.001;
-const int STEPS = 100;
+const int STEPS = 500;
 const vec3 LIGHT = normalize(vec3(1, 2, 3));
 
 float sphere(in vec3 p, in float r) {
@@ -77,8 +81,9 @@ void main() {
     vec2 pixel = mix(output_region.min, output_region.max, v_pos);
     vec2 uv = (pixel - output_region.offset) / output_region.extent;
 
-    vec3 ro = vec3(0, 0, 5);
-    vec3 rd = ray(normalize(-ro), vec3(0, 1, 0), uv);
+    vec3 rd = vec3(sin(push.time / 3.0), 0, cos(push.time / 3.0));
+    vec3 ro = vec3(0);
+    rd = ray(rd, vec3(0, 1, 0), uv);
 
     float dst = march(ro, rd);
     vec3 p = ro + dst * rd;

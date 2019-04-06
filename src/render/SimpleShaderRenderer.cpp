@@ -3,6 +3,7 @@
 #include "graphics/shader/Shader.h"
 #include "utility/enclosing_rect.h"
 #include "resources.h"
+#include "core/Logger.h"
 
 namespace {
     vk::UniqueDescriptorSetLayout create_descriptor_set(const Device& device) {
@@ -24,7 +25,8 @@ namespace {
 }
 
 SimpleShaderRenderer::SimpleShaderRenderer(Display* display):
-    display(display) {
+    display(display),
+    start(std::chrono::system_clock::now()) {
 
     this->recalculate_enclosing_rect();
     this->create_resources();
@@ -33,6 +35,9 @@ SimpleShaderRenderer::SimpleShaderRenderer(Display* display):
 void SimpleShaderRenderer::render() {
     const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
     const auto clear_color = vk::ClearValue(vk::ClearColorValue(std::array{0.f, 0.0f, 0.f, 1.f}));
+
+    const auto now = std::chrono::system_clock::now();
+    const float time = std::chrono::duration<float>(now - this->start).count();
 
     for (auto& drsc : this->device_resources) {
         for (auto& orsc : drsc.output_resources) {
@@ -50,6 +55,7 @@ void SimpleShaderRenderer::render() {
                 cmd.beginRenderPass(&render_pass_begin_info, vk::SubpassContents::eInline);
                 cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, orsc.pipeline.get());
                 cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, drsc.pipeline_layout.get(), 0, orsc.output_region_set, nullptr);
+                cmd.pushConstants(drsc.pipeline_layout.get(), vk::ShaderStageFlagBits::eFragment, 0, sizeof(float), static_cast<const void*>(&time));
                 cmd.draw(4, 1, 0, 0);
                 cmd.endRenderPass();
                 cmd.end();
@@ -114,10 +120,18 @@ void SimpleShaderRenderer::create_resources() {
 
         auto output_region_sets = device->allocateDescriptorSets(descr_alloc_info);
 
+        const auto push_constant_range = vk::PushConstantRange(
+            vk::ShaderStageFlagBits::eFragment,
+            0,
+            sizeof(float)
+        );
+
         auto pipeline_layout_info = vk::PipelineLayoutCreateInfo(
             {},
             1,
-            &output_region_layout.get()
+            &output_region_layout.get(),
+            1,
+            &push_constant_range
         );
 
         auto pipeline_layout = device->createPipelineLayoutUnique(pipeline_layout_info);

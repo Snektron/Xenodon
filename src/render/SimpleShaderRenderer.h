@@ -1,8 +1,9 @@
 #ifndef _XENODON_RENDER_SIMPLESHADERRENDERER_H
 #define _XENODON_RENDER_SIMPLESHADERRENDERER_H
 
-#include <vulkan/vulkan.hpp>
 #include <vector>
+#include <chrono>
+#include <vulkan/vulkan.hpp>
 #include "graphics/memory/Buffer.h"
 #include "backend/RenderDevice.h"
 #include "backend/Display.h"
@@ -39,6 +40,7 @@ class SimpleShaderRenderer {
     Display* display;
     std::vector<DeviceResources> device_resources;
     vk::Rect2D enclosing;
+    std::chrono::system_clock::time_point start;
 
 public:
     SimpleShaderRenderer(Display* display);
