@@ -37,7 +37,7 @@ sources = [
 
 shaders = [
     'resources/test.frag',
-    'resources/test.vert'
+    'resources/fullscreen_quad.vert'
 ]
 
 resources = [

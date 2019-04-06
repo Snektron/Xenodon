@@ -16,7 +16,6 @@ layout(location = 1) in vec2 v_pos;
 
 layout(location = 0) out vec4 f_color;
 
-const float ASPECT = 600. / 800.;
 const float EPSILON = 0.001;
 const int STEPS = 500;
 const vec3 LIGHT = normalize(vec3(1, 2, 3));

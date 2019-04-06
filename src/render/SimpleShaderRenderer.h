@@ -22,7 +22,6 @@ class SimpleShaderRenderer {
     struct OutputResources {
         Output* output;
         vk::Extent2D extent;
-        Buffer<OutputRegionUbo> output_region_buffer;
         vk::DescriptorSet output_region_set;
         vk::UniqueRenderPass render_pass;
         vk::UniquePipeline pipeline;
@@ -34,6 +33,7 @@ class SimpleShaderRenderer {
         vk::UniqueDescriptorSetLayout output_region_layout;
         vk::UniqueDescriptorPool descr_pool;
         vk::UniquePipelineLayout pipeline_layout;
+        Buffer<OutputRegionUbo> output_region_buffer;
         std::vector<OutputResources> output_resources;
     };
 
@@ -48,7 +48,7 @@ public:
     void recreate(size_t device, size_t output);
 
 private:
-    void recalculate_enclosing_rect();
+    void calculate_enclosing_rect();
     void create_resources();
 };
 
