@@ -29,7 +29,7 @@ layout(location = 0) out vec4 f_color;
 const int NUM_ITERATIONS = 11;
 
 // antialais level (1, 2, 3...)
-#define AA 16
+#define AA 1
 
 // undefine this to use numerical normals (central differences)
 //#define ANALYTIC
