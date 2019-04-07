@@ -28,6 +28,7 @@ sources = [
     'src/graphics/command/CommandPool.cpp',
     'src/render/FrameResources.cpp',
     'src/render/SimpleShaderRenderer.cpp',
+    'src/render/DdaRaytracer.cpp',
     'src/backend/SwapImage.cpp',
     'src/backend/RenderDevice.cpp',
     'src/backend/headless/headless.cpp',
@@ -49,7 +50,7 @@ resources = [
 
 add_project_arguments(
     [
-        '-march=native',
+        # '-march=native',
         '-Wconversion',
         '-Wall',
         '-Wextra',
