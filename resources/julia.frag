@@ -32,7 +32,7 @@ const int NUM_ITERATIONS = 11;
 #define AA 1
 
 // undefine this to use numerical normals (central differences)
-//#define ANALYTIC
+#define ANALYTIC
 
 vec4 qsqr(in vec4 a) { // square a quaterion
     return vec4(
@@ -227,7 +227,7 @@ void main() {
     vec3 col = vec3(0.0);
     for(int j = 0; j < AA; ++j) {
         for(int i = 0; i < AA; ++i) {
-            vec2 p = (pixel - output_region.offset + vec2(float(i), float(j) / float(AA))) / output_region.extent;
+            vec2 p = (pixel - output_region.offset + vec2(float(i), float(j)) / float(AA)) / output_region.extent;
             p = p * 2.0 - 1.0;
             p.y *= -output_region.extent.y / output_region.extent.x;
 
