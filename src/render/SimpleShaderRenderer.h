@@ -21,7 +21,7 @@ class SimpleShaderRenderer {
 
     struct OutputResources {
         Output* output;
-        vk::Extent2D extent;
+        vk::Rect2D region;
         vk::DescriptorSet output_region_set;
         vk::UniqueRenderPass render_pass;
         vk::UniquePipeline pipeline;
@@ -50,6 +50,7 @@ public:
 private:
     void calculate_enclosing_rect();
     void create_resources();
+    void update_output_regions();
 };
 
 #endif

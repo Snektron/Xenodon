@@ -5,142 +5,6 @@
 #include "resources.h"
 #include "core/Logger.h"
 
-namespace {
-    namespace render_pass {
-        const auto ATTACHMENT_REF = vk::AttachmentReference(
-            0, // The layout(location = x) of the fragment shader output
-            vk::ImageLayout::eColorAttachmentOptimal
-        );
-
-        const auto SUBPASS = vk::SubpassDescription(
-            {},
-            vk::PipelineBindPoint::eGraphics,
-            0,
-            nullptr,
-            1,
-            &ATTACHMENT_REF
-        );
-
-        const auto DEPENDENCY = vk::SubpassDependency(
-            VK_SUBPASS_EXTERNAL,
-            0,
-            vk::PipelineStageFlagBits::eColorAttachmentOutput,
-            vk::PipelineStageFlagBits::eColorAttachmentOutput,
-            vk::AccessFlags(),
-            vk::AccessFlagBits::eColorAttachmentRead
-        );
-
-        vk::UniqueRenderPass create(const Device& device, vk::AttachmentDescription output_attachment) {
-            return device->createRenderPassUnique({
-                {},
-                1,
-                &output_attachment,
-                1,
-                &SUBPASS,
-                1,
-                &DEPENDENCY
-            });
-        }
-    }
-
-    namespace pipeline {
-        const auto VERTEX_INPUT_INFO = vk::PipelineVertexInputStateCreateInfo();
-        const auto ASSEMBLY_INFO = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleStrip);
-        const auto MULTISAMPLE_INFO = vk::PipelineMultisampleStateCreateInfo();
-
-        vk::UniquePipeline create(
-            const Device& device,
-            Span<const vk::PipelineShaderStageCreateInfo> shaders,
-            vk::PipelineLayout pipeline_layout,
-            vk::RenderPass render_pass,
-            vk::Extent2D extent
-        ) {
-            const auto viewport = vk::Viewport(
-                0.0,
-                0.0,
-                static_cast<float>(extent.width),
-                static_cast<float>(extent.height),
-                0,
-                1
-            );
-
-            const auto scissor = vk::Rect2D{{0, 0}, extent};
-            const auto viewport_info = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
-
-            auto rasterizer_info = vk::PipelineRasterizationStateCreateInfo();
-            rasterizer_info.cullMode = vk::CullModeFlagBits::eBack;
-            rasterizer_info.lineWidth = 1.0f;
-
-            auto color_blend_attachment_info = vk::PipelineColorBlendAttachmentState();
-            color_blend_attachment_info.colorWriteMask =
-                  vk::ColorComponentFlagBits::eR
-                | vk::ColorComponentFlagBits::eG
-                | vk::ColorComponentFlagBits::eB
-                | vk::ColorComponentFlagBits::eA;
-
-            auto color_blend_info = vk::PipelineColorBlendStateCreateInfo();
-            color_blend_info.attachmentCount = 1;
-            color_blend_info.pAttachments = &color_blend_attachment_info;
-
-            return device->createGraphicsPipelineUnique(vk::PipelineCache(), {
-                {},
-                static_cast<uint32_t>(shaders.size()),
-                shaders.data(),
-                &VERTEX_INPUT_INFO,
-                &ASSEMBLY_INFO,
-                nullptr,
-                &viewport_info,
-                &rasterizer_info,
-                &MULTISAMPLE_INFO,
-                nullptr,
-                &color_blend_info,
-                nullptr,
-                pipeline_layout,
-                render_pass
-            });
-        }
-    }
-
-    vk::UniqueDescriptorSetLayout create_descriptor_set_layout(const Device& device) {
-        const auto output_region_layout_binding = vk::DescriptorSetLayoutBinding(
-            0,
-            vk::DescriptorType::eUniformBuffer,
-            1,
-            vk::ShaderStageFlagBits::eFragment
-        );
-
-        const auto output_region_layout_info = vk::DescriptorSetLayoutCreateInfo(
-            {},
-            1,
-            &output_region_layout_binding
-        );
-
-        return device->createDescriptorSetLayoutUnique(output_region_layout_info);
-    }
-
-    template <typename T>
-    void update_descriptor_write(const Device& device, const Buffer<T>& buffer, vk::DescriptorSet set, size_t index) {
-        const auto buffer_info = vk::DescriptorBufferInfo(
-            buffer.get(),
-            index * sizeof(T),
-            sizeof(T)
-        );
-
-        const auto descriptor_write = vk::WriteDescriptorSet(
-            set,
-            0,
-            0,
-            1,
-            vk::DescriptorType::eUniformBuffer,
-            nullptr,
-            &buffer_info,
-            nullptr
-        );
-
-        device->updateDescriptorSets(descriptor_write, nullptr);
-    }
-}
-
 SimpleShaderRenderer::SimpleShaderRenderer(Display* display):
     display(display),
     start(std::chrono::system_clock::now()) {
@@ -164,7 +28,7 @@ void SimpleShaderRenderer::render() {
                 auto render_pass_begin_info = vk::RenderPassBeginInfo(
                     orsc.render_pass.get(),
                     framebuffer,
-                    {{0, 0}, orsc.extent},
+                    {{0, 0}, orsc.region.extent},
                     1,
                     &clear_color
                 );
@@ -225,7 +89,7 @@ void SimpleShaderRenderer::create_resources() {
 
         auto descr_pool = device->createDescriptorPoolUnique(descr_pool_create_info);
 
-        auto output_region_layout = create_descriptor_set_layout(device);
+        auto output_region_layout = device.create_uniform_layout(0);
         const auto output_region_layouts = std::vector<vk::DescriptorSetLayout>(outputs, output_region_layout.get());
 
         const auto descr_alloc_info = vk::DescriptorSetAllocateInfo(
@@ -251,7 +115,7 @@ void SimpleShaderRenderer::create_resources() {
         });
 
         const auto vertex_shader = Shader(device, vk::ShaderStageFlagBits::eVertex, resources::open("resources/fullscreen_quad.vert"));
-        const auto fragment_shader = Shader(device, vk::ShaderStageFlagBits::eFragment, resources::open("resources/test.frag"));
+        const auto fragment_shader = Shader(device, vk::ShaderStageFlagBits::eFragment, resources::open("resources/julia.frag"));
 
         const auto shaders = std::array{
             vertex_shader.info(),
@@ -265,38 +129,26 @@ void SimpleShaderRenderer::create_resources() {
             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
         );
 
-        OutputRegionUbo* ubo = output_region_buffer.map(0, outputs);
-
         auto output_resources = std::vector<OutputResources>();
         output_resources.reserve(outputs);
         for (size_t j = 0; j < outputs; ++j) {
             Output* output = this->display->output(i, j);
             vk::Rect2D region = output->region();
 
-            auto offset = Vec2F(static_cast<float>(region.offset.x), static_cast<float>(region.offset.y));
-            auto extent = Vec2F(static_cast<float>(region.extent.width), static_cast<float>(region.extent.height));
-
-            ubo[j].min = offset;
-            ubo[j].max = offset + extent;
-            ubo[j].offset = Vec2F(static_cast<float>(this->enclosing.offset.x), static_cast<float>(this->enclosing.offset.y));
-            ubo[j].extent = Vec2F(static_cast<float>(this->enclosing.extent.width), static_cast<float>(this->enclosing.extent.height));
-
-            update_descriptor_write(device, output_region_buffer, output_region_sets[j], j);
-            auto render_pass = render_pass::create(device, output->color_attachment_descr());
-            auto pipeline = pipeline::create(device, shaders, pipeline_layout.get(), render_pass.get(), region.extent);
+            output_region_buffer.update_descriptor_write(output_region_sets[j], j);
+            auto render_pass = device.create_present_render_pass(0, output->color_attachment_descr());
+            auto pipeline = device.create_pipeline(shaders, pipeline_layout.get(), render_pass.get(), region.extent);
             auto frame_resources = FrameResources(rendev, output, render_pass.get());
 
             output_resources.emplace_back(OutputResources{
                 output,
-                region.extent,
+                region,
                 output_region_sets[j],
                 std::move(render_pass),
                 std::move(pipeline),
                 std::move(frame_resources)
             });
         }
-
-        output_region_buffer.unmap();
 
         this->device_resources.emplace_back(DeviceResources{
             &rendev,
@@ -306,5 +158,27 @@ void SimpleShaderRenderer::create_resources() {
             std::move(output_region_buffer),
             std::move(output_resources)
         });
+    }
+
+    this->update_output_regions();
+}
+
+void SimpleShaderRenderer::update_output_regions() {
+    for (auto& drsc : this->device_resources) {
+        OutputRegionUbo* ubo = drsc.output_region_buffer.map(0, drsc.rendev->outputs);
+        size_t j = 0;
+
+        for (auto& orsc : drsc.output_resources) {
+            auto offset = Vec2F(static_cast<float>(orsc.region.offset.x), static_cast<float>(orsc.region.offset.y));
+            auto extent = Vec2F(static_cast<float>(orsc.region.extent.width), static_cast<float>(orsc.region.extent.height));
+
+            ubo[j].min = offset;
+            ubo[j].max = offset + extent;
+            ubo[j].offset = Vec2F(static_cast<float>(this->enclosing.offset.x), static_cast<float>(this->enclosing.offset.y));
+            ubo[j].extent = Vec2F(static_cast<float>(this->enclosing.extent.width), static_cast<float>(this->enclosing.extent.height));
+            ++j;
+        }
+
+        drsc.output_region_buffer.unmap();
     }
 }

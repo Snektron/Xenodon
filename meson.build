@@ -38,7 +38,8 @@ sources = [
 
 shaders = [
     'resources/test.frag',
-    'resources/fullscreen_quad.vert'
+    'resources/fullscreen_quad.vert',
+    'resources/julia.frag'
 ]
 
 resources = [

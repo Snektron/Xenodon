@@ -16,8 +16,21 @@ public:
     Device(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Span<const char* const> extensions = nullptr);
 
     std::optional<uint32_t> find_memory_type(uint32_t filter, vk::MemoryPropertyFlags flags) const;
+
     vk::DeviceMemory allocate(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const;
+
     vk::UniqueDeviceMemory allocate_unique(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const;
+
+    vk::UniqueRenderPass create_present_render_pass(uint32_t binding, vk::AttachmentDescription attachment) const;
+
+    vk::UniquePipeline create_pipeline(
+        Span<const vk::PipelineShaderStageCreateInfo> shaders,
+        vk::PipelineLayout pipeline_layout,
+        vk::RenderPass render_pass,
+        vk::Extent2D extent
+    ) const;
+
+    vk::UniqueDescriptorSetLayout create_uniform_layout(uint32_t binding) const;
 
     vk::Device get() const {
         return this->dev.get();
