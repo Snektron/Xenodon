@@ -25,6 +25,7 @@ sources = [
     'src/graphics/core/Swapchain.cpp',
     'src/graphics/memory/Image.cpp',
     'src/graphics/shader/Shader.cpp',
+    'src/graphics/command/CommandPool.cpp',
     'src/render/FrameResources.cpp',
     'src/render/SimpleShaderRenderer.cpp',
     'src/backend/SwapImage.cpp',

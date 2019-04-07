@@ -5,9 +5,7 @@ FrameResources::FrameResources(const RenderDevice& rendev, Output* output, vk::R
     output(output) {
 
     uint32_t images = this->output->num_swap_images();
-    auto command_buffers_info = vk::CommandBufferAllocateInfo(rendev.graphics_pool());
-    command_buffers_info.commandBufferCount = static_cast<uint32_t>(images);
-    this->command_buffers = rendev.device->allocateCommandBuffersUnique(command_buffers_info);
+    this->command_buffers = rendev.graphics_command_pool.allocate_command_buffers(images);
 
     this->framebuffers.reserve(images);
     auto extent = output->region().extent;

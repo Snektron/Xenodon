@@ -87,11 +87,15 @@ void HeadlessOutput::download(Pixel* output, size_t stride) {
     }
 
     const size_t size = this->render_region.extent.width * this->render_region.extent.height;
-    const auto memory_bits = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
-    auto staging_buffer = Buffer<Pixel>(this->rendev.device, size, vk::BufferUsageFlagBits::eTransferDst, memory_bits);
+    auto staging_buffer = Buffer<Pixel>(
+        this->rendev.device,
+        size,
+        vk::BufferUsageFlagBits::eTransferDst,
+        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+    );
 
-    this->rendev.graphics_one_time_submit([this, &staging_buffer](vk::CommandBuffer cmd_buf) {
+    this->rendev.graphics_command_pool.one_time_submit([this, &staging_buffer](vk::CommandBuffer cmd_buf) {
         auto copy_info = vk::BufferImageCopy(
             0,
             0,
