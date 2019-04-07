@@ -32,7 +32,8 @@ sources = [
     'src/backend/headless/headless.cpp',
     'src/backend/headless/HeadlessDisplay.cpp',
     'src/backend/headless/HeadlessConfig.cpp',
-    'src/backend/headless/HeadlessOutput.cpp'
+    'src/backend/headless/HeadlessOutput.cpp',
+    'src/model/VolumetricCube.cpp'
 ]
 
 shaders = [
@@ -59,6 +60,7 @@ add_project_arguments(
 vk_dep = dependency('vulkan', method: 'system')
 dependencies = [
     vk_dep,
+    dependency('libtiff-4'),
     subproject('fmt').get_variable('fmt_dep'),
     subproject('lodepng').get_variable('lodepng_dep')
 ]

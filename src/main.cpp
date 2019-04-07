@@ -1,6 +1,7 @@
 #include <string_view>
 #include <array>
 #include <cstddef>
+#include <cstdlib>
 #include <vulkan/vulkan.hpp>
 #include <fmt/format.h>
 #include "resources.h"
@@ -115,5 +116,5 @@ int main(int argc, const char* argv[]) {
         fmt::print("Error: Invalid subcommand '{}', see `{} help`\n", subcommand, argv[0]);
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
