@@ -109,5 +109,6 @@ void ScreenGroup::swap_buffers() {
 void ScreenGroup::log() const {
     for (size_t i = 0; i < this->outputs.size(); ++i) {
         LOGGER.log("\tOutput {}:", i);
+        this->outputs[i].log();
     }
 }
