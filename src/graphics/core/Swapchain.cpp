@@ -166,7 +166,7 @@ vk::Result Swapchain::swap_buffers() {
         &this->current_image_index
     );
 
-    this->graphics_queue->presentKHR(&present_info);
+    this->graphics_queue->presentKHR(present_info);
 
     vk::Result result = dev.acquireNextImageKHR(
         this->swapchain.get(),

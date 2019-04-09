@@ -5,6 +5,7 @@
 #include <chrono>
 #include <vulkan/vulkan.hpp>
 #include "graphics/memory/Buffer.h"
+#include "graphics/memory/Texture3D.h"
 #include "backend/RenderDevice.h"
 #include "backend/Display.h"
 #include "backend/Output.h"
@@ -23,7 +24,7 @@ class DdaRaytracer {
     struct OutputResources {
         Output* output;
         vk::Rect2D region;
-        vk::DescriptorSet output_region_set;
+        vk::DescriptorSet descr_set;
         vk::UniqueRenderPass render_pass;
         vk::UniquePipeline pipeline;
         FrameResources frame_resources;
@@ -31,10 +32,12 @@ class DdaRaytracer {
 
     struct DeviceResources {
         const RenderDevice* rendev;
-        vk::UniqueDescriptorSetLayout output_region_layout;
+        vk::UniqueDescriptorSetLayout descr_set_layout;
         vk::UniqueDescriptorPool descr_pool;
         vk::UniquePipelineLayout pipeline_layout;
         Buffer<OutputRegionUbo> output_region_buffer;
+        Texture3D model;
+        vk::UniqueSampler sampler;
         std::vector<OutputResources> output_resources;
     };
 

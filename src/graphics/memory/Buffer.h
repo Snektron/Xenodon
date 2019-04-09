@@ -21,10 +21,10 @@ struct Buffer {
 
     ~Buffer();
 
-    T* map(vk::DeviceSize offset, vk::DeviceSize size);
-    void unmap();
+    T* map(vk::DeviceSize offset, vk::DeviceSize size) const;
+    void unmap() const;
 
-    void update_descriptor_write(vk::DescriptorSet set, size_t index);
+    void update_descriptor_write(vk::DescriptorSet set, uint32_t binding, size_t index);
 
     vk::Buffer get() const {
         return this->buffer;
@@ -77,17 +77,17 @@ Buffer<T>::~Buffer() {
 }
 
 template <typename T>
-T* Buffer<T>::map(vk::DeviceSize offset, vk::DeviceSize size) {
+T* Buffer<T>::map(vk::DeviceSize offset, vk::DeviceSize size) const {
     return reinterpret_cast<T*>(this->device.mapMemory(this->mem, offset * sizeof(T), size * sizeof(T)));
 }
 
 template <typename T>
-void Buffer<T>::unmap() {
+void Buffer<T>::unmap() const {
     this->device.unmapMemory(this->mem);
 }
 
 template <typename T>
-void Buffer<T>::update_descriptor_write(vk::DescriptorSet set, size_t index) {
+void Buffer<T>::update_descriptor_write(vk::DescriptorSet set, uint32_t binding, size_t index) {
     const auto buffer_info = vk::DescriptorBufferInfo(
         this->buffer,
         index * sizeof(T),
@@ -96,7 +96,7 @@ void Buffer<T>::update_descriptor_write(vk::DescriptorSet set, size_t index) {
 
     const auto descriptor_write = vk::WriteDescriptorSet(
         set,
-        0,
+        binding,
         0,
         1,
         vk::DescriptorType::eUniformBuffer,

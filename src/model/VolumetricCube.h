@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include "math/Vec.h"
+#include "utility/Span.h"
 
 class VolumetricCube {
 private:
@@ -25,8 +26,12 @@ public:
         return this->dim;
     }
 
-    const Pixel* pixels() const {
-        return this->data.get();
+    size_t size() const {
+        return this->dim.x * this->dim.y * this->dim.z;
+    }
+
+    Span<const Pixel> pixels() const {
+        return Span<const Pixel>(this->size(), this->data.get());
     }
 };
 

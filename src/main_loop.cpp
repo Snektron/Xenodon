@@ -3,9 +3,11 @@
 #include <fmt/format.h>
 #include "backend/Event.h"
 #include "backend/Display.h"
+#include "render/DdaRaytracer.h"
 #include "render/SimpleShaderRenderer.h"
 #include "core/Logger.h"
 #include "core/Error.h"
+#include "model/VolumetricCube.h"
 
 namespace {
     void check_setup(Display* display) {
@@ -37,6 +39,8 @@ namespace {
 
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     check_setup(display);
+
+    auto model = VolumetricCube::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
 
     auto renderer = SimpleShaderRenderer(display);
 

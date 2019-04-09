@@ -24,6 +24,7 @@ sources = [
     'src/graphics/core/Device.cpp',
     'src/graphics/core/Swapchain.cpp',
     'src/graphics/memory/Image.cpp',
+    'src/graphics/memory/Texture3D.cpp',
     'src/graphics/shader/Shader.cpp',
     'src/graphics/command/CommandPool.cpp',
     'src/render/FrameResources.cpp',
@@ -41,7 +42,8 @@ sources = [
 shaders = [
     'resources/test.frag',
     'resources/fullscreen_quad.vert',
-    'resources/julia.frag'
+    'resources/julia.frag',
+    'resources/dda.frag'
 ]
 
 resources = [
