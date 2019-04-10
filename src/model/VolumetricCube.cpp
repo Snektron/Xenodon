@@ -1,6 +1,6 @@
 #include "model/VolumetricCube.h"
-#include <tiffio.h>
 #include <iostream>
+#include <tiffio.h>
 #include "core/Error.h"
 
 namespace {
@@ -26,6 +26,14 @@ namespace {
             return fmt::to_string(buf);
         }
     };
+}
+
+VolumetricCube::VolumetricCube(Vec3<size_t> dim):
+    dim(dim), data(std::make_unique<Pixel[]>(this->size())) {
+
+    for (size_t i = 0; i < this->size(); ++i) {
+        this->data[i] = 0;
+    }
 }
 
 VolumetricCube VolumetricCube::from_tiff(const char* path) {

@@ -182,7 +182,7 @@ void DdaRaytracer::create_resources() {
             vk::ImageLayout::eTransferDstOptimal
         );
 
-        rendev.graphics_command_pool.one_time_submit([&, this](vk::CommandBuffer cmd_buf) {
+        rendev.graphics_command_pool.one_time_submit([&](vk::CommandBuffer cmd_buf) {
             auto barrier0 = vk::ImageMemoryBarrier(
                 vk::AccessFlags(),
                 vk::AccessFlagBits::eTransferRead,
@@ -222,7 +222,15 @@ void DdaRaytracer::create_resources() {
             );
         });
 
-        auto sampler = device->createSamplerUnique({});
+        auto sampler = device->createSamplerUnique({
+            {},
+            vk::Filter::eNearest,
+            vk::Filter::eNearest,
+            vk::SamplerMipmapMode::eNearest,
+            vk::SamplerAddressMode::eClampToBorder,
+            vk::SamplerAddressMode::eClampToBorder,
+            vk::SamplerAddressMode::eClampToBorder
+        });
 
         auto output_resources = std::vector<OutputResources>();
         output_resources.reserve(outputs);

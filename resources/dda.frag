@@ -19,12 +19,11 @@ layout(location = 1) in vec2 v_pos;
 layout(location = 0) out vec4 f_color;
 
 const vec3 LIGHT = normalize(vec3(1, 2, 3));
-const int STEPS = 1000;
+const int STEPS = 2500;
 
 vec3 ray(vec3 dir, vec3 up, vec2 uv) {
     uv -= 0.5;
     uv.y *= output_region.extent.y / output_region.extent.x;
-    uv *= 2.0;
 
     vec3 right = normalize(cross(up, dir));
     up = normalize(cross(right, dir));
@@ -33,41 +32,66 @@ vec3 ray(vec3 dir, vec3 up, vec2 uv) {
 }
 
 float get_voxel(ivec3 p) {
-    if (p.x < 0 || p.y < 0 || p.z < 0)
-        return 0;
-    else if (p.x > 2048 || p.y > 2048 || p.z > 48)
-        return 0;
-
-    return texelFetch(u_model, p, 0).g * 0.1;
+    return texelFetch(u_model, p, 0).g * 0.03;
 }
 
-vec3 trace(vec3 ro, vec3 rd) {
+vec3 trace(vec3 ro, vec3 rd, float tfar) {
     ivec3 map_pos = ivec3(floor(ro));
-    vec3 delta_dist = abs(vec3(length(rd)) / rd);
-    ivec3 rs = ivec3(sign(rd));
-    vec3 side_dist = (sign(rd) * (vec3(map_pos) - ro) + (sign(rd) * 0.5) + 0.5) * delta_dist;
+    vec3 delta_dist = abs(1. / rd);
+    vec3 sgn = sign(rd);
+    ivec3 rs = ivec3(sgn);
+    vec3 side_dist = (sgn * (floor(ro) - ro) + (sgn * 0.5) + 0.5) * delta_dist;
     float total = 0.0;
 
-    for (int i = 0; i < STEPS; i++) {
+    float t = 0;
+
+    for (int i = 0; i < STEPS; ++i) {
         float v = get_voxel(map_pos);
         bvec3 mask = lessThanEqual(side_dist.xyz, min(side_dist.yzx, side_dist.zxy));
-        side_dist += vec3(mask) * delta_dist;
+        vec3 fmask = vec3(mask);
+        side_dist += fmask * delta_dist;
         map_pos += ivec3(mask) * rs;
-        total += v * dot(vec3(mask) * delta_dist, vec3(1));
-        if (total > 1.0)
+
+        total += v;
+        if (total > 1.0) {
             break;
+        }
+
+        if (map_pos.x < 0 || map_pos.y < 0 || map_pos.z < 0) {
+            break;
+        } else if (map_pos.x > 2048 || map_pos.y > 2049 || map_pos.z > 48) {
+            break;
+        }
     }
 
     return vec3(total);
+}
+
+vec2 box_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rd) {
+    vec3 tbot = (bmin - ro) / rd;
+    vec3 ttop = (bmax - ro) / rd;
+    vec3 tmin = min(ttop, tbot);
+    vec3 tmax = max(ttop, tbot);
+    vec2 t = max(tmin.xx, tmin.yz);
+    float t0 = max(t.x, t.y);
+    t = min(tmax.xx, tmax.yz);
+    float t1 = min(t.x, t.y);
+    return vec2(t0, t1);
 }
 
 void main() {
     vec2 pixel = mix(output_region.min, output_region.max, v_pos);
     vec2 uv = (pixel - output_region.offset) / output_region.extent;
 
-    vec3 ro = vec3(1024, 1024, -300);
-    vec3 rd = normalize(vec3(0, 0, 1));
+    vec3 ro = vec3(1024 + sin(push.time * 0.1) * 3000, 1024, 24 + cos(push.time * 0.1) * 3000);
+    vec3 rd = normalize(vec3(1024, 1024, 24) - ro);
     rd = ray(rd, vec3(0, 1, 0), uv);
-    f_color.xyz = trace(ro, rd);
-    f_color.w = 1.0;
+
+    vec2 hit = box_intersect(vec3(0, 0, 0), vec3(2048, 2048, 48), ro, rd);
+    if (hit.y > max(hit.x, 0.0)) {
+        f_color.xyz = trace(ro + rd * hit.x, rd, hit.y);
+        f_color.w = 1;
+    } else {
+        f_color = vec4(0, 0, 0, 1);
+    }
 }

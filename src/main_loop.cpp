@@ -42,7 +42,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
 
     auto model = VolumetricCube::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
 
-    auto renderer = SimpleShaderRenderer(display);
+    auto renderer = DdaRaytracer(display, model);
 
     bool quit = false;
     dispatcher.bind_close([&quit] {

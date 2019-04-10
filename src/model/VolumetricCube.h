@@ -20,6 +20,8 @@ private:
     }
 
 public:
+    VolumetricCube(Vec3<size_t> dim);
+
     static VolumetricCube from_tiff(const char* path);
 
     Vec3<size_t> dimensions() const {
