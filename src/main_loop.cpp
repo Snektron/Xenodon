@@ -8,6 +8,7 @@
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/VolumetricCube.h"
+#include "model/Octree.h"
 
 namespace {
     void check_setup(Display* display) {
@@ -38,6 +39,10 @@ namespace {
 }
 
 void main_loop(EventDispatcher& dispatcher, Display* display) {
+    const auto cube = VolumetricCube::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
+    const auto octree = Octree(cube);
+    return;
+
     check_setup(display);
 
     auto model = VolumetricCube::from_tiff("/home/robin/Downloads/ZF-Eye.tif");

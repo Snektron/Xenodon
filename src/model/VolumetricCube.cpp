@@ -1,7 +1,10 @@
 #include "model/VolumetricCube.h"
 #include <iostream>
 #include <tiffio.h>
+#include <x86intrin.h>
 #include "core/Error.h"
+
+using Pixel = VolumetricCube::Pixel;
 
 namespace {
     struct TiffCloser {
@@ -28,7 +31,7 @@ namespace {
     };
 }
 
-VolumetricCube::VolumetricCube(Vec3<size_t> dim):
+VolumetricCube::VolumetricCube(Vec3Sz dim):
     dim(dim), data(std::make_unique<Pixel[]>(this->size())) {
 
     for (size_t i = 0; i < this->size(); ++i) {
@@ -81,4 +84,25 @@ VolumetricCube VolumetricCube::from_tiff(const char* path) {
         {width, height, depth},
         std::move(data)
     );
+}
+
+Pixel VolumetricCube::max_diff(Vec3Sz bmin, Vec3Sz bmax) const {
+    __m128i min = _mm_cvtsi32_si128(static_cast<int>(0xFFFFFFFF));
+    __m128i max = _mm_cvtsi32_si128(0x00000000);
+
+    for (size_t z = bmin.z; z < bmax.z; ++z) {
+        size_t z_base = z * this->dim.x * this->dim.y;
+        for (size_t y = bmin.y; y < bmax.y; ++y) {
+            size_t y_base = y * this->dim.x;
+            for (size_t x = bmin.x; x < bmax.x; ++x) {
+                size_t index = x + y_base + z_base;
+                __m128i pixel = _mm_cvtsi32_si128(static_cast<int>(this->data[index]));
+                min = _mm_min_epu8(min, pixel);
+                max = _mm_max_epu8(max, pixel);
+            }
+        }
+    }
+
+    __m128i diff = _mm_subs_epu8(max, min);
+    return static_cast<uint32_t>(_mm_cvtsi128_si32(diff));
 }

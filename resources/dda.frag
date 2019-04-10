@@ -31,8 +31,8 @@ vec3 ray(vec3 dir, vec3 up, vec2 uv) {
     return normalize(uv.x * right + uv.y * up + dir);
 }
 
-float get_voxel(ivec3 p) {
-    return texelFetch(u_model, p, 0).g * 0.03;
+vec3 get_voxel(ivec3 p) {
+    return texelFetch(u_model, p, 0).rgb * 0.03;
 }
 
 vec3 trace(vec3 ro, vec3 rd, float tfar) {
@@ -41,19 +41,18 @@ vec3 trace(vec3 ro, vec3 rd, float tfar) {
     vec3 sgn = sign(rd);
     ivec3 rs = ivec3(sgn);
     vec3 side_dist = (sgn * (floor(ro) - ro) + (sgn * 0.5) + 0.5) * delta_dist;
-    float total = 0.0;
+    vec3 total = vec3(0);
 
     float t = 0;
 
     for (int i = 0; i < STEPS; ++i) {
-        float v = get_voxel(map_pos);
+        total += get_voxel(map_pos);
         bvec3 mask = lessThanEqual(side_dist.xyz, min(side_dist.yzx, side_dist.zxy));
         vec3 fmask = vec3(mask);
         side_dist += fmask * delta_dist;
         map_pos += ivec3(mask) * rs;
 
-        total += v;
-        if (total > 1.0) {
+        if (any(greaterThanEqual(total, vec3(1)))) {
             break;
         }
 
@@ -64,7 +63,7 @@ vec3 trace(vec3 ro, vec3 rd, float tfar) {
         }
     }
 
-    return vec3(total);
+    return total;
 }
 
 vec2 box_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rd) {

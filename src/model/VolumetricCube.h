@@ -9,13 +9,14 @@
 #include "utility/Span.h"
 
 class VolumetricCube {
-private:
-    using Pixel = uint32_t;
+public:
 
-    Vec3<size_t> dim;
+    using Pixel = uint32_t;
+private:
+    Vec3Sz dim;
     std::unique_ptr<Pixel[]> data;
 
-    VolumetricCube(Vec3<size_t> dim, std::unique_ptr<Pixel[]>&& data):
+    VolumetricCube(Vec3Sz dim, std::unique_ptr<Pixel[]>&& data):
         dim(dim), data(std::move(data)) {
     }
 
@@ -24,7 +25,7 @@ public:
 
     static VolumetricCube from_tiff(const char* path);
 
-    Vec3<size_t> dimensions() const {
+    Vec3Sz dimensions() const {
         return this->dim;
     }
 
@@ -32,9 +33,15 @@ public:
         return this->dim.x * this->dim.y * this->dim.z;
     }
 
+    Pixel at(Vec3Sz index) const {
+        return this->data[index.x + index.y * this->dim.x + index.z * this->dim.x * this->dim.y];
+    }
+
     Span<const Pixel> pixels() const {
         return Span<const Pixel>(this->size(), this->data.get());
     }
+
+    Pixel max_diff(Vec3Sz bmin, Vec3Sz bmax) const;
 };
 
 #endif

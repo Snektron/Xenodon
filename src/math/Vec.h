@@ -15,21 +15,22 @@ using Vec2 = Vec<T, 2>;
 using Vec2F = Vec2<float>;
 using Vec2D = Vec2<double>;
 using Vec2I = Vec2<int>;
-using Vec2UI = Vec2<unsigned int>;
+using Vec2Sz = Vec2<size_t>;
 
 template <typename T>
 using Vec3 = Vec<T, 3>;
 using Vec3F = Vec3<float>;
 using Vec3D = Vec3<double>;
 using Vec3I = Vec3<int>;
-using Vec3UI = Vec3<unsigned int>;
+using Vec3Sz = Vec3<size_t>;
 
 template <typename T>
 using Vec4 = Vec<T, 4>;
 using Vec4F = Vec4<float>;
 using Vec4D = Vec4<double>;
 using Vec4I = Vec4<int>;
-using Vec4UI = Vec4<unsigned int>;
+using Vec4Sz = Vec4<size_t>;
+
 
 template <typename T, size_t N>
 struct BaseVec {
@@ -375,6 +376,13 @@ constexpr auto distance_sq(const Vec<T, N>& lhs, const Vec<U, N>& rhs) {
 template <typename T, typename U, size_t N>
 constexpr auto distance(const Vec<T, N>& lhs, const Vec<U, N>& rhs) {
     return length(lhs - rhs);
+}
+
+template <typename T, size_t N, typename F>
+constexpr auto map(const Vec<T, N>& v, F f) {
+    return generate_vec<N>([&v, f](size_t i) {
+        return f(v[i]);
+    });
 }
 
 template <typename T, size_t N>
