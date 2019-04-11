@@ -57,16 +57,18 @@ size_t Octree::construct_r(const VolumetricCube& src, Vec3Sz offset, size_t exte
 
     if (max_diff_channel > MAX_CHANNEL_DIFFERENCE) {
         size_t h_extent = extent / 2;
-        return 1 + std::max({
-            this->construct_r(src, {offset.x, offset.y, offset.z}, h_extent, nodes),
-            this->construct_r(src, {offset.x, offset.y, offset.z + h_extent}, h_extent, nodes),
-            this->construct_r(src, {offset.x, offset.y + h_extent, offset.z}, h_extent, nodes),
-            this->construct_r(src, {offset.x, offset.y + h_extent, offset.z + h_extent}, h_extent, nodes),
-            this->construct_r(src, {offset.x + h_extent, offset.y, offset.z}, h_extent, nodes),
-            this->construct_r(src, {offset.x + h_extent, offset.y, offset.z + h_extent}, h_extent, nodes),
-            this->construct_r(src, {offset.x + h_extent, offset.y + h_extent, offset.z}, h_extent, nodes),
-            this->construct_r(src, {offset.x + h_extent, offset.y + h_extent, offset.z + h_extent}, h_extent, nodes),
-        });
+        size_t depth = 0;
+
+        for (auto xoff : {size_t{0}, h_extent}) {
+            for (auto yoff : {size_t{0}, h_extent}) {
+                for (auto zoff : {size_t{0}, h_extent}) {
+                    size_t d = this->construct_r(src, {offset.x + xoff, offset.y + yoff, offset.z + zoff}, h_extent, nodes);
+                    depth = std::max(depth, d);
+                }
+            }
+        }
+
+        return depth + 1;
     } else {
         return 1;
     }

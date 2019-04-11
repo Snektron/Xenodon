@@ -41,7 +41,7 @@ namespace {
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     const auto cube = VolumetricCube::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
     const auto octree = Octree(cube);
-    return;
+    // return;
 
     check_setup(display);
 

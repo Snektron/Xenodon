@@ -11,6 +11,10 @@ project(
 
 cxx = meson.get_compiler('cpp')
 
+if cxx.get_id() != 'clang' and cxx.get_id() != 'gcc'
+    error('Compiler not supported')
+endif
+
 # Project sources & resources
 
 sources = [
@@ -37,7 +41,8 @@ sources = [
     'src/backend/headless/HeadlessConfig.cpp',
     'src/backend/headless/HeadlessOutput.cpp',
     'src/model/VolumetricCube.cpp',
-    'src/model/Octree.cpp'
+    'src/model/Octree.cpp',
+    'src/model/vol_scan.cpp'
 ]
 
 shaders = [
@@ -54,6 +59,7 @@ resources = [
 add_project_arguments(
     [
         '-march=native',
+        '-mavx2',
         '-Wconversion',
         '-Wall',
         '-Wextra',
@@ -86,7 +92,7 @@ configure_file(
 )
 
 # Add configuration for the direct backend
-if (get_option('present-direct').enabled())
+if get_option('present-direct').enabled()
     message('Building with direct backend')
 
     # Direct presenting requires raw linux input, and is thus
@@ -113,7 +119,7 @@ if (get_option('present-direct').enabled())
 endif
 
 # Add configuration for the xorg backend
-if (get_option('present-xorg').enabled())
+if get_option('present-xorg').enabled()
     message('Building with xorg presenting support')
 
     # Even though were not using X11 but XCB, we still need this header for the
