@@ -1,5 +1,5 @@
-#ifndef _XENODON_MODEL_VOLUMETRICCUBE_H
-#define _XENODON_MODEL_VOLUMETRICCUBE_H
+#ifndef _XENODON_MODEL_GRID_H
+#define _XENODON_MODEL_GRID_H
 
 #include <utility>
 #include <memory>
@@ -8,7 +8,7 @@
 #include "math/Vec.h"
 #include "utility/Span.h"
 
-class VolumetricCube {
+class Grid {
 public:
     using Pixel = uint32_t;
 
@@ -21,14 +21,14 @@ private:
     Vec3Sz dim;
     std::unique_ptr<Pixel[]> data;
 
-    VolumetricCube(Vec3Sz dim, std::unique_ptr<Pixel[]>&& data):
+    Grid(Vec3Sz dim, std::unique_ptr<Pixel[]>&& data):
         dim(dim), data(std::move(data)) {
     }
 
 public:
-    VolumetricCube(Vec3<size_t> dim);
+    Grid(Vec3<size_t> dim);
 
-    static VolumetricCube from_tiff(const char* path);
+    static Grid from_tiff(const char* path);
 
     Vec3Sz dimensions() const {
         return this->dim;

@@ -1,11 +1,11 @@
-#include "model/VolumetricCube.h"
+#include "model/Grid.h"
 #include <iostream>
 #include <algorithm>
 #include <tiffio.h>
 #include <x86intrin.h>
 #include "core/Error.h"
 
-using Pixel = VolumetricCube::Pixel;
+using Pixel = Grid::Pixel;
 
 namespace {
     struct TiffCloser {
@@ -32,7 +32,7 @@ namespace {
     };
 }
 
-VolumetricCube::VolumetricCube(Vec3Sz dim):
+Grid::Grid(Vec3Sz dim):
     dim(dim), data(std::make_unique<Pixel[]>(this->size())) {
 
     for (size_t i = 0; i < this->size(); ++i) {
@@ -40,7 +40,7 @@ VolumetricCube::VolumetricCube(Vec3Sz dim):
     }
 }
 
-VolumetricCube VolumetricCube::from_tiff(const char* path) {
+Grid Grid::from_tiff(const char* path) {
     auto tiff = TiffPtr(TIFFOpen(path, "r"));
     if (!tiff) {
         throw Error("Failed to open TIFF file '{}'", path);
@@ -81,13 +81,13 @@ VolumetricCube VolumetricCube::from_tiff(const char* path) {
         TIFFReadRGBAImage(tiff.get(), width, height, data.get() + layer_stride * i);
     }
 
-    return VolumetricCube(
+    return Grid(
         {width, height, depth},
         std::move(data)
     );
 }
 
-VolumetricCube::VolScanResult VolumetricCube::vol_scan(Vec3Sz bmin, Vec3Sz bmax) const {
+Grid::VolScanResult Grid::vol_scan(Vec3Sz bmin, Vec3Sz bmax) const {
     union {
         struct {
             uint8_t r, g, b, a;

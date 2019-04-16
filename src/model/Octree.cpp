@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <fmt/chrono.h>
-#include "model/VolumetricCube.h"
+#include "model/Grid.h"
 #include "core/Logger.h"
 
 namespace {
@@ -22,7 +22,7 @@ namespace {
 
     // Taken from boost:
     // https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
-    template <class T>
+    template <typename T>
     size_t hash_combine(size_t seed, const T& v) {
         return seed ^ (std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
     }
@@ -58,7 +58,7 @@ bool operator!=(const Octree::Node& lhs, const Octree::Node& rhs) {
     return !(lhs == rhs);
 }
 
-Octree::Octree(const VolumetricCube& src) {
+Octree::Octree(const Grid& src) {
     const auto src_dim = src.dimensions();
     size_t dim = std::max({ceil_2pow(src_dim.x), ceil_2pow(src_dim.y), ceil_2pow(src_dim.z)});
 
@@ -74,7 +74,7 @@ Octree::Octree(const VolumetricCube& src) {
     LOGGER.log("Construction took: {}", std::chrono::duration<double>(stop - start));
 }
 
-uint32_t Octree::construct(const VolumetricCube& src, std::unordered_map<Node, uint32_t>& map, Vec3Sz offset, size_t extent) {
+uint32_t Octree::construct(const Grid& src, std::unordered_map<Node, uint32_t>& map, Vec3Sz offset, size_t extent) {
     if (this->nodes.size() % 100000 == 0) {
         LOGGER.log(
             "{} nodes... ({} GiB)",

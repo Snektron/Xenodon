@@ -40,7 +40,7 @@ sources = [
     'src/backend/headless/HeadlessDisplay.cpp',
     'src/backend/headless/HeadlessConfig.cpp',
     'src/backend/headless/HeadlessOutput.cpp',
-    'src/model/VolumetricCube.cpp',
+    'src/model/Grid.cpp',
     'src/model/Octree.cpp',
 ]
 

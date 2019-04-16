@@ -5,7 +5,7 @@
 #include "resources.h"
 #include "core/Logger.h"
 
-DdaRaytracer::DdaRaytracer(Display* display, const VolumetricCube& model):
+DdaRaytracer::DdaRaytracer(Display* display, const Grid& model):
     display(display),
     start(std::chrono::system_clock::now()),
     model(model) {

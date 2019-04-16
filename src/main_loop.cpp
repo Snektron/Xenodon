@@ -7,7 +7,7 @@
 #include "render/SimpleShaderRenderer.h"
 #include "core/Logger.h"
 #include "core/Error.h"
-#include "model/VolumetricCube.h"
+#include "model/Grid.h"
 #include "model/Octree.h"
 
 namespace {
@@ -39,13 +39,13 @@ namespace {
 }
 
 void main_loop(EventDispatcher& dispatcher, Display* display) {
-    const auto cube = VolumetricCube::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
-    const auto octree = Octree(cube);
+    const auto grid = Grid::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
+    const auto octree = Octree(grid);
     // return;
 
     check_setup(display);
 
-    auto model = VolumetricCube::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
+    auto model = Grid::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
 
     auto renderer = DdaRaytracer(display, model);
 

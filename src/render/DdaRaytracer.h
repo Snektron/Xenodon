@@ -11,7 +11,7 @@
 #include "backend/Output.h"
 #include "render/FrameResources.h"
 #include "math/Vec.h"
-#include "model/VolumetricCube.h"
+#include "model/Grid.h"
 
 class DdaRaytracer {
     struct OutputRegionUbo {
@@ -45,10 +45,10 @@ class DdaRaytracer {
     std::vector<DeviceResources> device_resources;
     vk::Rect2D enclosing;
     std::chrono::system_clock::time_point start;
-    const VolumetricCube& model;
+    const Grid& model;
 
 public:
-    DdaRaytracer(Display* display, const VolumetricCube& model);
+    DdaRaytracer(Display* display, const Grid& model);
     void render();
     void recreate(size_t device, size_t output);
 

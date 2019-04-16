@@ -7,7 +7,7 @@
 #include <cstdint>
 #include "math/Vec.h"
 
-class VolumetricCube;
+class Grid;
 
 class Octree {
     struct Node {
@@ -19,10 +19,10 @@ class Octree {
     std::vector<Node> nodes;
 
 public:
-    explicit Octree(const VolumetricCube& src);
+    explicit Octree(const Grid& src);
 
 private:
-    uint32_t construct(const VolumetricCube& src, std::unordered_map<Node, uint32_t>& map, Vec3Sz offset, size_t extent);
+    uint32_t construct(const Grid& src, std::unordered_map<Node, uint32_t>& map, Vec3Sz offset, size_t extent);
 
     friend struct std::hash<Octree::Node>;
     friend bool operator==(const Node&, const Node&);
