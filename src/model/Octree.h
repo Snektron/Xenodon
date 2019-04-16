@@ -10,16 +10,18 @@ class VolumetricCube;
 
 class Octree {
     struct Node {
-        uint64_t children[8];
+        uint32_t children[8];
+        uint32_t color;
+        uint32_t is_leaf;
     };
 
-    std::vector<Node> data;
+    std::vector<Node> nodes;
 
 public:
     explicit Octree(const VolumetricCube& src);
 
 private:
-    size_t construct_r(const VolumetricCube& src, Vec3Sz offset, size_t extent, size_t& nodes);
+    uint32_t construct(const VolumetricCube& src, Vec3Sz offset, size_t extent);
 };
 
 #endif

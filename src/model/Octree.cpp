@@ -1,10 +1,12 @@
 #include "model/Octree.h"
 #include <algorithm>
+#include <chrono>
+#include <fmt/chrono.h>
 #include "model/VolumetricCube.h"
 #include "core/Logger.h"
 
 namespace {
-    constexpr const size_t MAX_CHANNEL_DIFFERENCE = 10;
+    constexpr const uint8_t MIN_CHANNEL_DIFF = 40;
 
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     size_t ceil_2pow(size_t x) {
@@ -26,50 +28,54 @@ Octree::Octree(const VolumetricCube& src) {
     LOGGER.log("Source size: {}x{}x{}", src_dim.x, src_dim.y, src_dim.z);
     LOGGER.log("Octree size: {}x{}x{}", dim, dim, dim);
 
-    size_t nodes = 0;
-    size_t depth = this->construct_r(src, Vec3Sz{0, 0, 0}, dim, nodes);
-    LOGGER.log("Total nodes: {}, Depth: {}", nodes, depth);
+    const auto start = std::chrono::high_resolution_clock::now();
+    this->construct(src, Vec3Sz{0, 0, 0}, dim);
+    const auto stop = std::chrono::high_resolution_clock::now();
+
+    LOGGER.log("Total nodes: {}", this->nodes.size());
+    LOGGER.log("Construction took: {}", std::chrono::duration<double>(stop - start));
 }
 
-size_t Octree::construct_r(const VolumetricCube& src, Vec3Sz offset, size_t extent, size_t& nodes) {
-    ++nodes;
-
-    if (nodes % 100000 == 0) {
-        LOGGER.log("{} nodes...", nodes);
+uint32_t Octree::construct(const VolumetricCube& src, Vec3Sz offset, size_t extent) {
+    if (this->nodes.size() % 100000 == 0) {
+        LOGGER.log(
+            "{} nodes... ({} GiB)",
+            this->nodes.size(),
+            static_cast<float>(this->nodes.size() * sizeof(Node)) / (1024.f * 1024.f * 1024.f)
+        );
     }
 
-    const auto src_dim = src.dimensions();
+    auto [avg, max_diff] = src.vol_scan(offset, offset + extent);
 
-    const auto bounded_max = Vec3Sz{
-        std::min(src_dim.x, offset.x + extent),
-        std::min(src_dim.y, offset.y + extent),
-        std::min(src_dim.z, offset.z + extent),
-    };
+    uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
 
-    VolumetricCube::Pixel diff;
-    if (bounded_max.x == 0 || bounded_max.y == 0 || bounded_max.z == 0) {
-        diff = 0;
+    this->nodes.emplace_back(Node{});
+    this->nodes[node_index].color = avg;
+
+    if (max_diff <= MIN_CHANNEL_DIFF || extent == 2) {
+        // This node is a leaf node
+        for (size_t i = 0; i < 8; ++i) {
+            this->nodes[node_index].children[i] = 0;
+        }
+
+        this->nodes[node_index].is_leaf = 1;
     } else {
-        diff = src.max_diff(offset, bounded_max);
-    }
+        // This node is an intermediary node
 
-    uint8_t max_diff_channel = *std::max_element(reinterpret_cast<uint8_t*>(&diff), reinterpret_cast<uint8_t*>(&diff) + sizeof(VolumetricCube::Pixel));
-
-    if (max_diff_channel > MAX_CHANNEL_DIFFERENCE) {
         size_t h_extent = extent / 2;
-        size_t depth = 0;
+        size_t child = 0;
 
         for (auto xoff : {size_t{0}, h_extent}) {
             for (auto yoff : {size_t{0}, h_extent}) {
                 for (auto zoff : {size_t{0}, h_extent}) {
-                    size_t d = this->construct_r(src, {offset.x + xoff, offset.y + yoff, offset.z + zoff}, h_extent, nodes);
-                    depth = std::max(depth, d);
+                    uint32_t index = this->construct(src, {offset.x + xoff, offset.y + yoff, offset.z + zoff}, h_extent);
+                    this->nodes[node_index].children[child++] = index;
                 }
             }
         }
 
-        return depth + 1;
-    } else {
-        return 1;
+        this->nodes[node_index].is_leaf = 0;
     }
+
+    return node_index;
 }

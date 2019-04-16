@@ -42,7 +42,6 @@ sources = [
     'src/backend/headless/HeadlessOutput.cpp',
     'src/model/VolumetricCube.cpp',
     'src/model/Octree.cpp',
-    'src/model/vol_scan.cpp'
 ]
 
 shaders = [

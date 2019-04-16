@@ -10,8 +10,13 @@
 
 class VolumetricCube {
 public:
-
     using Pixel = uint32_t;
+
+    struct VolScanResult {
+        Pixel avg;
+        uint8_t max_diff;
+    };
+
 private:
     Vec3Sz dim;
     std::unique_ptr<Pixel[]> data;
@@ -41,7 +46,7 @@ public:
         return Span<const Pixel>(this->size(), this->data.get());
     }
 
-    Pixel max_diff(Vec3Sz bmin, Vec3Sz bmax) const;
+    VolScanResult vol_scan(Vec3Sz bmin, Vec3Sz bmax) const;
 };
 
 #endif

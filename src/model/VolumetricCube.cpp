@@ -1,5 +1,6 @@
 #include "model/VolumetricCube.h"
 #include <iostream>
+#include <algorithm>
 #include <tiffio.h>
 #include <x86intrin.h>
 #include "core/Error.h"
@@ -86,9 +87,38 @@ VolumetricCube VolumetricCube::from_tiff(const char* path) {
     );
 }
 
-Pixel VolumetricCube::max_diff(Vec3Sz bmin, Vec3Sz bmax) const {
-    __m128i min = _mm_cvtsi32_si128(static_cast<int>(0xFFFFFFFF));
-    __m128i max = _mm_cvtsi32_si128(0x00000000);
+VolumetricCube::VolScanResult VolumetricCube::vol_scan(Vec3Sz bmin, Vec3Sz bmax) const {
+    union {
+        struct {
+            uint8_t r, g, b, a;
+        } channel;
+
+        Pixel pix;
+    } pun;
+
+    struct {
+        size_t r, g, b, a;
+    } accum = {0, 0, 0, 0};
+
+    struct {
+        uint8_t r, g, b, a;
+    } min = {0xFF, 0xFF, 0xFF, 0xFF}, max = {0, 0, 0, 0};
+
+    bmin.x = std::min(this->dim.x, bmin.x);
+    bmin.y = std::min(this->dim.y, bmin.y);
+    bmin.z = std::min(this->dim.z, bmin.z);
+
+    bmax.x = std::min(this->dim.x, bmax.x);
+    bmax.y = std::min(this->dim.y, bmax.y);
+    bmax.z = std::min(this->dim.z, bmax.z);
+
+    size_t n = (bmax.x - bmin.x) * (bmax.y - bmin.y) * (bmax.z - bmin.z);
+    if (n == 0) {
+        return VolScanResult {
+            0x00000000,
+            0x00
+        };
+    }
 
     for (size_t z = bmin.z; z < bmax.z; ++z) {
         size_t z_base = z * this->dim.x * this->dim.y;
@@ -96,13 +126,33 @@ Pixel VolumetricCube::max_diff(Vec3Sz bmin, Vec3Sz bmax) const {
             size_t y_base = y * this->dim.x;
             for (size_t x = bmin.x; x < bmax.x; ++x) {
                 size_t index = x + y_base + z_base;
-                __m128i pixel = _mm_cvtsi32_si128(static_cast<int>(this->data[index]));
-                min = _mm_min_epu8(min, pixel);
-                max = _mm_max_epu8(max, pixel);
+                pun.pix = this->data[index];
+
+                min.r = std::min(min.r, pun.channel.r);
+                min.g = std::min(min.g, pun.channel.g);
+                min.b = std::min(min.b, pun.channel.b);
+                min.a = std::min(min.a, pun.channel.a);
+
+                max.r = std::max(max.r, pun.channel.r);
+                max.g = std::max(max.g, pun.channel.g);
+                max.b = std::max(max.b, pun.channel.b);
+                max.a = std::max(max.a, pun.channel.a);
+
+                accum.r += pun.channel.r;
+                accum.g += pun.channel.g;
+                accum.b += pun.channel.b;
+                accum.a += pun.channel.a;
             }
         }
     }
 
-    __m128i diff = _mm_subs_epu8(max, min);
-    return static_cast<uint32_t>(_mm_cvtsi128_si32(diff));
+    pun.channel.r = static_cast<uint8_t>(accum.r / n);
+    pun.channel.g = static_cast<uint8_t>(accum.g / n);
+    pun.channel.b = static_cast<uint8_t>(accum.b / n);
+    pun.channel.a = static_cast<uint8_t>(accum.a / n);
+
+    return VolScanResult{
+        pun.pix,
+        static_cast<uint8_t>(std::max({max.r - min.r, max.g - min.g, max.b - min.b, max.a - min.a}))
+    };
 }
