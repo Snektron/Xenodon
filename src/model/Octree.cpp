@@ -6,10 +6,10 @@
 #include "core/Logger.h"
 
 namespace {
-    constexpr const uint8_t MIN_CHANNEL_DIFF = 40;
+    constexpr const uint8_t MIN_CHANNEL_DIFF = 0;
 
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-    size_t ceil_2pow(size_t x) {
+    uint64_t ceil_2pow(uint64_t x) {
         --x;
         x |= x >> 1;
         x |= x >> 2;
@@ -19,6 +19,43 @@ namespace {
         x |= x >> 32;
         return ++x;
     }
+
+    // Taken from boost:
+    // https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
+    template <class T>
+    size_t hash_combine(size_t seed, const T& v) {
+        return seed ^ (std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
+    }
+}
+
+template<>
+struct std::hash<Octree::Node> {
+    size_t operator()(const Octree::Node& node) const {
+        size_t v = std::hash<uint32_t>{}(node.is_leaf);
+        v = hash_combine(v, std::hash<uint32_t>{}(node.color));
+
+        for (size_t i = 0; i < 8; ++i) {
+            v = hash_combine(v, std::hash<uint32_t>{}(node.children[i]));
+        }
+
+        return v;
+    }
+};
+
+bool operator==(const Octree::Node& lhs, const Octree::Node& rhs) {
+    if (lhs.is_leaf != rhs.is_leaf || lhs.color != rhs.color)
+        return false;
+
+    for (size_t i = 0; i < 8; ++i) {
+        if (lhs.children[i] != rhs.children[i])
+            return false;
+    }
+
+    return true;
+}
+
+bool operator!=(const Octree::Node& lhs, const Octree::Node& rhs) {
+    return !(lhs == rhs);
 }
 
 Octree::Octree(const VolumetricCube& src) {
@@ -28,15 +65,16 @@ Octree::Octree(const VolumetricCube& src) {
     LOGGER.log("Source size: {}x{}x{}", src_dim.x, src_dim.y, src_dim.z);
     LOGGER.log("Octree size: {}x{}x{}", dim, dim, dim);
 
+    auto map = std::unordered_map<Node, uint32_t>();
     const auto start = std::chrono::high_resolution_clock::now();
-    this->construct(src, Vec3Sz{0, 0, 0}, dim);
+    this->construct(src, map, Vec3Sz{0, 0, 0}, dim);
     const auto stop = std::chrono::high_resolution_clock::now();
 
     LOGGER.log("Total nodes: {}", this->nodes.size());
     LOGGER.log("Construction took: {}", std::chrono::duration<double>(stop - start));
 }
 
-uint32_t Octree::construct(const VolumetricCube& src, Vec3Sz offset, size_t extent) {
+uint32_t Octree::construct(const VolumetricCube& src, std::unordered_map<Node, uint32_t>& map, Vec3Sz offset, size_t extent) {
     if (this->nodes.size() % 100000 == 0) {
         LOGGER.log(
             "{} nodes... ({} GiB)",
@@ -47,35 +85,46 @@ uint32_t Octree::construct(const VolumetricCube& src, Vec3Sz offset, size_t exte
 
     auto [avg, max_diff] = src.vol_scan(offset, offset + extent);
 
-    uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
-
-    this->nodes.emplace_back(Node{});
-    this->nodes[node_index].color = avg;
 
     if (max_diff <= MIN_CHANNEL_DIFF || extent == 2) {
         // This node is a leaf node
-        for (size_t i = 0; i < 8; ++i) {
-            this->nodes[node_index].children[i] = 0;
-        }
+        uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
+        auto& node = this->nodes.emplace_back(Node{
+            .children = {0},
+            .color = avg,
+            .is_leaf = 1
+        });
 
-        this->nodes[node_index].is_leaf = 1;
+        map.insert({node, node_index});
+
+        return node_index;
     } else {
         // This node is an intermediary node
 
         size_t h_extent = extent / 2;
         size_t child = 0;
 
+        auto node = Node{
+            .children = {},
+            .color = avg,
+            .is_leaf = 0
+        };
+
         for (auto xoff : {size_t{0}, h_extent}) {
             for (auto yoff : {size_t{0}, h_extent}) {
                 for (auto zoff : {size_t{0}, h_extent}) {
-                    uint32_t index = this->construct(src, {offset.x + xoff, offset.y + yoff, offset.z + zoff}, h_extent);
-                    this->nodes[node_index].children[child++] = index;
+                    uint32_t index = this->construct(src, map, {offset.x + xoff, offset.y + yoff, offset.z + zoff}, h_extent);
+                    node.children[child++] = index;
                 }
             }
         }
 
-        this->nodes[node_index].is_leaf = 0;
+        uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
+        auto [it, inserted] = map.insert({node, node_index});
+        if (inserted) {
+            return node_index;
+        } else {
+            return it->second;
+        }
     }
-
-    return node_index;
 }
