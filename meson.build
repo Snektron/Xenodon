@@ -58,7 +58,6 @@ resources = [
 add_project_arguments(
     [
         '-march=native',
-        '-mavx2',
         '-Wconversion',
         '-Wall',
         '-Wextra',
