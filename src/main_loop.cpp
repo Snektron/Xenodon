@@ -65,6 +65,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
     auto start = std::chrono::high_resolution_clock::now();
     size_t frames = 0;
 
+    LOGGER.log("Starting render loop...");
     while (!quit) {
         ++frames;
 

@@ -81,8 +81,9 @@ void main() {
     vec2 pixel = mix(output_region.min, output_region.max, v_pos);
     vec2 uv = (pixel - output_region.offset) / output_region.extent;
 
-    float t = push.time * 0.1;
-    vec3 ro = vec3(1024 + sin(t) * 3000, 1024, 24 + cos(t) * 3000);
+    float t = push.time * 0.2;
+    vec3 center = vec3(1024, 1024, 24);
+    vec3 ro = center + vec3(sin(t), 0, cos(t)) * 3000.0;
     vec3 rd = normalize(vec3(1024, 1024, 24) - ro);
     rd = ray(rd, vec3(0, 1, 0), uv);
 
