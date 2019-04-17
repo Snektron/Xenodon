@@ -4,6 +4,7 @@
 
 Device::Device(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions):
     physdev(physdev.get()) {
+
     this->dev = this->physdev.createDeviceUnique({
         {},
         static_cast<uint32_t>(queue_families.size()),
@@ -11,8 +12,7 @@ Device::Device(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> qu
         0,
         nullptr,
         static_cast<uint32_t>(extensions.size()),
-        extensions.data(),
-        nullptr
+        extensions.data()
     });
 }
 

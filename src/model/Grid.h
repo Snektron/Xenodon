@@ -7,11 +7,10 @@
 #include <vulkan/vulkan.hpp>
 #include "math/Vec.h"
 #include "utility/Span.h"
+#include "model/Pixel.h"
 
 class Grid {
 public:
-    using Pixel = uint32_t;
-
     struct VolScanResult {
         Pixel avg;
         uint8_t max_diff;
@@ -26,7 +25,7 @@ private:
     }
 
 public:
-    Grid(Vec3<size_t> dim);
+    Grid(Vec3Sz dim);
 
     static Grid from_tiff(const char* path);
 

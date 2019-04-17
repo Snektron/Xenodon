@@ -34,6 +34,7 @@ sources = [
     'src/render/FrameResources.cpp',
     'src/render/SimpleShaderRenderer.cpp',
     'src/render/DdaRaytracer.cpp',
+    'src/render/SvoRaytracer.cpp',
     'src/backend/SwapImage.cpp',
     'src/backend/RenderDevice.cpp',
     'src/backend/headless/headless.cpp',
@@ -48,7 +49,8 @@ shaders = [
     'resources/test.frag',
     'resources/fullscreen_quad.vert',
     'resources/julia.frag',
-    'resources/dda.frag'
+    'resources/dda.frag',
+    'resources/svo.frag'
 ]
 
 resources = [

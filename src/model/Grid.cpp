@@ -4,8 +4,7 @@
 #include <tiffio.h>
 #include <x86intrin.h>
 #include "core/Error.h"
-
-using Pixel = Grid::Pixel;
+#include "core/Logger.h"
 
 namespace {
     struct TiffCloser {
@@ -36,7 +35,7 @@ Grid::Grid(Vec3Sz dim):
     dim(dim), data(std::make_unique<Pixel[]>(this->size())) {
 
     for (size_t i = 0; i < this->size(); ++i) {
-        this->data[i] = 0;
+        this->data[i] = {0, 0, 0, 0};
     }
 }
 
@@ -78,7 +77,12 @@ Grid Grid::from_tiff(const char* path) {
     size_t layer_stride = width * height;
     for (uint16_t i = 0; i < depth; ++i) {
         TIFFSetDirectory(tiff.get(), i);
-        TIFFReadRGBAImage(tiff.get(), width, height, data.get() + layer_stride * i);
+
+        // TIFFReadRGBAImage writes uint32_t's to the raster, which are in the form ABGR. This means
+        // that in-memory, their layout is RGBA if the host machine is little-endian, so instead of
+        // an expensive copy routine just do a reinterpret cast.
+        static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "TIFFReadRGBAImage requires little endian");
+        TIFFReadRGBAImage(tiff.get(), width, height, reinterpret_cast<uint32_t*>(&data.get()[layer_stride * i]));
     }
 
     return Grid(
@@ -88,21 +92,9 @@ Grid Grid::from_tiff(const char* path) {
 }
 
 Grid::VolScanResult Grid::vol_scan(Vec3Sz bmin, Vec3Sz bmax) const {
-    union {
-        struct {
-            uint8_t r, g, b, a;
-        } channel;
-
-        Pixel pix;
-    } pun;
-
     struct {
         size_t r, g, b, a;
     } accum = {0, 0, 0, 0};
-
-    struct {
-        uint8_t r, g, b, a;
-    } min = {0xFF, 0xFF, 0xFF, 0xFF}, max = {0, 0, 0, 0};
 
     bmin.x = std::min(this->dim.x, bmin.x);
     bmin.y = std::min(this->dim.y, bmin.y);
@@ -115,44 +107,44 @@ Grid::VolScanResult Grid::vol_scan(Vec3Sz bmin, Vec3Sz bmax) const {
     size_t n = (bmax.x - bmin.x) * (bmax.y - bmin.y) * (bmax.z - bmin.z);
     if (n == 0) {
         return VolScanResult {
-            0x00000000,
-            0x00
+            .avg = {0, 0, 0, 0},
+            .max_diff = 0
         };
     }
+
+    __m128i xmin = _mm_cvtsi32_si128(static_cast<int>(0xFFFFFFFF));
+    __m128i xmax = _mm_cvtsi32_si128(0x00000000);
 
     for (size_t z = bmin.z; z < bmax.z; ++z) {
         size_t z_base = z * this->dim.x * this->dim.y;
         for (size_t y = bmin.y; y < bmax.y; ++y) {
-            size_t y_base = y * this->dim.x;
+            size_t y_base = y * this->dim.x + z_base;
             for (size_t x = bmin.x; x < bmax.x; ++x) {
-                size_t index = x + y_base + z_base;
-                pun.pix = this->data[index];
+                const auto pix = this->data[y_base + x];
 
-                min.r = std::min(min.r, pun.channel.r);
-                min.g = std::min(min.g, pun.channel.g);
-                min.b = std::min(min.b, pun.channel.b);
-                min.a = std::min(min.a, pun.channel.a);
+                __m128i xpix = _mm_cvtsi32_si128(static_cast<int>(pix.pack()));
+                xmin = _mm_min_epu8(xmin, xpix);
+                xmax = _mm_max_epu8(xmax, xpix);
 
-                max.r = std::max(max.r, pun.channel.r);
-                max.g = std::max(max.g, pun.channel.g);
-                max.b = std::max(max.b, pun.channel.b);
-                max.a = std::max(max.a, pun.channel.a);
-
-                accum.r += pun.channel.r;
-                accum.g += pun.channel.g;
-                accum.b += pun.channel.b;
-                accum.a += pun.channel.a;
+                accum.r += static_cast<size_t>(pix.r);
+                accum.g += static_cast<size_t>(pix.g);
+                accum.b += static_cast<size_t>(pix.b);
+                accum.a += static_cast<size_t>(pix.a);
             }
         }
     }
 
-    pun.channel.r = static_cast<uint8_t>(accum.r / n);
-    pun.channel.g = static_cast<uint8_t>(accum.g / n);
-    pun.channel.b = static_cast<uint8_t>(accum.b / n);
-    pun.channel.a = static_cast<uint8_t>(accum.a / n);
+    auto diff = Pixel::unpack(static_cast<uint32_t>(_mm_cvtsi128_si32(_mm_subs_epu8(xmax, xmin))));
+
+    auto avg = Pixel{
+        static_cast<uint8_t>(accum.r / n),
+        static_cast<uint8_t>(accum.g / n),
+        static_cast<uint8_t>(accum.b / n),
+        static_cast<uint8_t>(accum.a / n)
+    };
 
     return VolScanResult{
-        pun.pix,
-        static_cast<uint8_t>(std::max({max.r - min.r, max.g - min.g, max.b - min.b, max.a - min.a}))
+        .avg = avg,
+        .max_diff = static_cast<uint8_t>(std::max({diff.r, diff.g, diff.b, diff.a}))
     };
 }

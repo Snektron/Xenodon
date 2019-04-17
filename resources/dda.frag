@@ -18,7 +18,6 @@ layout(location = 1) in vec2 v_pos;
 
 layout(location = 0) out vec4 f_color;
 
-const vec3 LIGHT = normalize(vec3(1, 2, 3));
 const int STEPS = 2500;
 
 vec3 ray(vec3 dir, vec3 up, vec2 uv) {
@@ -66,7 +65,7 @@ vec3 trace(vec3 ro, vec3 rd, float tfar) {
     return total;
 }
 
-vec2 box_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rd) {
+vec2 aabb_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rd) {
     vec3 tbot = (bmin - ro) / rd;
     vec3 ttop = (bmax - ro) / rd;
     vec3 tmin = min(ttop, tbot);
@@ -82,11 +81,12 @@ void main() {
     vec2 pixel = mix(output_region.min, output_region.max, v_pos);
     vec2 uv = (pixel - output_region.offset) / output_region.extent;
 
-    vec3 ro = vec3(1024 + sin(push.time * 0.1) * 3000, 1024, 24 + cos(push.time * 0.1) * 3000);
+    float t = push.time * 0.1;
+    vec3 ro = vec3(1024 + sin(t) * 3000, 1024, 24 + cos(t) * 3000);
     vec3 rd = normalize(vec3(1024, 1024, 24) - ro);
     rd = ray(rd, vec3(0, 1, 0), uv);
 
-    vec2 hit = box_intersect(vec3(0, 0, 0), vec3(2048, 2048, 48), ro, rd);
+    vec2 hit = aabb_intersect(vec3(0, 0, 0), vec3(2048, 2048, 48), ro, rd);
     if (hit.y > max(hit.x, 0.0)) {
         f_color.xyz = trace(ro + rd * hit.x, rd, hit.y);
         f_color.w = 1;

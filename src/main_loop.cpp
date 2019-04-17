@@ -3,12 +3,15 @@
 #include <fmt/format.h>
 #include "backend/Event.h"
 #include "backend/Display.h"
-#include "render/DdaRaytracer.h"
-#include "render/SimpleShaderRenderer.h"
+#include "render/SvoRaytracer.h"
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/Grid.h"
 #include "model/Octree.h"
+
+#include <vector>
+#include <lodepng.h>
+#include "model/Pixel.h"
 
 namespace {
     void check_setup(Display* display) {
@@ -39,15 +42,11 @@ namespace {
 }
 
 void main_loop(EventDispatcher& dispatcher, Display* display) {
-    const auto grid = Grid::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
-    const auto octree = Octree(grid);
-    // return;
-
     check_setup(display);
 
-    auto model = Grid::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
-
-    auto renderer = DdaRaytracer(display, model);
+    const auto grid = Grid::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
+    const auto octree = Octree(grid);
+    auto renderer = SvoRaytracer(display, octree);
 
     bool quit = false;
     dispatcher.bind_close([&quit] {
