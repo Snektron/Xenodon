@@ -81,7 +81,6 @@ Grid Grid::from_tiff(const char* path) {
         // TIFFReadRGBAImage writes uint32_t's to the raster, which are in the form ABGR. This means
         // that in-memory, their layout is RGBA if the host machine is little-endian, so instead of
         // an expensive copy routine just do a reinterpret cast.
-        static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "TIFFReadRGBAImage requires little endian");
         TIFFReadRGBAImage(tiff.get(), width, height, reinterpret_cast<uint32_t*>(&data.get()[layer_stride * i]));
     }
 

@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-struct [[gnu::packed]] Pixel {
+struct Pixel {
     uint8_t r, g, b, a;
 
     constexpr static Pixel unpack(uint32_t packed) {

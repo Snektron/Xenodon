@@ -4,6 +4,7 @@
 #include "backend/Event.h"
 #include "backend/Display.h"
 #include "render/SvoRaytracer.h"
+#include "render/DdaRaytracer.h"
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/Grid.h"
@@ -44,9 +45,12 @@ namespace {
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     check_setup(display);
 
-    const auto grid = Grid::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
+    const auto grid = Grid::from_tiff("/home/robin/Downloads/python/python.tiff");
+
     const auto octree = Octree(grid);
     auto renderer = SvoRaytracer(display, octree);
+
+    // auto renderer = DdaRaytracer(display, grid);
 
     bool quit = false;
     dispatcher.bind_close([&quit] {

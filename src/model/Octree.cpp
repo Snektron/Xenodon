@@ -6,7 +6,7 @@
 #include "core/Logger.h"
 
 namespace {
-    constexpr const uint8_t MIN_CHANNEL_DIFF = 30;
+    constexpr const uint8_t MIN_CHANNEL_DIFF = 25;
 
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     uint64_t ceil_2pow(uint64_t x) {

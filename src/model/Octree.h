@@ -24,7 +24,7 @@ public:
     constexpr const static uint32_t LEAF = 1u << 31u;
 
     // This struct should be kept in sync with resources/svo.frag
-    struct [[gnu::packed]] Node {
+    struct Node {
         uint32_t children[8];
         Pixel color;
         uint32_t is_leaf_depth;

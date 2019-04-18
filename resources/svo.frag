@@ -93,7 +93,7 @@ vec4 trace(vec3 ro, vec3 rd) {
 
     vec4 total = vec4(0);
 
-    for (int i = 0; i < 200 && t.x + HALF_VOXEL_SIZE < t.y; ++i) {
+    for (int i = 0; i < 500 && t.x + HALF_VOXEL_SIZE < t.y; ++i) {
         vec3 p = (t.x + HALF_VOXEL_SIZE) * rd + ro;
         vec3 offset;
         float side;
@@ -101,7 +101,9 @@ vec4 trace(vec3 ro, vec3 rd) {
 
         vec2 s = aabb_intersect(offset, offset + side, ro, rd);
         t.x = s.y;
-        total += unpack(nodes[node].color) * (s.y - s.x) * 40.0;
+
+        vec4 color = unpack(nodes[node].color);
+        total += color * (s.y - s.x) * 2.0;
     }
 
     return total;
@@ -112,8 +114,8 @@ void main() {
     vec2 uv = (pixel - output_region.offset) / output_region.extent;
 
     float t = push.time * 0.2;
-    vec3 center = vec3(0.5, 0.5, HALF_VOXEL_SIZE);
-    vec3 ro = center + vec3(sin(t), 0, cos(t)) * 1.5;
+    vec3 center = vec3(0.5, 0.5, 0.5);
+    vec3 ro = center + vec3(sin(t), 0, cos(t)) * 2;
     vec3 rd = normalize(center - ro);
     rd = ray(rd, vec3(0, 1, 0), uv);
 

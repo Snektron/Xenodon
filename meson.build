@@ -15,6 +15,14 @@ if cxx.get_id() != 'clang' and cxx.get_id() != 'gcc'
     error('Compiler not supported')
 endif
 
+if host_machine.cpu_family() != 'x86_64'
+    error('Host machine cpy family is required to be x86_64 (required by Grid::vol_scan)')
+endif
+
+if host_machine.endian() != 'little'
+    error('Host machine endianness is required to be litte (required by Grid::from_tiff)')
+endif
+
 # Project sources & resources
 
 sources = [
@@ -23,6 +31,7 @@ sources = [
     'src/sysinfo.cpp',
     'src/core/Logger.cpp',
     'src/core/Parser.cpp',
+    'src/utility/MemoryMap.cpp',
     'src/graphics/core/Instance.cpp',
     'src/graphics/core/PhysicalDevice.cpp',
     'src/graphics/core/Device.cpp',
@@ -97,7 +106,7 @@ if get_option('present-direct').enabled()
 
     # Direct presenting requires raw linux input, and is thus
     # not supported on other platforms
-    if target_machine.system() != 'linux'
+    if host_machine.system() != 'linux'
         error('Direct display system requires linux')
     endif
 
@@ -189,7 +198,7 @@ foreach shader : shaders
     inputs += spv_gen.process(shader)
 endforeach
 
-resources_target = custom_target(
+resources_host = custom_target(
     'gen-resources',
     input: inputs,
     output: ['resources.h', 'resources.S'],
@@ -197,7 +206,7 @@ resources_target = custom_target(
 )
 
 dependencies += declare_dependency(
-    sources: resources_target
+    sources: resources_host
 )
 
 # Main binary
