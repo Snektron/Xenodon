@@ -12,8 +12,8 @@ class Device {
     vk::UniqueDevice dev;
 
 public:
-    Device(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions = nullptr);
-    Device(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Span<const char* const> extensions = nullptr);
+    Device(const PhysicalDevice& physdev, Span<const vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions = nullptr);
+    Device(const PhysicalDevice& physdev, Span<const uint32_t> queue_families, Span<const char* const> extensions = nullptr);
 
     std::optional<uint32_t> find_memory_type(uint32_t filter, vk::MemoryPropertyFlags flags) const;
 

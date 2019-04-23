@@ -74,14 +74,23 @@ namespace {
             surfaces.push_back(surface.get());
         }
 
-        if (auto family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics, surfaces)) {
+        const auto graphics_family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics, surfaces);
+        const auto compute_family = physdev.find_queue_family(vk::QueueFlagBits::eCompute);
+
+        if (graphics_family && compute_family) {
+            const auto families = std::array {
+                graphics_family.value(),
+                compute_family.value()
+            };
+
             return RenderDevice(
-                Device(physdev, family.value(), DEVICE_EXTENSIONS),
-                family.value(),
-                surfaces.size()
+                Device(physdev, families, DEVICE_EXTENSIONS),
+                graphics_family.value(),
+                static_cast<uint32_t>(surfaces.size()),
+                1
             );
         } else {
-            throw Error("Gpu does not support graphics/present queue");
+            throw Error("Gpu does not support required queues");
         }
     }
 }

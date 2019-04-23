@@ -1,4 +1,5 @@
 #include "backend/headless/HeadlessOutput.h"
+#include <array>
 #include <cassert>
 #include "core/Error.h"
 #include "graphics/memory/Buffer.h"
@@ -12,14 +13,23 @@ namespace {
 
 
     RenderDevice create_render_device(const PhysicalDevice& physdev) {
-        if (auto family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics)) {
+        const auto graphics_family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics);
+        const auto compute_family = physdev.find_queue_family(vk::QueueFlagBits::eCompute);
+
+        if (graphics_family && compute_family) {
+            const auto families = std::array {
+                graphics_family.value(),
+                compute_family.value()
+            };
+
             return RenderDevice(
-                Device(physdev, family.value()),
-                family.value(),
+                Device(physdev, families),
+                graphics_family.value(),
+                compute_family.value(),
                 1
             );
         } else {
-            throw Error("Gpu does not support graphics/present queue");
+            throw Error("Gpu does not support required queues");
         }
     }
 }

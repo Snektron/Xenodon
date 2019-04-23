@@ -31,12 +31,22 @@ namespace {
                     continue;
                 }
 
-                if (auto family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics, surface)) {
+                const auto graphics_family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics, surface);
+                const auto compute_family = physdev.find_queue_family(vk::QueueFlagBits::eCompute);
+
+                if (graphics_family && compute_family) {
                     LOGGER.log("Picked GPU {}: '{}'", i, physdev.name());
-                    LOGGER.log("Graphics queue family: {}", family.value());
+                    LOGGER.log("Graphics queue family: {}", graphics_family.value());
+                    LOGGER.log("Compute queue family: {}", compute_family.value());
+                    const auto families = std::array {
+                        graphics_family.value(),
+                        compute_family.value()
+                    };
+
                     return RenderDevice(
-                        Device(physdev, family.value(), DEVICE_EXTENSIONS),
-                        family.value(),
+                        Device(physdev, families, DEVICE_EXTENSIONS),
+                        graphics_family.value(),
+                        compute_family.value(),
                         1
                     );
                 }

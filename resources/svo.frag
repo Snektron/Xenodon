@@ -103,7 +103,7 @@ vec4 trace(vec3 ro, vec3 rd) {
         t.x = s.y;
 
         vec4 color = unpack(nodes[node].color);
-        total += color * (s.y - s.x) * 2.0;
+        total += color * (s.y - s.x) * 40.0;
     }
 
     return total;

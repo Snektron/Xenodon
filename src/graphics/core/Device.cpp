@@ -2,7 +2,7 @@
 #include <vector>
 #include <algorithm>
 
-Device::Device(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions):
+Device::Device(const PhysicalDevice& physdev, Span<const vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions):
     physdev(physdev.get()) {
 
     this->dev = this->physdev.createDeviceUnique({
@@ -16,7 +16,7 @@ Device::Device(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> qu
     });
 }
 
-Device::Device(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Span<const char* const> extensions):
+Device::Device(const PhysicalDevice& physdev, Span<const uint32_t> queue_families, Span<const char* const> extensions):
     physdev(physdev.get()) {
     float priority = 1.0f;
     auto queue_create_infos = std::vector<vk::DeviceQueueCreateInfo>(queue_families.size());

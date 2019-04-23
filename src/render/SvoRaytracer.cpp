@@ -96,13 +96,13 @@ void SvoRaytracer::create_resources() {
 
         auto layout_bindings = std::array {
             vk::DescriptorSetLayoutBinding(
-                0, // layout(binding = 0)
+                0, // layout(binding = 0) uniform OutputRegionBuffer
                 vk::DescriptorType::eUniformBuffer,
                 1,
                 vk::ShaderStageFlagBits::eFragment
             ),
             vk::DescriptorSetLayoutBinding(
-                1, // layout(binding = 1)
+                1, // layout(binding = 1) readonly buffer Octree
                 vk::DescriptorType::eStorageBuffer,
                 1,
                 vk::ShaderStageFlagBits::eFragment
