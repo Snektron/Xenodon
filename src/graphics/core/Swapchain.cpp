@@ -1,5 +1,5 @@
 #include "graphics/core/Swapchain.h"
-#include "core/Logger.h"
+#include "core/Error.h"
 
 namespace {
     constexpr const auto PREFERRED_FORMAT = vk::SurfaceFormatKHR{vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
@@ -51,13 +51,19 @@ Swapchain::Swapchain(Device& device, Queue graphics_queue, vk::SurfaceKHR surfac
 }
 
 void Swapchain::recreate(vk::Extent2D surface_extent) {
-    auto caps = this->device->physical_device().getSurfaceCapabilitiesKHR(this->surface);
+    auto dev = this->device->get();
+    dev.waitIdle();
+
+    const auto usage_flags = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eStorage;
+
+    const auto caps = this->device->physical_device().getSurfaceCapabilitiesKHR(this->surface);
     this->format = find_surface_format(this->device->physical_device(), surface);
     this->present_mode = find_present_mode(this->device->physical_device(), surface);
     this->extent = find_extent(caps, surface_extent);
 
-    auto dev = this->device->get();
-    dev.waitIdle();
+    if ((caps.supportedUsageFlags & usage_flags) != usage_flags) {
+        throw Error("Surface does not support ColorAttachment and/or Storage flags");
+    }
 
     // Create the swapchain itself
     {
@@ -73,7 +79,7 @@ void Swapchain::recreate(vk::Extent2D surface_extent) {
             this->format.colorSpace,
             this->extent,
             1,
-            vk::ImageUsageFlagBits::eColorAttachment,
+            usage_flags,
             vk::SharingMode::eExclusive,
             1,
             &this->graphics_queue.queue_family_index(),
