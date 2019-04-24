@@ -41,8 +41,8 @@ public:
         return this->data[index.x + index.y * this->dim.x + index.z * this->dim.x * this->dim.y];
     }
 
-    Span<const Pixel> pixels() const {
-        return Span<const Pixel>(this->size(), this->data.get());
+    Span<Pixel> pixels() const {
+        return Span(this->size(), this->data.get());
     }
 
     VolScanResult vol_scan(Vec3Sz bmin, Vec3Sz bmax) const;

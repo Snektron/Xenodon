@@ -26,6 +26,8 @@ struct Buffer {
 
     void update_descriptor_write(vk::DescriptorSet set, uint32_t binding, size_t index);
 
+    vk::DescriptorBufferInfo descriptor_info(size_t offset, size_t size) const;
+
     vk::Buffer get() const {
         return this->buffer;
     }
@@ -87,25 +89,12 @@ void Buffer<T>::unmap() const {
 }
 
 template <typename T>
-void Buffer<T>::update_descriptor_write(vk::DescriptorSet set, uint32_t binding, size_t index) {
-    const auto buffer_info = vk::DescriptorBufferInfo(
+vk::DescriptorBufferInfo Buffer<T>::descriptor_info(size_t offset, size_t size) const {
+    return vk::DescriptorBufferInfo(
         this->buffer,
-        index * sizeof(T),
-        sizeof(T)
+        offset * sizeof(T),
+        size * sizeof(T)
     );
-
-    const auto descriptor_write = vk::WriteDescriptorSet(
-        set,
-        binding,
-        0,
-        1,
-        vk::DescriptorType::eUniformBuffer,
-        nullptr,
-        &buffer_info,
-        nullptr
-    );
-
-    this->device.updateDescriptorSets(descriptor_write, nullptr);
 }
 
 #endif

@@ -31,7 +31,6 @@ sources = [
     'src/sysinfo.cpp',
     'src/core/Logger.cpp',
     'src/core/Parser.cpp',
-    'src/utility/MemoryMap.cpp',
     'src/graphics/core/Instance.cpp',
     'src/graphics/core/PhysicalDevice.cpp',
     'src/graphics/core/Device.cpp',
@@ -44,6 +43,7 @@ sources = [
     'src/render/SimpleShaderRenderer.cpp',
     'src/render/DdaRaytracer.cpp',
     'src/render/SvoRaytracer.cpp',
+    'src/render/ComputeSvoRaytracer.cpp',
     'src/backend/SwapImage.cpp',
     'src/backend/RenderDevice.cpp',
     'src/backend/headless/headless.cpp',
@@ -59,7 +59,8 @@ shaders = [
     'resources/fullscreen_quad.vert',
     'resources/julia.frag',
     'resources/dda.frag',
-    'resources/svo.frag'
+    'resources/svo.frag',
+    'resources/svo.comp'
 ]
 
 resources = [

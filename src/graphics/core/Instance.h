@@ -11,7 +11,7 @@ class Instance {
     std::vector<PhysicalDevice> physdevs;
 
 public:
-    Instance(Span<const char* const> extensions = nullptr);
+    Instance(Span<const char*> extensions = nullptr);
 
     vk::Instance get() const {
         return this->instance.get();

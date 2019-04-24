@@ -41,7 +41,7 @@ public:
 
     const Node* find(const Vec3Sz& pos, size_t max_depth = std::numeric_limits<size_t>::max()) const;
 
-    Span<const Node> data() const {
+    Span<Node> data() const {
         return this->nodes;
     }
 

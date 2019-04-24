@@ -9,7 +9,8 @@ namespace {
 
     const vk::ImageUsageFlags RENDER_TARGET_USAGE = vk::ImageUsageFlagBits::eColorAttachment
         | vk::ImageUsageFlagBits::eSampled
-        | vk::ImageUsageFlagBits::eTransferSrc;
+        | vk::ImageUsageFlagBits::eTransferSrc
+        | vk::ImageUsageFlagBits::eStorage;
 
 
     RenderDevice create_render_device(const PhysicalDevice& physdev) {

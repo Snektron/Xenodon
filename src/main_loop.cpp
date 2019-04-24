@@ -5,6 +5,7 @@
 #include "backend/Display.h"
 #include "render/SvoRaytracer.h"
 #include "render/DdaRaytracer.h"
+#include "render/ComputeSvoRaytracer.h"
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/Grid.h"
@@ -48,7 +49,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
     const auto grid = Grid::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
 
     const auto octree = Octree(grid);
-    auto renderer = SvoRaytracer(display, octree);
+    auto renderer = ComputeSvoRaytracer(display, octree);
 
     // auto renderer = DdaRaytracer(display, grid);
 

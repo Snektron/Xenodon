@@ -256,7 +256,7 @@ void SvoRaytracer::update_output_regions() {
 }
 
 void SvoRaytracer::update_tree_buffers() {
-    const Span<const Octree::Node> nodes = this->model.data();
+    const Span<Octree::Node> nodes = this->model.data();
 
     const auto copy_info = vk::BufferCopy{
         0,

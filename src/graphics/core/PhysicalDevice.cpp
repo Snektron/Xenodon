@@ -8,7 +8,7 @@ PhysicalDevice::PhysicalDevice(vk::PhysicalDevice physdev):
     props(this->physdev.getProperties()) {
 }
 
-bool PhysicalDevice::supports_extensions(Span<const char* const> extensions) const {
+bool PhysicalDevice::supports_extensions(Span<const char*> extensions) const {
     const auto supported_extensions = this->physdev.enumerateDeviceExtensionProperties();
 
     for (const char* const ext_name : extensions) {
@@ -48,7 +48,7 @@ bool PhysicalDevice::supports_surface(vk::SurfaceKHR surface) const {
     return format_count != 0 && present_mode_count != 0;
 }
 
-std::optional<uint32_t> PhysicalDevice::find_queue_family(vk::QueueFlags flags, Span<const vk::SurfaceKHR> surfaces) const {
+std::optional<uint32_t> PhysicalDevice::find_queue_family(vk::QueueFlags flags, Span<vk::SurfaceKHR> surfaces) const {
     auto queue_families = physdev.getQueueFamilyProperties();
     uint32_t num_families = static_cast<uint32_t>(queue_families.size());
     for (uint32_t family_index = 0; family_index < num_families; ++family_index) {
@@ -65,7 +65,7 @@ std::optional<uint32_t> PhysicalDevice::find_queue_family(vk::QueueFlags flags, 
     return std::nullopt;
 }
 
-std::optional<std::pair<uint32_t, uint32_t>> PhysicalDevice::find_display_plane(vk::DisplayKHR display) const {
+std::optional<PhysicalDevice::PlaneIndices> PhysicalDevice::find_display_plane(vk::DisplayKHR display) const {
     const auto plane_props = this->physdev.getDisplayPlanePropertiesKHR();
 
     for (uint32_t plane = 0; plane < plane_props.size(); ++plane) {

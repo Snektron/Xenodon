@@ -4,22 +4,23 @@
 #include <array>
 #include <vector>
 #include <initializer_list>
+#include <type_traits>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
 
 template <typename T>
 class Span {
     size_t count;
-    T* ptr;
+    const T* ptr;
 
 public:
     using value_type = T;
     using size_type = size_t;
-    using reference = T&;
+    using reference = const T&;
     using const_reference = const T&;
-    using pointer = T*;
+    using pointer = const T*;
     using const_pointer = const T*;
-    using iterator = T*;
+    using iterator = const T*;
     using const_iterator = const T*;
 
     constexpr Span(std::nullptr_t):
@@ -27,30 +28,24 @@ public:
         ptr(nullptr) {
     }
 
-    constexpr Span(T& ptr):
+    constexpr Span(const T& ptr):
         count(1),
         ptr(&ptr) {
     }
 
     template <size_t N>
-    constexpr Span(T (&arr)[N]):
+    constexpr Span(const T (&arr)[N]):
         count(N),
         ptr(arr) {
     }
 
-    constexpr Span(size_t count, T* ptr):
+    constexpr Span(size_t count, const T* ptr):
         count(count),
         ptr(ptr) {
     }
 
     template <size_t N>
-    constexpr Span(std::array<typename std::remove_const<T>::type, N>& data):
-        count(N),
-        ptr(data.data()) {
-    }
-
-    template <size_t N>
-    constexpr Span(const std::array<typename std::remove_const<T>::type, N>& data):
+    constexpr Span(const std::array<T, N>& data):
         count(N),
         ptr(data.data()) {
     }
@@ -61,48 +56,21 @@ public:
     }
 
     template <class Allocator>
-    Span(std::vector<typename std::remove_const<T>::type, Allocator> & data):
+    Span(const std::vector<T, Allocator>& data):
         count(data.size()),
         ptr(data.data()) {
-    }
-
-    template <class Allocator>
-    Span(const std::vector<typename std::remove_const<T>::type, Allocator>& data):
-        count(data.size()),
-        ptr(data.data()) {
-    }
-
-    constexpr Span(std::initializer_list<T> const& data):
-        count(data.end() - data.begin()),
-        ptr(data.begin()) {
-    }
-
-    constexpr T* begin() {
-        return ptr;
     }
 
     constexpr const T* begin() const {
         return ptr;
     }
 
-    constexpr T* end() {
-        return ptr + count;
-    }
-
     constexpr const T* end() const {
         return ptr + count;
     }
 
-    constexpr T& front() {
-      return *this->ptr;
-    }
-
     constexpr const T & front() const {
       return *this->ptr;
-    }
-
-    constexpr T& back() {
-        return *(this->ptr + this->count - 1);
     }
 
     constexpr const T& back() const {
@@ -117,16 +85,8 @@ public:
         return this->count;
     }
 
-    constexpr T* data() {
-        return this->ptr;
-    }
-
     constexpr const T* data() const {
         return this->ptr;
-    }
-
-    constexpr T& operator[](size_t i) {
-        return this->ptr[i];
     }
 
     constexpr const T& operator[](size_t i) const {

@@ -4,7 +4,7 @@
 #include "core/Error.h"
 #include "version.h"
 
-Instance::Instance(Span<const char* const> extensions) {
+Instance::Instance(Span<const char*> extensions) {
     auto supported_extensions = vk::enumerateInstanceExtensionProperties();
 
     for (const char* ext_name : extensions) {

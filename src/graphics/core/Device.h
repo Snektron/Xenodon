@@ -12,8 +12,8 @@ class Device {
     vk::UniqueDevice dev;
 
 public:
-    Device(const PhysicalDevice& physdev, Span<const vk::DeviceQueueCreateInfo> queue_families, Span<const char* const> extensions = nullptr);
-    Device(const PhysicalDevice& physdev, Span<const uint32_t> queue_families, Span<const char* const> extensions = nullptr);
+    Device(const PhysicalDevice& physdev, Span<vk::DeviceQueueCreateInfo> queue_families, Span<const char*> extensions = nullptr);
+    Device(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Span<const char*> extensions = nullptr);
 
     std::optional<uint32_t> find_memory_type(uint32_t filter, vk::MemoryPropertyFlags flags) const;
 
@@ -24,7 +24,7 @@ public:
     vk::UniqueRenderPass create_present_render_pass(uint32_t binding, vk::AttachmentDescription attachment) const;
 
     vk::UniquePipeline create_pipeline(
-        Span<const vk::PipelineShaderStageCreateInfo> shaders,
+        Span<vk::PipelineShaderStageCreateInfo> shaders,
         vk::PipelineLayout pipeline_layout,
         vk::RenderPass render_pass,
         vk::Extent2D extent

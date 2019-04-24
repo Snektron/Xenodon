@@ -25,7 +25,7 @@ public:
     ~Texture3D();
 
     template <typename T>
-    auto upload(Span<const T> data, const vk::BufferImageCopy& region, vk::ImageLayout dst_layout);
+    auto upload(Span<T> data, const vk::BufferImageCopy& region, vk::ImageLayout dst_layout);
 
     vk::Image get() const {
         return this->image;
@@ -41,7 +41,7 @@ public:
 };
 
 template <typename T>
-auto Texture3D::upload(Span<const T> data, const vk::BufferImageCopy& region, vk::ImageLayout dst_layout) {
+auto Texture3D::upload(Span<T> data, const vk::BufferImageCopy& region, vk::ImageLayout dst_layout) {
     auto staging_buffer = Buffer<T>(
         *this->device,
         data.size(),
