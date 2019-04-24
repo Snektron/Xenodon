@@ -1,5 +1,5 @@
-#ifndef _XENODON_UTILITY_ENCLOSING_RECT_H
-#define _XENODON_UTILITY_ENCLOSING_RECT_H
+#ifndef _XENODON_UTILITY_RECT_UNION_H
+#define _XENODON_UTILITY_RECT_UNION_H
 
 #include <algorithm>
 #include <iterator>
@@ -8,7 +8,7 @@
 #include <vulkan/vulkan.hpp>
 #include "core/Logger.h"
 
-inline vk::Rect2D enclosing_rect(vk::Rect2D left, vk::Rect2D right) {
+inline vk::Rect2D rect_union(vk::Rect2D left, vk::Rect2D right) {
     int32_t x = std::min(left.offset.x, right.offset.x);
     int32_t y = std::min(left.offset.y, right.offset.y);
 
@@ -26,7 +26,7 @@ inline vk::Rect2D enclosing_rect(vk::Rect2D left, vk::Rect2D right) {
 }
 
 template <typename It, typename F, typename = std::enable_if_t<!std::is_same_v<typename std::iterator_traits<It>::value_type, void>>>
-vk::Rect2D enclosing_rect(It first, It last, F f) {
+vk::Rect2D rect_union(It first, It last, F f) {
     if (first == last)
         return {{0, 0}, {0, 0}};
 

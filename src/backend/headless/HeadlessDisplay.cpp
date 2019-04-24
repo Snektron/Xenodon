@@ -3,7 +3,7 @@
 #include <cassert>
 #include <lodepng.h>
 #include "core/Logger.h"
-#include "utility/enclosing_rect.h"
+#include "utility/rect_union.h"
 
 namespace {
     constexpr const auto BLACK_PIXEL = 0xFF000000;
@@ -48,7 +48,7 @@ void HeadlessDisplay::poll_events() {
 }
 
 void HeadlessDisplay::save() {
-    vk::Rect2D enclosing = enclosing_rect(this->outputs.begin(), this->outputs.end(), [](HeadlessOutput& output){
+    vk::Rect2D enclosing = rect_union(this->outputs.begin(), this->outputs.end(), [](HeadlessOutput& output){
         return output.region();
     });
 

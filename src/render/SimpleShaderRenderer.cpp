@@ -1,7 +1,7 @@
 #include "render/SimpleShaderRenderer.h"
 #include <array>
 #include "graphics/shader/Shader.h"
-#include "utility/enclosing_rect.h"
+#include "utility/rect_union.h"
 #include "resources.h"
 #include "core/Logger.h"
 
@@ -9,7 +9,7 @@ SimpleShaderRenderer::SimpleShaderRenderer(Display* display):
     display(display),
     start(std::chrono::system_clock::now()) {
 
-    this->calculate_enclosing_rect();
+    this->calculate_rect_union();
     this->create_resources();
 }
 
@@ -49,11 +49,11 @@ void SimpleShaderRenderer::render() {
 
 void SimpleShaderRenderer::recreate(size_t device, size_t output) {
     this->device_resources.clear();
-    this->calculate_enclosing_rect();
+    this->calculate_rect_union();
     this->create_resources();
 }
 
-void SimpleShaderRenderer::calculate_enclosing_rect() {
+void SimpleShaderRenderer::calculate_rect_union() {
     bool first = true;
     const size_t n = this->display->num_render_devices();
     for (size_t i = 0; i < n; ++i) {
@@ -64,7 +64,7 @@ void SimpleShaderRenderer::calculate_enclosing_rect() {
                 this->enclosing = output->region();
                 first = false;
             } else {
-                this->enclosing = enclosing_rect(this->enclosing, output->region());
+                this->enclosing = rect_union(this->enclosing, output->region());
             }
         }
     }

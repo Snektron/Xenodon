@@ -1,7 +1,7 @@
 #include "render/SvoRaytracer.h"
 #include <array>
 #include "graphics/shader/Shader.h"
-#include "utility/enclosing_rect.h"
+#include "utility/rect_union.h"
 #include "resources.h"
 #include "core/Logger.h"
 
@@ -10,7 +10,7 @@ SvoRaytracer::SvoRaytracer(Display* display, const Octree& model):
     start(std::chrono::system_clock::now()),
     model(model) {
 
-    this->calculate_enclosing_rect();
+    this->calculate_rect_union();
     this->create_resources();
 }
 
@@ -50,11 +50,11 @@ void SvoRaytracer::render() {
 
 void SvoRaytracer::recreate(size_t device, size_t output) {
     this->device_resources.clear();
-    this->calculate_enclosing_rect();
+    this->calculate_rect_union();
     this->create_resources();
 }
 
-void SvoRaytracer::calculate_enclosing_rect() {
+void SvoRaytracer::calculate_rect_union() {
     bool first = true;
     const size_t n = this->display->num_render_devices();
     for (size_t i = 0; i < n; ++i) {
@@ -65,7 +65,7 @@ void SvoRaytracer::calculate_enclosing_rect() {
                 this->enclosing = output->region();
                 first = false;
             } else {
-                this->enclosing = enclosing_rect(this->enclosing, output->region());
+                this->enclosing = rect_union(this->enclosing, output->region());
             }
         }
     }

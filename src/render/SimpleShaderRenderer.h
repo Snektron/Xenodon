@@ -48,7 +48,7 @@ public:
     void recreate(size_t device, size_t output);
 
 private:
-    void calculate_enclosing_rect();
+    void calculate_rect_union();
     void create_resources();
     void update_output_regions();
 };

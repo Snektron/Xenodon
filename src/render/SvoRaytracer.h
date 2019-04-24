@@ -10,6 +10,7 @@
 #include "backend/Output.h"
 #include "render/FrameResources.h"
 #include "model/Octree.h"
+#include "math/Vec.h"
 
 class SvoRaytracer {
     struct OutputRegionUbo {
@@ -50,7 +51,7 @@ public:
     void recreate(size_t device, size_t output);
 
 private:
-    void calculate_enclosing_rect();
+    void calculate_rect_union();
     void create_resources();
     void update_output_regions();
     void update_tree_buffers();
