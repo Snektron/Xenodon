@@ -1,6 +1,7 @@
 #ifndef _XENODON_RENDER_COMPUTESVORAYTRACER_H
 #define _XENODON_RENDER_COMPUTESVORAYTRACER_H
 
+#include <chrono>
 #include <vulkan/vulkan.hpp>
 #include "backend/Display.h"
 #include "backend/RenderDevice.h"
@@ -41,6 +42,7 @@ class ComputeSvoRaytracer {
 
     Display* display;
     const Octree& model;
+    std::chrono::system_clock::time_point start;
     vk::Rect2D display_region;
     std::vector<DeviceResources> device_resources;
 
@@ -56,7 +58,6 @@ private:
     void update_descriptor_sets();
     void upload_uniform_buffers();
     void upload_tree_buffers();
-    vk::UniqueDescriptorPool create_descriptor_pool(const RenderDevice& rendev, uint32_t sets);
     void calculate_display_rect();
 };
 

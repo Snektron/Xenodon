@@ -20,6 +20,11 @@ layout(location = 0) out vec4 f_color;
 
 const int STEPS = 2500;
 
+const float ZSCALE = 4.0;
+const float RZSCALE = 0.25;
+const int IZSCALE = 4;
+const float INTENSITY = 0.01;
+
 vec3 ray(vec3 dir, vec3 up, vec2 uv) {
     uv -= 0.5;
     uv.y *= output_region.extent.y / output_region.extent.x;
@@ -31,7 +36,7 @@ vec3 ray(vec3 dir, vec3 up, vec2 uv) {
 }
 
 vec3 get_voxel(ivec3 p) {
-    return texelFetch(u_model, p, 0).rgb * 0.03;
+    return texelFetch(u_model, ivec3(vec3(p) * vec3(1, 1, RZSCALE)), 0).rgb * INTENSITY;
 }
 
 vec3 trace(vec3 ro, vec3 rd, float tfar) {
@@ -57,7 +62,7 @@ vec3 trace(vec3 ro, vec3 rd, float tfar) {
 
         if (map_pos.x < 0 || map_pos.y < 0 || map_pos.z < 0) {
             break;
-        } else if (map_pos.x > 2048 || map_pos.y > 2049 || map_pos.z > 48) {
+        } else if (map_pos.x > 2048 || map_pos.y > 2049 || map_pos.z > 48 * IZSCALE) {
             break;
         }
     }
@@ -82,12 +87,12 @@ void main() {
     vec2 uv = (pixel - output_region.offset) / output_region.extent;
 
     float t = push.time * 0.2;
-    vec3 center = vec3(1024, 1024, 24);
-    vec3 ro = center + vec3(sin(t), 0, cos(t)) * 3000.0;
-    vec3 rd = normalize(vec3(1024, 1024, 24) - ro);
+    vec3 center = vec3(1024, 1024, 24 * ZSCALE);
+    vec3 ro = center + vec3(1000, 500, -3000); //vec3(sin(t), 0, cos(t)) * 3000.0;
+    vec3 rd = normalize(vec3(1024, 1024, 24 * ZSCALE) - ro);
     rd = ray(rd, vec3(0, 1, 0), uv);
 
-    vec2 hit = aabb_intersect(vec3(0, 0, 0), vec3(2048, 2048, 48), ro, rd);
+    vec2 hit = aabb_intersect(vec3(0, 0, 0), vec3(2048, 2048, 48 * ZSCALE), ro, rd);
     if (hit.y > max(hit.x, 0.0)) {
         f_color.xyz = trace(ro + rd * hit.x, rd, hit.y);
         f_color.w = 1;

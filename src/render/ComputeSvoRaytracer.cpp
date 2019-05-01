@@ -83,12 +83,30 @@ namespace {
             barrier
         );
     }
+
+    vk::UniqueDescriptorPool create_descriptor_pool(const RenderDevice& rendev, uint32_t sets) {
+        constexpr const size_t num_bindings = std::tuple_size_v<decltype(LAYOUT_BINDINGS)>;
+        auto pool_sizes = std::array<vk::DescriptorPoolSize, num_bindings>{};
+
+        for (size_t i = 0; i < num_bindings; ++i) {
+            pool_sizes[i] = vk::DescriptorPoolSize(LAYOUT_BINDINGS[i].descriptorType, sets);
+        }
+
+        const auto descr_pool_create_info = vk::DescriptorPoolCreateInfo(
+            {},
+            sets,
+            static_cast<uint32_t>(pool_sizes.size()),
+            pool_sizes.data()
+        );
+
+        return rendev.device->createDescriptorPoolUnique(descr_pool_create_info);
+    }
 }
 
 ComputeSvoRaytracer::ComputeSvoRaytracer(Display* display, const Octree& model):
     display(display),
-    model(model) {
-
+    model(model),
+    start(std::chrono::system_clock::now()) {
     this->calculate_display_rect();
     this->create_resources();
     this->upload_uniform_buffers();
@@ -101,6 +119,16 @@ ComputeSvoRaytracer::ComputeSvoRaytracer(Display* display, const Octree& model):
 
 void ComputeSvoRaytracer::recreate(size_t device, size_t output) {
     const uint32_t images = this->display->output(device, output)->num_swap_images();
+
+    for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
+        auto& drsc = this->device_resources[devidx];
+
+        for (size_t outputidx = 0; outputidx < drsc.output_resources.size(); ++outputidx) {
+            auto& orsc = drsc.output_resources[outputidx];
+            orsc.region = orsc.output->region();
+        }
+    }
+
     this->calculate_display_rect();
 
     if (static_cast<size_t>(images) != this->device_resources[device].output_resources[output].command_buffers.size()) {
@@ -115,6 +143,8 @@ void ComputeSvoRaytracer::recreate(size_t device, size_t output) {
 
 void ComputeSvoRaytracer::render() {
     const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+    const auto now = std::chrono::system_clock::now();
+    const float time = std::chrono::duration<float>(now - this->start).count();
 
     for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
         auto& drsc = this->device_resources[devidx];
@@ -140,6 +170,7 @@ void ComputeSvoRaytracer::render() {
 
             cmd_buf.bindPipeline(vk::PipelineBindPoint::eCompute, orsc.pipeline.get());
             cmd_buf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, drsc.pipeline_layout.get(), 0, orsc.descriptor_sets[index], nullptr);
+            cmd_buf.pushConstants(drsc.pipeline_layout.get(), vk::ShaderStageFlagBits::eCompute, 0, sizeof(float), static_cast<const void*>(&time));
             cmd_buf.dispatch(group_size.x, group_size.y, 1);
 
             image_transition(
@@ -177,12 +208,18 @@ void ComputeSvoRaytracer::create_resources() {
         // Create the pipeline resources
         const auto shader = Shader(device, vk::ShaderStageFlagBits::eCompute, resources::open(SHADER_RESOURCE));
 
+        const auto push_constant_range = vk::PushConstantRange(
+            vk::ShaderStageFlagBits::eCompute,
+            0,
+            sizeof(float)
+        );
+
         auto pipeline_layout = device->createPipelineLayoutUnique({
             {},
             1,
             &descr_set_layout.get(),
-            0,
-            nullptr
+            1,
+            &push_constant_range
         });
 
         // Create device buffers
@@ -247,7 +284,7 @@ void ComputeSvoRaytracer::create_descriptor_sets() {
             total_images += orsc.output->num_swap_images();
         }
 
-        drsc.descriptor_pool = this->create_descriptor_pool(rendev, total_images);
+        drsc.descriptor_pool = create_descriptor_pool(rendev, total_images);
 
         const auto descr_set_layouts = std::vector<vk::DescriptorSetLayout>(total_images, drsc.descriptor_set_layout.get());
         const auto descr_alloc_info = vk::DescriptorSetAllocateInfo(
@@ -383,24 +420,6 @@ void ComputeSvoRaytracer::upload_tree_buffers() {
             cmd_buf.copyBuffer(staging_buffer.get(), drsc.tree_buffer.get(), copy_info);
         });
     }
-}
-
-vk::UniqueDescriptorPool ComputeSvoRaytracer::create_descriptor_pool(const RenderDevice& rendev, uint32_t sets) {
-    constexpr const size_t num_bindings = std::tuple_size_v<decltype(LAYOUT_BINDINGS)>;
-    auto pool_sizes = std::array<vk::DescriptorPoolSize, num_bindings>{};
-
-    for (size_t i = 0; i < num_bindings; ++i) {
-        pool_sizes[i] = vk::DescriptorPoolSize(LAYOUT_BINDINGS[i].descriptorType, sets);
-    }
-
-    const auto descr_pool_create_info = vk::DescriptorPoolCreateInfo(
-        {},
-        sets,
-        static_cast<uint32_t>(pool_sizes.size()),
-        pool_sizes.data()
-    );
-
-    return rendev.device->createDescriptorPoolUnique(descr_pool_create_info);
 }
 
 void ComputeSvoRaytracer::calculate_display_rect() {

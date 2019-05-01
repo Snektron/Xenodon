@@ -46,7 +46,7 @@ namespace {
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     check_setup(display);
 
-    const auto grid = Grid::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
+    const auto grid = Grid::from_tiff("/home/robin/Downloads/python/python.tif");
 
     const auto octree = Octree(grid);
     auto renderer = ComputeSvoRaytracer(display, octree);

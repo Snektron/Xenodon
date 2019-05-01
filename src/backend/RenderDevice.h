@@ -13,11 +13,11 @@ struct RenderDevice {
     Device device;
     Queue graphics_queue;
     Queue compute_queue;
-    size_t outputs;
+    uint32_t outputs;
     CommandPool graphics_command_pool;
     CommandPool compute_command_pool;
 
-    RenderDevice(Device&& device, uint32_t graphics_queue_family, uint32_t compute_queue_family, size_t outputs);
+    RenderDevice(Device&& device, uint32_t graphics_queue_family, uint32_t compute_queue_family, uint32_t outputs);
 };
 
 #endif
