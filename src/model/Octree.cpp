@@ -1,13 +1,9 @@
 #include "model/Octree.h"
 #include <algorithm>
-#include <chrono>
-#include <fmt/chrono.h>
 #include "model/Grid.h"
 #include "core/Logger.h"
 
 namespace {
-    constexpr const uint8_t MIN_CHANNEL_DIFF = 25;
-
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     uint64_t ceil_2pow(uint64_t x) {
         --x;
@@ -53,24 +49,26 @@ bool operator!=(const Octree::Node& lhs, const Octree::Node& rhs) {
     return !(lhs == rhs);
 }
 
-Octree::Octree(const Grid& src) {
+struct Octree::ConstructionContext {
+    const Grid& src;
+    std::unordered_map<Node, uint32_t> map;
+    uint8_t min_channel_diff;
+    bool dag;
+};
+
+Octree::Octree(const Grid& src, uint8_t min_channel_diff, bool dag) {
     const auto src_dim = src.dimensions();
     this->dim = std::max({ceil_2pow(src_dim.x), ceil_2pow(src_dim.y), ceil_2pow(src_dim.z)});
 
-    LOGGER.log("Source size: {}x{}x{}", src_dim.x, src_dim.y, src_dim.z);
-    LOGGER.log("Octree size: {}x{}x{}", this->dim, this->dim, this->dim);
+    auto ctx = ConstructionContext{
+        .src = src,
+        .min_channel_diff = min_channel_diff,
+        .dag = dag
+    };
 
-    auto map = std::unordered_map<Node, uint32_t>();
-    const auto start = std::chrono::high_resolution_clock::now();
-    this->construct(src, map, Vec3Sz{0, 0, 0}, this->dim, 0);
-    const auto stop = std::chrono::high_resolution_clock::now();
-
-    LOGGER.log("Total nodes: {:n}", this->nodes.size());
-    LOGGER.log("Construction took: {}", std::chrono::duration<double>(stop - start));
-    LOGGER.log("Total unique nodes: {:n}", map.size());
+    this->construct(ctx, Vec3Sz{0, 0, 0}, this->dim, 0);
 
     this->nodes.shrink_to_fit();
-
     std::reverse(this->nodes.begin(), this->nodes.end());
 
     uint32_t end = static_cast<uint32_t>(this->nodes.size()) - 1;
@@ -120,29 +118,26 @@ const Octree::Node* Octree::find(const Vec3Sz& pos, size_t max_depth) const {
     }
 }
 
-uint32_t Octree::construct(const Grid& src, std::unordered_map<Node, uint32_t>& map, Vec3Sz offset, size_t extent, size_t depth) {
-    if (this->nodes.size() % 1'000'000 == 0 && this->nodes.size() > 0) {
-        LOGGER.log(
-            "{:n} nodes... ({} GiB)",
-            this->nodes.size(),
-            static_cast<float>(this->nodes.size() * sizeof(Node)) / (1024.f * 1024.f * 1024.f)
-        );
-    }
-
+uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t extent, size_t depth) {
     auto insert = [&](const Node& node) {
         uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
-        auto [it, inserted] = map.insert({node, node_index});
 
-        if (inserted) {
+        if (ctx.dag) {
+            auto [it, inserted] = ctx.map.insert({node, node_index});
+            if (inserted) {
+                this->nodes.push_back(node);
+            }
+
+            return it->second;
+        } else {
             this->nodes.push_back(node);
+            return node_index;
         }
-
-        return it->second;
     };
 
-    auto [avg, max_diff] = src.vol_scan(offset, offset + extent);
+    auto [avg, max_diff] = ctx.src.vol_scan(offset, offset + extent);
 
-    if (max_diff <= MIN_CHANNEL_DIFF || extent == 1) {
+    if (max_diff <= ctx.min_channel_diff || extent == 1) {
         // This node is a leaf node
         const auto node = Node{
             .children = {0},
@@ -165,7 +160,7 @@ uint32_t Octree::construct(const Grid& src, std::unordered_map<Node, uint32_t>& 
         for (auto xoff : {size_t{0}, h_extent}) {
             for (auto yoff : {size_t{0}, h_extent}) {
                 for (auto zoff : {size_t{0}, h_extent}) {
-                    uint32_t index = this->construct(src, map, {offset.x + xoff, offset.y + yoff, offset.z + zoff}, h_extent, depth + 1);
+                    uint32_t index = this->construct(ctx, {offset.x + xoff, offset.y + yoff, offset.z + zoff}, h_extent, depth + 1);
                     node.children[child++] = index;
                 }
             }

@@ -8,6 +8,7 @@
 #include "version.h"
 #include "main_loop.h"
 #include "sysinfo.h"
+#include "convert.h"
 #include "core/Logger.h"
 #include "backend/Display.h"
 #include "backend/Event.h"
@@ -112,6 +113,8 @@ int main(int argc, const char* argv[]) {
         sysinfo();
     } else if (subcommand == "render") {
         render(args);
+    } else if (subcommand == "convert") {
+        convert(args);
     } else {
         fmt::print("Error: Invalid subcommand '{}', see `{} help`\n", subcommand, argv[0]);
     }

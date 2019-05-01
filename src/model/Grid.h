@@ -29,6 +29,8 @@ public:
 
     static Grid from_tiff(const char* path);
 
+    VolScanResult vol_scan(Vec3Sz bmin, Vec3Sz bmax) const;
+
     Vec3Sz dimensions() const {
         return this->dim;
     }
@@ -45,7 +47,9 @@ public:
         return Span(this->size(), this->data.get());
     }
 
-    VolScanResult vol_scan(Vec3Sz bmin, Vec3Sz bmax) const;
+    size_t memory_footprint() const {
+        return sizeof(Grid) + this->size() * sizeof(Pixel);
+    }
 };
 
 #endif

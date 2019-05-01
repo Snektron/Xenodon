@@ -29,6 +29,7 @@ sources = [
     'src/main.cpp',
     'src/main_loop.cpp',
     'src/sysinfo.cpp',
+    'src/convert.cpp',
     'src/core/Logger.cpp',
     'src/core/Parser.cpp',
     'src/graphics/core/Instance.cpp',

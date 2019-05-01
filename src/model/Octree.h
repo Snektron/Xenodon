@@ -33,11 +33,13 @@ public:
     static_assert(sizeof(Node) == 40, "");
 
 private:
+    struct ConstructionContext;
+
     std::vector<Node> nodes;
     size_t dim;
 
 public:
-    explicit Octree(const Grid& src);
+    Octree(const Grid& src, uint8_t min_channel_diff, bool dag);
 
     const Node* find(const Vec3Sz& pos, size_t max_depth = std::numeric_limits<size_t>::max()) const;
 
@@ -45,8 +47,12 @@ public:
         return this->nodes;
     }
 
+    size_t memory_footprint() const {
+        return sizeof(Octree) + this->nodes.size() * sizeof(Octree::Node);
+    }
+
 private:
-    uint32_t construct(const Grid& src, std::unordered_map<Node, uint32_t>& map, Vec3Sz offset, size_t extent, size_t depth);
+    uint32_t construct(ConstructionContext& ctx, Vec3Sz offset, size_t extent, size_t depth);
 };
 
 #endif
