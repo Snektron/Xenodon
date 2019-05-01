@@ -74,20 +74,19 @@ namespace {
             surfaces.push_back(surface.get());
         }
 
-        const auto graphics_family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics, surfaces);
-        const auto compute_family = physdev.find_queue_family(vk::QueueFlagBits::eCompute);
+        const auto queue_families = physdev.find_queues(surfaces);
 
-        if (graphics_family && compute_family) {
+        if (queue_families) {
             const auto families = std::array {
-                graphics_family.value(),
-                compute_family.value()
+                queue_families.value().graphics_family,
+                queue_families.value().compute_family
             };
 
             return RenderDevice(
                 Device(physdev, families, DEVICE_EXTENSIONS),
-                graphics_family.value(),
-                static_cast<uint32_t>(surfaces.size()),
-                1
+                queue_families.value().graphics_family,
+                queue_families.value().compute_family,
+                static_cast<uint32_t>(surfaces.size())
             );
         } else {
             throw Error("Gpu does not support required queues");

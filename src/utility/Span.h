@@ -50,6 +50,12 @@ public:
         ptr(data.data()) {
     }
 
+    // Careful, this can only be used in parameters and such
+    Span(std::initializer_list<T> items):
+        count(items.size()),
+        ptr(items.begin()) {
+    }
+
     Span(vk::ArrayProxy<T> proxy):
         count(proxy.size()),
         ptr(proxy.data()) {

@@ -14,19 +14,18 @@ namespace {
 
 
     RenderDevice create_render_device(const PhysicalDevice& physdev) {
-        const auto graphics_family = physdev.find_queue_family(vk::QueueFlagBits::eGraphics);
-        const auto compute_family = physdev.find_queue_family(vk::QueueFlagBits::eCompute);
+        const auto queue_families = physdev.find_queues();
 
-        if (graphics_family && compute_family) {
+        if (queue_families) {
             const auto families = std::array {
-                graphics_family.value(),
-                compute_family.value()
+                queue_families.value().graphics_family,
+                queue_families.value().compute_family
             };
 
             return RenderDevice(
                 Device(physdev, families),
-                graphics_family.value(),
-                compute_family.value(),
+                queue_families.value().graphics_family,
+                queue_families.value().compute_family,
                 1
             );
         } else {

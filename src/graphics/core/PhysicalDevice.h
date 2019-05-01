@@ -11,14 +11,8 @@ class PhysicalDevice {
     vk::PhysicalDeviceProperties props;
 
 public:
-    struct QueueFamilyFindInfo {
-        vk::QueueFlags flags;
-        unsigned priority;
-        Span<vk::SurfaceKHR> surfaces = Span<vk::SurfaceKHR>(nullptr);
-    };
-
-    struct QueueIndices {
-        uint32_t family, index;
+    struct QueueFamilyIndices {
+        uint32_t graphics_family, compute_family;
     };
 
     struct PlaneIndices {
@@ -30,9 +24,8 @@ public:
     bool supports_extensions(Span<const char*> extensions) const;
     bool supports_surface(vk::SurfaceKHR surface) const;
     std::optional<uint32_t> find_queue_family(vk::QueueFlags flags, Span<vk::SurfaceKHR> surfaces = nullptr) const;
+    std::optional<QueueFamilyIndices> find_queues(Span<vk::SurfaceKHR> surfaces = nullptr) const;
     std::optional<PlaneIndices> find_display_plane(vk::DisplayKHR display) const;
-
-    void find_queue_families();
 
     vk::PhysicalDevice get() const {
         return this->physdev;

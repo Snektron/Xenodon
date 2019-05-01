@@ -35,9 +35,19 @@ Device::Device(const PhysicalDevice& physdev, Span<uint32_t> queue_families, Spa
         }
     );
 
+    std::sort(
+        queue_create_infos.begin(),
+        queue_create_infos.end(),
+        [](const auto& a, const auto& b){
+            return a.queueFamilyIndex < b.queueFamilyIndex;
+        }
+    );
+
+    const auto last = std::unique(queue_create_infos.begin(), queue_create_infos.end());
+
     this->dev = this->physdev.createDeviceUnique({
         {},
-        static_cast<uint32_t>(queue_create_infos.size()),
+        static_cast<uint32_t>(std::distance(queue_create_infos.begin(), last)),
         queue_create_infos.data(),
         0,
         nullptr,
