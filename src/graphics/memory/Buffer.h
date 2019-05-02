@@ -24,8 +24,6 @@ struct Buffer {
     T* map(vk::DeviceSize offset, vk::DeviceSize size) const;
     void unmap() const;
 
-    void update_descriptor_write(vk::DescriptorSet set, uint32_t binding, size_t index);
-
     vk::DescriptorBufferInfo descriptor_info(size_t offset, size_t size) const;
 
     vk::Buffer get() const {

@@ -135,7 +135,21 @@ void SimpleShaderRenderer::create_resources() {
             Output* output = this->display->output(i, j);
             vk::Rect2D region = output->region();
 
-            output_region_buffer.update_descriptor_write(output_region_sets[j], 0, j);
+            const auto output_region_buffer_info = output_region_buffer.descriptor_info(j, 1);
+
+            auto write = vk::WriteDescriptorSet(
+                output_region_sets[j],
+                0,
+                0,
+                1,
+                vk::DescriptorType::eUniformBuffer,
+                nullptr,
+                &output_region_buffer_info,
+                nullptr
+            );
+
+            device->updateDescriptorSets(write, nullptr);
+
             auto render_pass = device.create_present_render_pass(0, output->color_attachment_descr());
             auto pipeline = device.create_pipeline(shaders, pipeline_layout.get(), render_pass.get(), region.extent);
             auto frame_resources = FrameResources(rendev, output, render_pass.get());
