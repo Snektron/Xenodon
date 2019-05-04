@@ -1,13 +1,20 @@
 #include "convert.h"
+#include <vector>
 #include <string_view>
 #include <optional>
 #include <fmt/format.h>
+#include "core/arg_parse.h"
 
 namespace {
     enum class FileType {
         Tiff,
         Oct,
         Unknown
+    };
+
+    struct ConvertOptions {
+        uint8_t split_difference;
+        bool dag;
     };
 
     FileType parse_file_type(std::string_view str) {
@@ -52,47 +59,28 @@ void convert(Span<const char*> args) {
     const char* src_type_arg = nullptr;
     const char* dst_type_arg = nullptr;
 
-    for (size_t i = 0; i < args.size(); ++i) {
-        const auto arg = std::string_view(args[i]);
-        const bool is_flag = arg.size() > 0 && arg[0] == '-';
+    ConvertOptions opts;
 
-        if (arg == "--src-type" || arg == "-s") {
-            if (++i == args.size()) {
-                fmt::print("Error: {} expects argument <type>\n", arg);
-                return;
-            }
-
-            src_type_arg = args[i];
-        } else if (arg == "--dst-type" || arg == "-d") {
-            if (++i == args.size()) {
-                fmt::print("Error: {} expects argument <type>\n", arg);
-                return;
-            }
-
-            dst_type_arg = args[i];
-        } else if (!is_flag && !src) {
-            src = args[i];
-        } else if (!is_flag && !dst) {
-            dst = args[i];
-        } else if (is_flag) {
-            fmt::print("Error: unrecognized option '{}'\n", arg);
-            return;
-        } else {
-            fmt::print("Error: unrecognized positional argument '{}'\n", arg);
-            return;
+    auto cmd = args::Command {
+        .flags = {
+            {opts.dag, "--dag"}
+        },
+        .parameters = {
+            {src_type_arg, "source type", "--src-type", 's'},
+            {dst_type_arg, "destination type", "--dst-type", 'd'}
+        },
+        .positional = {
+            {src, "source file"},
+            {dst, "destination file"}
         }
-    }
+    };
 
-    if (!src) {
-        fmt::print("Error: missing positional argument <source>\n");
-        return;
-    } else if (!dst) {
-        fmt::print("Error: missing positional argument <destination>\n");
+    if (!args::parse(args, cmd)) {
         return;
     }
 
-    const auto src_type = guess_file_type(src, src_type_arg, "source");
-    const auto dst_type = guess_file_type(dst, dst_type_arg, "destination");
+    const auto src_type = guess_file_type(src, src_type_arg, "source file");
+    const auto dst_type = guess_file_type(dst, dst_type_arg, "destination file");
 
     if (src_type == FileType::Unknown || dst_type == FileType::Unknown) {
         return;

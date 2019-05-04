@@ -5,16 +5,23 @@
 #include "core/Config.h"
 #include "core/Logger.h"
 #include "core/Error.h"
+#include "core/arg_parse.h"
 #include "backend/direct/DirectConfig.h"
 #include "backend/Event.h"
 
 std::unique_ptr<DirectDisplay> make_direct_display(Span<const char*> args, EventDispatcher& dispatcher) {
-    if (args.empty()) {
-        fmt::print("Error: Missing argument <config>\n");
+    const char* config_path = nullptr;
+    auto cmd = args::Command {
+        .positional = {
+            {config_path, "config path"},
+        }
+    };
+
+    if (!args::parse(args, cmd)) {
         return nullptr;
     }
 
-    auto in = std::ifstream(args[0]);
+    auto in = std::ifstream(config_path);
     if (!in) {
         fmt::print("Error: Failed to open config file '{}'\n", std::string_view(args[0]));
         return nullptr;
@@ -25,7 +32,7 @@ std::unique_ptr<DirectDisplay> make_direct_display(Span<const char*> args, Event
     try {
         config = cfg::Config(in).as<DirectConfig>();
     } catch (const Error& err) {
-        fmt::print("Failed to read config file '{}':\n{}\n", args[0], err.what());
+        fmt::print("Failed to read config file '{}':\n{}\n", config_path, err.what());
         return nullptr;
     }
 

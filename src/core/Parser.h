@@ -34,7 +34,7 @@ namespace parser {
     struct ParseError: public Error {
         template <typename... Args>
         ParseError(const Parser& parser, std::string_view fmt, const Args&... args):
-            Error(format_error(parser, fmt, fmt::make_format_args(args...))) {
+            Error("{}", format_error(parser, fmt, fmt::make_format_args(args...))) {
         }
 
     private:

@@ -32,6 +32,7 @@ sources = [
     'src/convert.cpp',
     'src/core/Logger.cpp',
     'src/core/Parser.cpp',
+    'src/core/arg_parse.cpp',
     'src/graphics/core/Instance.cpp',
     'src/graphics/core/PhysicalDevice.cpp',
     'src/graphics/core/Device.cpp',

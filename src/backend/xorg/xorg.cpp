@@ -7,6 +7,7 @@
 #include "core/Error.h"
 #include "core/Logger.h"
 #include "core/Config.h"
+#include "core/arg_parse.h"
 #include "backend/Event.h"
 #include "backend/xorg/XorgMultiGpuConfig.h"
 
@@ -28,27 +29,24 @@ namespace {
 }
 
 std::unique_ptr<XorgDisplay> make_xorg_display(Span<const char*> args, EventDispatcher& dispatcher) {
-    auto config = std::optional<XorgMultiGpuConfig>(std::nullopt);
+    const char* config_path = nullptr;
 
-    if (!args.empty()) {
-        auto arg = std::string_view(args[0]);
-
-        if (arg == "-m" || arg == "--multi-gpu") {
-            if (args.size() == 1) {
-                fmt::print("Error: {} requires argument <config>", arg);
-            } else {
-                config = read_config(args[1]);
-                if (!config)
-                    return nullptr;
-            }
-        } else {
-            fmt::print("Error: Unrecognized argument '{}'\n", arg);
-            return nullptr;
+    auto cmd = args::Command {
+        .parameters = {
+            {config_path, "source type", "--multi-gpu", 'm'},
         }
+    };
+
+    if (!args::parse(args, cmd)) {
+        return nullptr;
     }
 
     LOGGER.log("Using xorg presenting backend");
-    if (config) {
+    if (config_path) {
+        auto config = read_config(config_path);
+        if (!config) {
+            return nullptr;
+        }
         return std::make_unique<XorgDisplay>(dispatcher, config.value());
     } else {
         return std::make_unique<XorgDisplay>(dispatcher, vk::Extent2D{800, 600});
