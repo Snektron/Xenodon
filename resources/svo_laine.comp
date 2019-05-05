@@ -1,0 +1,212 @@
+#version 450
+
+struct Node {
+    uint children[8];
+    uint color;
+    uint is_leaf_depth;
+};
+
+struct Rect {
+    ivec2 offset;
+    uvec2 extent;
+};
+
+layout(local_size_x = 4, local_size_y = 4) in;
+
+layout(push_constant) uniform PushConstant {
+    float time;
+} push;
+
+layout(binding = 0) readonly uniform UniformBuffer {
+    Rect output_region;
+    Rect display_region;
+} uniforms;
+
+layout(binding = 1) readonly buffer Octree {
+    Node nodes[];
+} model;
+
+layout(binding = 2, rgba8) restrict writeonly uniform image2D render_target;
+
+const uint LEAF = 1 << 31;
+const float EPSILON = 0.0001;
+
+vec4 unpack(uint v) {
+    return vec4(
+        float(v & 0xFF) / 255.0,
+        float((v >> 8) & 0xFF) / 255.0,
+        float((v >> 16) & 0xFF) / 255.0,
+        float((v >> 24) & 0xFF) / 255.0
+    );
+}
+
+vec3 ray(vec3 dir, vec3 up, vec2 uv) {
+    uv -= 0.5;
+    uv.y *= float(uniforms.display_region.extent.y) / float(uniforms.display_region.extent.x);
+
+    vec3 right = normalize(cross(up, dir));
+    up = normalize(cross(right, dir));
+
+    return normalize(uv.x * right + uv.y * up + dir);
+}
+
+vec2 aabb_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rd) {
+    vec3 rrd = 1.0 / (rd + 0.00000001);
+    vec3 tbot = (bmin - ro) * rrd;
+    vec3 ttop = (bmax - ro) * rrd;
+    vec3 tmin = min(ttop, tbot);
+    vec3 tmax = max(ttop, tbot);
+    vec2 t = max(tmin.xx, tmin.yz);
+    float t0 = max(t.x, t.y);
+    t = min(tmax.xx, tmax.yz);
+    float t1 = min(t.x, t.y);
+    return vec2(t0, t1);
+}
+
+float v3min(vec3 v) {
+    return min(v.x, min(v.y, v.z));
+}
+
+float v3max(vec3 v) {
+    return max(v.x, max(v.y, v.z));
+}
+
+uint cxor(uint x, bvec3 a) {
+    x ^= mix(0, 1, a.x);
+    x ^= mix(0, 2, a.y);
+    x ^= mix(0, 4, a.z);
+    return x;
+}
+
+vec4 trace(vec3 ro, vec3 rd) {
+    const uint cast_stack_depth = 23;
+    const float epsilon = exp2(-float(cast_stack_depth));
+
+    uint node_stack[cast_stack_depth];
+    float t_max_stack[cast_stack_depth];
+
+    rd = mix(rd, step(rd, vec3(0)) * epsilon * 2.0 - epsilon, lessThan(abs(rd), vec3(epsilon)));
+
+    vec3 t_coeff = 1.0 / -abs(rd);
+    vec3 t_bias = t_coeff * ro;
+
+    bvec3 lt0 = greaterThan(rd, vec3(0));
+    t_bias = mix(t_bias, 3.0 * t_coeff - t_bias, lt0);
+    uint octant_mask = cxor(7, lt0);
+
+    float t_min = v3max(2.0 * t_coeff - t_bias);
+    float t_max = v3min(t_coeff - t_bias);
+    float h = t_max;
+
+    t_min = max(t_min, 0.0);
+    t_max = min(t_max, sqrt(3.0));
+
+    uint parent = 0;
+    uint idx = 0;
+    vec3 pos = vec3(1);
+    uint scale = cast_stack_depth - 1;
+    float scale_exp2 = 0.5;
+
+    {
+        bvec3 a = greaterThan(1.5 * t_coeff - t_bias, vec3(t_min));
+        pos = mix(pos, vec3(1.5), a);
+        idx = cxor(idx, a);
+    }
+
+    while (scale < cast_stack_depth) {
+        vec3 t_corner = pos * t_coeff - t_bias;
+        float tc_max = v3min(t_corner);
+
+        uint child = model.nodes[parent].children[idx ^ octant_mask];
+        bool exists = ((model.nodes[child].color >> 24) & 0xFF) > 0;
+
+        if (exists && t_min <= t_max) {
+            float hlf = scale_exp2 * 0.5;
+            float tv_max = min(t_max, tc_max);
+            vec3 t_center = hlf * t_coeff + t_corner;
+
+            if (t_min <= tv_max) {
+                // Stop the ray tracing if we hit a leaf. This should be changed...
+                if (model.nodes[child].is_leaf_depth >= LEAF) {
+                    return unpack(model.nodes[child].color);
+                }
+
+                // PUSH
+
+                if (tc_max < h) {
+                    node_stack[scale] = parent;
+                    t_max_stack[scale] = t_max;
+                }
+
+                h = tc_max;
+
+                parent = child;
+
+                --scale;
+                scale_exp2 = hlf;
+                bvec3 a = greaterThan(t_center, vec3(t_min));
+                idx = cxor(0, a);
+                pos += mix(vec3(0), vec3(scale_exp2), a);
+                t_max = tv_max;
+                continue;
+            }
+        }
+
+        // ADVANCE
+
+        bvec3 a = lessThanEqual(t_corner, vec3(tc_max));
+        uint step_mask = cxor(0, a);
+        pos -= mix(vec3(0), vec3(scale_exp2), a);
+
+        t_min = tc_max;
+        idx ^= step_mask;
+
+        if ((idx & step_mask) != 0) {
+            // POP
+
+            uvec3 x = floatBitsToUint(pos) ^ floatBitsToUint(pos + scale_exp2);
+            uvec3 y = uvec3(a) * x;
+            uint dbits = y.x | y.y | y.z;
+
+            scale = (floatBitsToUint(float(dbits)) >> 23) - 127;
+            scale_exp2 = uintBitsToFloat((scale - cast_stack_depth + 127) << 23);
+
+            parent = node_stack[scale];
+            t_max = t_max_stack[scale];
+
+            uvec3 sh = floatBitsToUint(pos) >> scale;
+            pos = uintBitsToFloat(sh << scale);
+
+            sh %= 2;
+            idx = sh.x + sh.y * 2 + sh.z * 4;
+
+            h = 0;
+        }
+    }
+
+    return vec4(0);
+}
+
+void main() {
+    uvec2 index = gl_GlobalInvocationID.xy;
+
+    if (any(greaterThanEqual(index, uniforms.output_region.extent))) {
+        return;
+    }
+
+    ivec2 pixel = uniforms.output_region.offset + ivec2(index);
+    vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
+
+    float time = push.time * 0.2;
+    vec3 center = vec3(1.5, 1.5, 1.5);
+
+    vec3 ro = center + vec3(sin(time), 0, cos(time)) * 3;
+    vec3 rd = normalize(center - ro);
+    rd = ray(rd, vec3(0, 1, 0), uv);
+
+    vec2 t = aabb_intersect(vec3(1), vec3(2), ro, rd);
+    ro += t.x * rd;
+    vec4 color = trace(ro, rd);
+
+    imageStore(render_target, ivec2(index), vec4(color.rgb, 1));
+}

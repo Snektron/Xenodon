@@ -27,7 +27,9 @@ private:
 public:
     Grid(Vec3Sz dim);
 
-    static Grid from_tiff(const char* path);
+    static Grid load_tiff(const char* path);
+
+    void save_tiff(const char* path);
 
     VolScanResult vol_scan(Vec3Sz bmin, Vec3Sz bmax) const;
 
@@ -41,6 +43,10 @@ public:
 
     Pixel at(Vec3Sz index) const {
         return this->data[index.x + index.y * this->dim.x + index.z * this->dim.x * this->dim.y];
+    }
+
+    void set(Vec3Sz index, Pixel value) {
+        this->data[index.x + index.y * this->dim.x + index.z * this->dim.x * this->dim.y] = value;
     }
 
     Span<Pixel> pixels() const {

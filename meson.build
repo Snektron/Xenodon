@@ -62,7 +62,8 @@ shaders = [
     'resources/julia.frag',
     'resources/dda.frag',
     'resources/svo.frag',
-    'resources/svo.comp'
+    'resources/svo.comp',
+    'resources/svo_laine.comp'
 ]
 
 resources = [

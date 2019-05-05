@@ -39,7 +39,7 @@ Grid::Grid(Vec3Sz dim):
     }
 }
 
-Grid Grid::from_tiff(const char* path) {
+Grid Grid::load_tiff(const char* path) {
     auto tiff = TiffPtr(TIFFOpen(path, "r"));
     if (!tiff) {
         throw Error("Failed to open TIFF file '{}'", path);

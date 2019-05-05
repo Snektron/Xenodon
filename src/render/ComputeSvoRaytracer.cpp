@@ -7,7 +7,7 @@
 #include "resources.h"
 
 namespace {
-    constexpr const std::string_view SHADER_RESOURCE = "resources/svo.comp";
+    constexpr const std::string_view SHADER_RESOURCE = "resources/svo_laine.comp";
     constexpr const Vec2<uint32_t> LOCAL_SIZE{4, 4}; // keep in sync with above shader
 
     const auto LAYOUT_BINDINGS = std::array {

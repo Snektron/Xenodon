@@ -46,8 +46,23 @@ namespace {
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     check_setup(display);
 
-    const auto grid = Grid::from_tiff("/home/robin/Downloads/ZF-Eye.tif");
-    const auto octree = Octree(grid, 10, true);
+    // const auto grid = Grid::load_tiff("/home/robin/Downloads/ZF-Eye.tif");
+
+    auto grid = Grid({256, 256, 256});
+
+    auto set = [&](size_t x, size_t y, size_t z) {
+        grid.set({x, y, z}, Pixel{static_cast<uint8_t>(x), static_cast<uint8_t>(y), static_cast<uint8_t>(z), 255});
+    };
+
+    for (size_t a = 0; a < 256; ++a) {
+        for (size_t b = 0; b < 256; ++b) {
+            set(a, b, 255);
+            set(a, 255, b);
+            set(255, a, b);
+        }
+    }
+
+    const auto octree = Octree(grid, 30, true);
     auto renderer = ComputeSvoRaytracer(display, octree);
 
     // auto renderer = DdaRaytracer(display, grid);
