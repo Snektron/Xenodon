@@ -46,23 +46,25 @@ namespace {
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     check_setup(display);
 
-    // const auto grid = Grid::load_tiff("/home/robin/Downloads/ZF-Eye.tif");
+    // const auto grid = Grid::load_tiff("/home/robin/Downloads/snek_skull/skull.tiff");
 
-    auto grid = Grid({256, 256, 256});
+    auto grid = Grid({16, 16, 16});
 
     auto set = [&](size_t x, size_t y, size_t z) {
-        grid.set({x, y, z}, Pixel{static_cast<uint8_t>(x), static_cast<uint8_t>(y), static_cast<uint8_t>(z), 255});
+        grid.set({x, y, z}, Pixel{static_cast<uint8_t>(x * 16), static_cast<uint8_t>(y * 16), static_cast<uint8_t>(z * 16), 255});
     };
 
-    for (size_t a = 0; a < 256; ++a) {
-        for (size_t b = 0; b < 256; ++b) {
-            set(a, b, 255);
-            set(a, 255, b);
-            set(255, a, b);
+    for (size_t a = 0; a < 16; ++a) {
+        for (size_t b = 0; b < 16; ++b) {
+            for (size_t c = 0; c < 16; ++c) {
+                set(a, b, c);
+            }
         }
     }
 
-    const auto octree = Octree(grid, 30, true);
+    // auto renderer = DdaRaytracer(display, grid);
+
+    const auto octree = Octree(grid, 50, true);
     auto renderer = ComputeSvoRaytracer(display, octree);
 
     // auto renderer = DdaRaytracer(display, grid);

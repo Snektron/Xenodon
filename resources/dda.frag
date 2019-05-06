@@ -20,10 +20,10 @@ layout(location = 0) out vec4 f_color;
 
 const int STEPS = 2500;
 
-const float ZSCALE = 4.0;
-const float RZSCALE = 0.25;
-const int IZSCALE = 4;
-const float INTENSITY = 0.01;
+const float ZSCALE = 2;//4.0;
+const float RZSCALE = 0.5;//0.25;
+const int IZSCALE = 2;//4;
+const float INTENSITY = 0.001;
 
 vec3 ray(vec3 dir, vec3 up, vec2 uv) {
     uv -= 0.5;
@@ -62,7 +62,7 @@ vec3 trace(vec3 ro, vec3 rd, float tfar) {
 
         if (map_pos.x < 0 || map_pos.y < 0 || map_pos.z < 0) {
             break;
-        } else if (map_pos.x > 2048 || map_pos.y > 2049 || map_pos.z > 48 * IZSCALE) {
+        } else if (map_pos.x > 1024 || map_pos.y > 1024 || map_pos.z > 1024 * IZSCALE) {
             break;
         }
     }
@@ -87,12 +87,12 @@ void main() {
     vec2 uv = (pixel - output_region.offset) / output_region.extent;
 
     float t = push.time * 0.2;
-    vec3 center = vec3(1024, 1024, 24 * ZSCALE);
-    vec3 ro = center + vec3(1000, 500, -3000); //vec3(sin(t), 0, cos(t)) * 3000.0;
-    vec3 rd = normalize(vec3(1024, 1024, 24 * ZSCALE) - ro);
+    vec3 center = vec3(512, 512, 512 * ZSCALE);
+    vec3 ro = center + vec3(sin(t), 0, cos(t)) * 3000.0;
+    vec3 rd = normalize(vec3(512, 512, 512 * ZSCALE) - ro);
     rd = ray(rd, vec3(0, 1, 0), uv);
 
-    vec2 hit = aabb_intersect(vec3(0, 0, 0), vec3(2048, 2048, 48 * ZSCALE), ro, rd);
+    vec2 hit = aabb_intersect(vec3(0, 0, 0), vec3(1024, 1024, 1024 * ZSCALE), ro, rd);
     if (hit.y > max(hit.x, 0.0)) {
         f_color.xyz = trace(ro + rd * hit.x, rd, hit.y);
         f_color.w = 1;

@@ -90,9 +90,9 @@ vec4 trace(vec3 ro, vec3 rd) {
     vec3 t_coeff = 1.0 / -abs(rd);
     vec3 t_bias = t_coeff * ro;
 
-    bvec3 lt0 = greaterThan(rd, vec3(0));
-    t_bias = mix(t_bias, 3.0 * t_coeff - t_bias, lt0);
-    uint octant_mask = cxor(7, lt0);
+    bvec3 gt0 = greaterThan(rd, vec3(0));
+    t_bias = mix(t_bias, 3.0 * t_coeff - t_bias, gt0);
+    uint octant_mask = cxor(7, gt0);
 
     float t_min = v3max(2.0 * t_coeff - t_bias);
     float t_max = v3min(t_coeff - t_bias);
@@ -113,6 +113,8 @@ vec4 trace(vec3 ro, vec3 rd) {
         idx = cxor(idx, a);
     }
 
+    vec4 total_color = vec4(0);
+
     while (scale < cast_stack_depth) {
         vec3 t_corner = pos * t_coeff - t_bias;
         float tc_max = v3min(t_corner);
@@ -128,27 +130,28 @@ vec4 trace(vec3 ro, vec3 rd) {
             if (t_min <= tv_max) {
                 // Stop the ray tracing if we hit a leaf. This should be changed...
                 if (model.nodes[child].is_leaf_depth >= LEAF) {
-                    return unpack(model.nodes[child].color);
+                    // return unpack(model.nodes[child].color);
+                    vec4 color = unpack(model.nodes[child].color);
+                    total_color += color * (tv_max - t_min);
+                } else {
+                    // PUSH
+                    if (tc_max < h) {
+                        node_stack[scale] = parent;
+                        t_max_stack[scale] = t_max;
+                    }
+
+                    h = tc_max;
+
+                    parent = child;
+
+                    --scale;
+                    scale_exp2 = hlf;
+                    bvec3 a = greaterThan(t_center, vec3(t_min));
+                    idx = cxor(0, a);
+                    pos += mix(vec3(0), vec3(scale_exp2), a);
+                    t_max = tv_max;
+                    continue;
                 }
-
-                // PUSH
-
-                if (tc_max < h) {
-                    node_stack[scale] = parent;
-                    t_max_stack[scale] = t_max;
-                }
-
-                h = tc_max;
-
-                parent = child;
-
-                --scale;
-                scale_exp2 = hlf;
-                bvec3 a = greaterThan(t_center, vec3(t_min));
-                idx = cxor(0, a);
-                pos += mix(vec3(0), vec3(scale_exp2), a);
-                t_max = tv_max;
-                continue;
             }
         }
 
@@ -184,7 +187,7 @@ vec4 trace(vec3 ro, vec3 rd) {
         }
     }
 
-    return vec4(0);
+    return total_color;
 }
 
 void main() {
@@ -200,7 +203,7 @@ void main() {
     float time = push.time * 0.2;
     vec3 center = vec3(1.5, 1.5, 1.5);
 
-    vec3 ro = center + vec3(sin(time), 0, cos(time)) * 3;
+    vec3 ro = center + vec3(sin(time), 0, cos(time)) * 2;
     vec3 rd = normalize(center - ro);
     rd = ray(rd, vec3(0, 1, 0), uv);
 

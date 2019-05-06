@@ -50,65 +50,51 @@ vec3 ray(vec3 dir, vec3 up, vec2 uv) {
     return normalize(uv.x * right + uv.y * up + dir);
 }
 
+float v3min(vec3 v) {
+    return min(v.x, min(v.y, v.z));
+}
+
+float v3max(vec3 v) {
+    return max(v.x, max(v.y, v.z));
+}
+
 vec2 aabb_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rrd) {
     vec3 tbot = (bmin - ro) * rrd;
     vec3 ttop = (bmax - ro) * rrd;
     vec3 tmin = min(ttop, tbot);
     vec3 tmax = max(ttop, tbot);
-    vec2 t = max(tmin.xx, tmin.yz);
-    float t0 = max(t.x, t.y);
-    t = min(tmax.xx, tmax.yz);
-    float t1 = min(t.x, t.y);
+    float t0 = v3max(tmin);
+    float t1 = v3min(tmax);
     return vec2(t0, t1);
 }
 
-uint find(vec3 pos, out vec3 base, out float side) {
-    float extent = 1.0;
-
-    uint index = 0;
-    vec3 offset = vec3(0);
-
-    while (true) {
-        if (model.nodes[index].is_leaf_depth >= LEAF) {
-            base = offset;
-            side = extent;
-            return index;
-        }
-
-        extent *= 0.5;
-        bvec3 mask = greaterThanEqual(pos, offset + extent);
-        int child = int(dot(vec3(mask), vec3(4, 2, 1)));
-        offset += vec3(mask) * vec3(extent);
-        index = model.nodes[index].children[child];
-    }
-}
-
 vec4 trace(vec3 ro, vec3 rd) {
-    vec3 rrd = 1.0 / (rd + 0.0000000001); // Floating point infinities
+    const uint cast_stack_depth = 23;
+    const float epsilon = exp2(-float(cast_stack_depth));
 
-    vec2 t = aabb_intersect(vec3(0), vec3(1), ro, rrd);
-    if (t.y < 0) {
+    // Adjust the ray direction if one of its values is close to 0
+    rd = mix(rd, step(rd, vec3(0)) * epsilon * 2.0 - epsilon, lessThan(abs(rd), vec3(epsilon)));
+
+    vec3 rrd = 1.0 / abs(rd);
+    vec3 bias = rrd * ro;
+
+    // If the rd is less than 0, reflect the point around the cube
+    // This way, a * rrd - bias is always smaller than b * rrd - bias, given a < b
+    // if the ray hits the cube, and larger if the ray misses the cube
+    bvec3 lt0 = lessThan(rd, vec3(0));
+    bias = mix(bias, rrd * (3 - ro), lt0);
+
+    vec3 a = rrd - bias;
+    vec3 b = 2.0 * rrd - bias;
+
+    float t_min = v3max(a);
+    float t_max = v3min(b);
+
+    if (t_min <= t_max) {
         return vec4(0);
+    } else {
+        return vec4(1, 0, 1, 1);
     }
-
-    t.x = max(t.x, 0);
-
-    vec4 total = vec4(0);
-
-    for (int i = 0; i < 500 && t.x + EPSILON < t.y; ++i) {
-        vec3 p = (t.x + EPSILON) * rd + ro;
-        vec3 offset;
-        float side;
-        uint node = find(p, offset, side);
-
-        vec2 s = aabb_intersect(offset, offset + side, ro, rrd);
-        t.x = s.y;
-
-        vec4 color = unpack(model.nodes[node].color);
-        total += color * (s.y - s.x);
-    }
-
-    return total;
 }
 
 void main() {
@@ -121,10 +107,10 @@ void main() {
     ivec2 pixel = uniforms.output_region.offset + ivec2(index);
     vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
 
-    float t = push.time * 0.2;
-    vec3 center = vec3(0.5, 0.5, 0.5);
+    float t = push.time * 1.2;
+    vec3 center = vec3(1.5, 1.25, 1.5);
 
-    vec3 ro = center + vec3(sin(t), 0, cos(t)) * 2;
+    vec3 ro = center + vec3(sin(t), 0, cos(t)) * 3;
     vec3 rd = normalize(center - ro);
     rd = ray(rd, vec3(0, 1, 0), uv);
 
