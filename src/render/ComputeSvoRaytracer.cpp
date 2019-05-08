@@ -8,7 +8,7 @@
 
 namespace {
     constexpr const std::string_view SHADER_RESOURCE = "resources/svo2.comp";
-    constexpr const Vec2<uint32_t> LOCAL_SIZE{4, 4}; // keep in sync with above shader
+    constexpr const Vec2<uint32_t> LOCAL_SIZE{8, 8}; // keep in sync with above shader
 
     const auto LAYOUT_BINDINGS = std::array {
         vk::DescriptorSetLayoutBinding(

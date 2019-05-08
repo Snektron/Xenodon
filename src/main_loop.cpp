@@ -64,7 +64,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
 
     // auto renderer = DdaRaytracer(display, grid);
 
-    const auto octree = Octree(grid, 50, true);
+    const auto octree = Octree(grid, 0, true);
     auto renderer = ComputeSvoRaytracer(display, octree);
 
     // auto renderer = DdaRaytracer(display, grid);

@@ -11,7 +11,7 @@ struct Rect {
     uvec2 extent;
 };
 
-layout(local_size_x = 4, local_size_y = 4) in;
+layout(local_size_x = 8, local_size_y = 8) in;
 
 layout(push_constant) uniform PushConstant {
     float time;
@@ -29,16 +29,6 @@ layout(binding = 1) readonly buffer Octree {
 layout(binding = 2, rgba8) restrict writeonly uniform image2D render_target;
 
 const uint LEAF = 1 << 31;
-const float EPSILON = 0.0001;
-
-vec4 unpack(uint v) {
-    return vec4(
-        float(v & 0xFF) / 255.0,
-        float((v >> 8) & 0xFF) / 255.0,
-        float((v >> 16) & 0xFF) / 255.0,
-        float((v >> 24) & 0xFF) / 255.0
-    );
-}
 
 vec3 ray(vec3 dir, vec3 up, vec2 uv) {
     uv -= 0.5;
@@ -50,51 +40,104 @@ vec3 ray(vec3 dir, vec3 up, vec2 uv) {
     return normalize(uv.x * right + uv.y * up + dir);
 }
 
-float v3min(vec3 v) {
+float min_elem(vec3 v) {
     return min(v.x, min(v.y, v.z));
 }
 
-float v3max(vec3 v) {
+float max_elem(vec3 v) {
     return max(v.x, max(v.y, v.z));
 }
 
-vec2 aabb_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rrd) {
-    vec3 tbot = (bmin - ro) * rrd;
-    vec3 ttop = (bmax - ro) * rrd;
-    vec3 tmin = min(ttop, tbot);
-    vec3 tmax = max(ttop, tbot);
-    float t0 = v3max(tmin);
-    float t1 = v3min(tmax);
-    return vec2(t0, t1);
-}
-
 vec4 trace(vec3 ro, vec3 rd) {
-    const uint cast_stack_depth = 23;
-    const float epsilon = exp2(-float(cast_stack_depth));
+    const uint float_mantissa_size = 23;
+    const float epsilon = exp2(-float(float_mantissa_size));
 
     // Adjust the ray direction if one of its values is close to 0
     rd = mix(rd, step(rd, vec3(0)) * epsilon * 2.0 - epsilon, lessThan(abs(rd), vec3(epsilon)));
 
-    vec3 rrd = 1.0 / abs(rd);
+    vec3 rrd = 1.0 / rd;
     vec3 bias = rrd * ro;
 
-    // If the rd is less than 0, reflect the point around the cube
-    // This way, a * rrd - bias is always smaller than b * rrd - bias, given a < b
-    // if the ray hits the cube, and larger if the ray misses the cube
-    bvec3 lt0 = lessThan(rd, vec3(0));
-    bias = mix(bias, rrd * (3 - ro), lt0);
+    vec3 pos = vec3(1);
+    float side = 1.0;
 
-    vec3 a = rrd - bias;
-    vec3 b = 2.0 * rrd - bias;
+    uint stack_index = float_mantissa_size - 1;
 
-    float t_min = v3max(a);
-    float t_max = v3min(b);
+    // Extra slot to prevent out-of-bounds read
+    uint node_stack[float_mantissa_size + 1];
+    uint child_index_stack[float_mantissa_size + 1];
 
-    if (t_min <= t_max) {
-        return vec4(0);
-    } else {
-        return vec4(1, 0, 1, 1);
+    node_stack[float_mantissa_size] = 0;
+    child_index_stack[float_mantissa_size] = 8;
+
+    uint node = 0;
+    uint idx = 0;
+
+    vec4 total_color = vec4(0);
+    int i = 0;
+
+    while (stack_index < float_mantissa_size && i < 1000) {
+        vec3 box_min = pos * rrd - bias;
+        vec3 box_max = (pos + side) * rrd - bias;
+
+        float t_min = max_elem(min(box_min, box_max));
+        float t_max = min_elem(max(box_min, box_max));
+
+        if (t_min <= t_max) {
+            // This cube is hit
+            // sum its children
+
+            if (model.nodes[node].is_leaf_depth >= LEAF || stack_index < float_mantissa_size - 3) {
+                vec4 color = unpackUnorm4x8(model.nodes[node].color);
+                total_color += color * (t_max - t_min);
+            } else {
+                node_stack[stack_index] = node;
+                child_index_stack[stack_index] = idx;
+
+                side *= 0.5;
+                --stack_index;
+                idx = 0;
+
+                // Move to the first child, we dont need to change the coordinate here
+                node = model.nodes[node].children[0];
+                continue;
+            }
+        }
+
+        while (idx == 7) {
+            ++stack_index;
+            side *= 2.0;
+            node = node_stack[stack_index];
+            idx = child_index_stack[stack_index];
+        }
+
+        if (stack_index + 1 >= float_mantissa_size || idx == 8) {
+            return total_color;
+        }
+
+        pos -= mod(pos, side * 2.0);
+
+        ++idx;
+
+        if ((idx & 4) != 0) {
+            pos.x += side;
+        }
+
+        if ((idx & 2) != 0) {
+            pos.y += side;
+        }
+
+        if ((idx & 1) != 0) {
+            pos.z += side;
+        }
+
+        uint parent = node_stack[stack_index + 1];
+        node = model.nodes[parent].children[idx];
+
+        ++i;
     }
+
+    return total_color;
 }
 
 void main() {

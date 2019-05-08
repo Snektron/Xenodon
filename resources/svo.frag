@@ -31,15 +31,6 @@ layout(location = 0) out vec4 f_color;
 const uint LEAF = 1 << 31;
 const float HALF_VOXEL_SIZE = 1.0 / 2048.0 / 2.0;
 
-vec4 unpack(uint v) {
-    return vec4(
-        float(v & 0xFF) / 255.0,
-        float((v >> 8) & 0xFF) / 255.0,
-        float((v >> 16) & 0xFF) / 255.0,
-        float((v >> 24) & 0xFF) / 255.0
-    );
-}
-
 vec3 ray(vec3 dir, vec3 up, vec2 uv) {
     uv -= 0.5;
     uv.y *= output_region.extent.y / output_region.extent.x;
@@ -102,7 +93,7 @@ vec4 trace(vec3 ro, vec3 rd) {
         vec2 s = aabb_intersect(offset, offset + side, ro, rd);
         t.x = s.y;
 
-        vec4 color = unpack(nodes[node].color);
+        vec4 color = unpackUnorm4x8(nodes[node].color);
         total += color * (s.y - s.x) * 40.0;
     }
 
