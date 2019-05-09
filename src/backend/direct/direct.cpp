@@ -13,7 +13,7 @@ std::unique_ptr<DirectDisplay> make_direct_display(Span<const char*> args, Event
     const char* config_path = nullptr;
     auto cmd = args::Command {
         .positional = {
-            {config_path, "config path"},
+            {config_path, "config path"}
         }
     };
 

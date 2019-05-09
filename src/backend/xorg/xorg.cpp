@@ -33,7 +33,7 @@ std::unique_ptr<XorgDisplay> make_xorg_display(Span<const char*> args, EventDisp
 
     auto cmd = args::Command {
         .parameters = {
-            {config_path, "source type", "--multi-gpu", 'm'},
+            {config_path, "source type", "--multi-gpu", 'm'}
         }
     };
 

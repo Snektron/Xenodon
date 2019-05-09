@@ -35,9 +35,9 @@ namespace args {
     };
 
     struct Command {
-        std::vector<Flag> flags;
-        std::vector<Parameter> parameters;
-        std::vector<Positional> positional;
+        std::vector<Flag> flags = {};
+        std::vector<Parameter> parameters = {};
+        std::vector<Positional> positional = {};
     };
 
     bool parse(Span<const char*> args, Command& cmd);

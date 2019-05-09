@@ -16,7 +16,7 @@ std::unique_ptr<HeadlessDisplay> make_headless_display(Span<const char*> args, E
             {output_path, "output image", "--output", 'o'}
         },
         .positional = {
-            {config_path, "config path"},
+            {config_path, "config path"}
         }
     };
 
