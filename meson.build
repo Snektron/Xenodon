@@ -160,9 +160,9 @@ if get_option('present-xorg').enabled()
     ]
 
     dependencies += [
-        dependency('xcb'),
-        dependency('xcb-keysyms'),
-        dependency('xcb-xkb')
+        dependency('xcb', method: 'pkg-config'),
+        dependency('xcb-keysyms', method: 'pkg-config'),
+        dependency('xcb-xkb', method: 'pkg-config')
     ]
 endif
 
