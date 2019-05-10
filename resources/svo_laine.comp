@@ -120,7 +120,7 @@ vec4 trace(vec3 ro, vec3 rd) {
             if (t_min <= tv_max) {
                 if (model.nodes[child].is_leaf_depth >= LEAF) {
                     vec4 color = unpackUnorm4x8(model.nodes[child].color);
-                    total_color += color * (tv_max - t_min);
+                    total_color += color * (tv_max - t_min) * 40.0;
                 } else {
                     // PUSH
                     if (tc_max < h) {

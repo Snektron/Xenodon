@@ -74,9 +74,8 @@ vec4 trace(vec3 ro, vec3 rd) {
     uint idx = 0;
 
     vec4 total_color = vec4(0);
-    int i = 0;
 
-    while (stack_index < float_mantissa_size && i < 1000) {
+    while (stack_index < float_mantissa_size) {
         vec3 box_min = pos * rrd - bias;
         vec3 box_max = (pos + side) * rrd - bias;
 
@@ -87,9 +86,9 @@ vec4 trace(vec3 ro, vec3 rd) {
             // This cube is hit
             // sum its children
 
-            if (model.nodes[node].is_leaf_depth >= LEAF || stack_index < float_mantissa_size - 3) {
+            if (model.nodes[node].is_leaf_depth >= LEAF) {
                 vec4 color = unpackUnorm4x8(model.nodes[node].color);
-                total_color += color * (t_max - t_min);
+                total_color += color * (t_max - t_min) * 40.0;
             } else {
                 node_stack[stack_index] = node;
                 child_index_stack[stack_index] = idx;
@@ -104,15 +103,21 @@ vec4 trace(vec3 ro, vec3 rd) {
             }
         }
 
+        // Ray exits cube at level 1
+        if (stack_index == float_mantissa_size - 1) {
+            break;
+        }
+
+        // Pop if needed
         while (idx == 7) {
             ++stack_index;
             side *= 2.0;
             node = node_stack[stack_index];
             idx = child_index_stack[stack_index];
-        }
 
-        if (stack_index + 1 >= float_mantissa_size || idx == 8) {
-            return total_color;
+            if (stack_index == float_mantissa_size - 1) {
+                break;
+            }
         }
 
         pos -= mod(pos, side * 2.0);
@@ -133,8 +138,6 @@ vec4 trace(vec3 ro, vec3 rd) {
 
         uint parent = node_stack[stack_index + 1];
         node = model.nodes[parent].children[idx];
-
-        ++i;
     }
 
     return total_color;
@@ -151,7 +154,7 @@ void main() {
     vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
 
     float t = push.time * 1.2;
-    vec3 center = vec3(1.5, 1.25, 1.5);
+    vec3 center = vec3(1.5, 1.5, 1.5);
 
     vec3 ro = center + vec3(sin(t), 0, cos(t)) * 3;
     vec3 rd = normalize(center - ro);
