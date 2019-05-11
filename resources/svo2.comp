@@ -88,7 +88,7 @@ vec4 trace(vec3 ro, vec3 rd) {
 
             if (model.nodes[node].is_leaf_depth >= LEAF) {
                 vec4 color = unpackUnorm4x8(model.nodes[node].color);
-                total_color += color * (t_max - t_min) * 40.0;
+                total_color += color * (t_max - t_min);
             } else {
                 node_stack[stack_index] = node;
                 child_index_stack[stack_index] = idx;
@@ -103,44 +103,26 @@ vec4 trace(vec3 ro, vec3 rd) {
             }
         }
 
-        // Ray exits cube at level 1
-        if (stack_index == float_mantissa_size - 1) {
-            break;
-        }
-
-        // Pop if needed
-        while (idx == 7) {
+        while (idx == 7 && stack_index < float_mantissa_size - 1) {
             ++stack_index;
             side *= 2.0;
             node = node_stack[stack_index];
             idx = child_index_stack[stack_index];
+        }
 
-            if (stack_index == float_mantissa_size - 1) {
-                break;
-            }
+        if (idx == 7 || stack_index == float_mantissa_size - 1) {
+            return total_color;
         }
 
         pos -= mod(pos, side * 2.0);
 
         ++idx;
 
-        if ((idx & 4) != 0) {
-            pos.x += side;
-        }
-
-        if ((idx & 2) != 0) {
-            pos.y += side;
-        }
-
-        if ((idx & 1) != 0) {
-            pos.z += side;
-        }
+        pos += mix(vec3(0), vec3(side), notEqual(uvec3(idx) & uvec3(4, 2, 1), uvec3(0)));
 
         uint parent = node_stack[stack_index + 1];
         node = model.nodes[parent].children[idx];
     }
-
-    return total_color;
 }
 
 void main() {
