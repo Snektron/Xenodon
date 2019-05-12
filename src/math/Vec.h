@@ -222,6 +222,9 @@ struct Vec: BaseVec<T, N> {
     constexpr Vec<T, N>& mix(const Vec<U, N>& other, const V& t);
 };
 
+template <typename... Ts>
+Vec(Ts...) -> Vec<std::common_type_t<Ts...>, sizeof...(Ts)>;
+
 template <size_t N, typename F>
 constexpr auto generate_vec(F f) {
     using Result = std::result_of_t<F(size_t)>;
@@ -333,11 +336,11 @@ constexpr auto operator-(const Vec<T, N>& v) {
 
 template <typename T, typename U>
 constexpr auto cross(const Vec<T, 3>& lhs, const Vec<U, 3>& rhs) {
-    return make_vec(
+    return Vec{
         lhs.y * rhs.z - lhs.z * rhs.y,
         lhs.z * rhs.x - lhs.x * rhs.z,
         lhs.x * rhs.y - lhs.y * rhs.x
-    );
+    };
 }
 
 template <typename T, typename U, typename V, size_t N>

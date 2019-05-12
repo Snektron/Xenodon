@@ -53,7 +53,7 @@ sources = [
     'src/backend/headless/HeadlessConfig.cpp',
     'src/backend/headless/HeadlessOutput.cpp',
     'src/model/Grid.cpp',
-    'src/model/Octree.cpp',
+    'src/model/Octree.cpp'
 ]
 
 shaders = [
@@ -73,7 +73,7 @@ resources = [
 
 add_project_arguments(
     [
-        '-march=native',
+        # '-march=native',
         '-Wconversion',
         '-Wall',
         '-Wextra',

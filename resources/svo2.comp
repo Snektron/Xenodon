@@ -50,32 +50,42 @@ float max_elem(vec3 v) {
 
 vec4 trace(vec3 ro, vec3 rd) {
     const uint float_mantissa_size = 23;
-    const float epsilon = exp2(-float(float_mantissa_size));
+    const float epsilon = 0.00001;
 
     // Adjust the ray direction if one of its values is close to 0
     rd = mix(rd, step(rd, vec3(0)) * epsilon * 2.0 - epsilon, lessThan(abs(rd), vec3(epsilon)));
 
+    if (any(lessThan(abs(rd), vec3(epsilon)))) {
+        return vec4(1, 0, 1, 1);
+    }
+
     vec3 rrd = 1.0 / rd;
     vec3 bias = rrd * ro;
 
-    vec3 pos = vec3(1);
-    float side = 1.0;
-
-    uint stack_index = float_mantissa_size - 1;
+    int stack_index = int(float_mantissa_size - 1);
 
     // Extra slot to prevent out-of-bounds read
     uint node_stack[float_mantissa_size + 1];
     uint child_index_stack[float_mantissa_size + 1];
+    float side_stack[float_mantissa_size + 1];
 
     node_stack[float_mantissa_size] = 0;
     child_index_stack[float_mantissa_size] = 8;
 
-    uint node = 0;
+    uint parent_idx = 0;
+    Node parent = model.nodes[parent_idx];
+
     uint idx = 0;
+    vec3 pos = vec3(1);
+    float side = 0.5;
 
     vec4 total_color = vec4(0);
 
-    while (stack_index < float_mantissa_size) {
+    uint i = 0;
+
+    while (stack_index < float_mantissa_size && i < 1000) {
+        ++i;
+
         vec3 box_min = pos * rrd - bias;
         vec3 box_max = (pos + side) * rrd - bias;
 
@@ -83,46 +93,49 @@ vec4 trace(vec3 ro, vec3 rd) {
         float t_max = min_elem(max(box_min, box_max));
 
         if (t_min <= t_max) {
-            // This cube is hit
-            // sum its children
+            uint child = parent.children[idx];
 
-            if (model.nodes[node].is_leaf_depth >= LEAF) {
-                vec4 color = unpackUnorm4x8(model.nodes[node].color);
+            if (model.nodes[child].is_leaf_depth >= LEAF) {
+                vec4 color = unpackUnorm4x8(model.nodes[child].color);
                 total_color += color * (t_max - t_min);
             } else {
-                node_stack[stack_index] = node;
-                child_index_stack[stack_index] = idx;
+                if (idx != 7) {
+                    node_stack[stack_index] = parent_idx;
+                    child_index_stack[stack_index] = idx;
+                    side_stack[stack_index] = side;
+                    --stack_index;
+                }
 
                 side *= 0.5;
-                --stack_index;
-                idx = 0;
 
-                // Move to the first child, we dont need to change the coordinate here
-                node = model.nodes[node].children[0];
+                parent_idx = child;
+                parent = model.nodes[parent_idx];
+
+                idx = 0;
                 continue;
             }
         }
 
-        while (idx == 7 && stack_index < float_mantissa_size - 1) {
+        if (idx == 7) {
             ++stack_index;
-            side *= 2.0;
-            node = node_stack[stack_index];
-            idx = child_index_stack[stack_index];
-        }
 
-        if (idx == 7 || stack_index == float_mantissa_size - 1) {
-            return total_color;
+            if (stack_index >= float_mantissa_size) {
+                return total_color;
+            }
+
+            parent_idx = node_stack[stack_index];
+            idx = child_index_stack[stack_index];
+            side = side_stack[stack_index];
+
+            parent = model.nodes[parent_idx];
         }
 
         pos -= mod(pos, side * 2.0);
-
         ++idx;
-
         pos += mix(vec3(0), vec3(side), notEqual(uvec3(idx) & uvec3(4, 2, 1), uvec3(0)));
-
-        uint parent = node_stack[stack_index + 1];
-        node = model.nodes[parent].children[idx];
     }
+
+    return vec4(0, 1, 0, 1);
 }
 
 void main() {
@@ -136,7 +149,7 @@ void main() {
     vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
 
     float t = push.time * 1.2;
-    vec3 center = vec3(1.5, 1.5, 1.5);
+    vec3 center = vec3(1.51, 1.51, 1.51);
 
     vec3 ro = center + vec3(sin(t), 0, cos(t)) * 3;
     vec3 rd = normalize(center - ro);

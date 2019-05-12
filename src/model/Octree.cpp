@@ -1,6 +1,8 @@
 #include "model/Octree.h"
 #include <algorithm>
 #include <fstream>
+#include <cmath>
+#include <fmt/format.h>
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/Grid.h"
@@ -118,6 +120,153 @@ const Octree::Node* Octree::find(const Vec3Sz& pos, size_t max_depth) const {
 
         --max_depth;
     }
+}
+
+Vec3F Octree::test_trace(const Vec3F& ro, Vec3F rd, bool debug) const {
+    constexpr const size_t float_mantissa_size = 23;
+    constexpr const float epsilon = 0.0001f;
+
+    if (std::fabs(rd.x) < epsilon) {
+        rd.x = std::copysignf(epsilon, rd.x);
+    }
+
+    if (std::fabs(rd.y) < epsilon) {
+        rd.y = std::copysignf(epsilon, rd.y);
+    }
+
+    if (std::fabs(rd.z) < epsilon) {
+        rd.z = std::copysignf(epsilon, rd.z);
+    }
+
+    const Vec3F rrd = 1.0 / rd;
+    const Vec3F bias = rrd * ro;
+
+    size_t stack_index = float_mantissa_size - 1;
+
+    std::array<uint32_t, float_mantissa_size + 1> node_stack;
+    std::array<uint32_t, float_mantissa_size + 1> child_index_stack;
+    std::array<float, float_mantissa_size + 1> side_stack;
+
+    node_stack[float_mantissa_size] = 0;
+    child_index_stack[float_mantissa_size] = 8;
+
+    uint32_t parent = 0;
+    uint32_t idx = 0;
+    Vec3F pos = {1, 1, 1};
+    float side = 0.5;
+
+    Vec3F total_color = {0, 0, 0};
+
+    const auto max_elem = [](const Vec3F& x) {
+        return std::max({x.x, x.y, x.z});
+    };
+
+    const auto min_elem = [](const Vec3F& x) {
+        return std::min({x.x, x.y, x.z});
+    };
+
+    const auto max = [](const Vec3F& x, const Vec3F& y) {
+        return Vec3F {
+            std::max(x.x, y.x),
+            std::max(x.y, y.y),
+            std::max(x.z, y.z)
+        };
+    };
+
+    const auto min = [](const Vec3F& x, const Vec3F& y) {
+        return Vec3F {
+            std::min(x.x, y.x),
+            std::min(x.y, y.y),
+            std::min(x.z, y.z)
+        };
+    };
+
+    size_t i = 0;
+
+    while (stack_index < float_mantissa_size && i < 10000) {
+        const uint32_t child = this->nodes.at(parent).children[idx];
+
+        const Vec3F box_min = pos * rrd - bias;
+        const Vec3F box_max = (pos + side) * rrd - bias;
+
+        const float t_min = max_elem(min(box_min, box_max));
+        const float t_max = min_elem(max(box_min, box_max));
+
+        const auto indent = std::string((float_mantissa_size - stack_index - 1) * 2, ' ');
+
+        ++i;
+
+        if (debug) {
+            fmt::print("{}parent: {}, child: {}, idx: {}, leaf: {} :: {}\n", indent, parent, child, idx, this->nodes.at(child).is_leaf_depth >= LEAF, t_min <= t_max ? "hit" : "miss");
+        }
+
+        if (t_min <= t_max) {
+            if (this->nodes.at(child).is_leaf_depth >= LEAF) {
+                Vec3F color = {
+                    static_cast<float>(this->nodes[child].color.r) / 255.f,
+                    static_cast<float>(this->nodes[child].color.g) / 255.f,
+                    static_cast<float>(this->nodes[child].color.b) / 255.f
+                };
+
+                total_color += color * (t_max - t_min);
+            } else {
+                if (idx != 7) {
+                    node_stack.at(stack_index) = parent;
+                    child_index_stack.at(stack_index) = idx;
+                    side_stack.at(stack_index) = side;
+                    --stack_index;
+                }
+
+                side *= 0.5f;
+
+                parent = child;
+                idx = 0;
+                continue;
+            }
+        }
+
+        if (idx == 7) {
+            ++stack_index;
+
+            if (stack_index >= float_mantissa_size) {
+                return total_color;
+            }
+
+            if (debug) {
+                fmt::print("{}pop {} -> ", indent, idx);
+            }
+
+            parent = node_stack.at(stack_index);
+            idx = child_index_stack.at(stack_index);
+            side = side_stack.at(stack_index);
+
+            if (debug) {
+                fmt::print("{}\n", idx);
+            }
+        }
+
+        pos = Vec3F {
+            pos.x - std::fmod(pos.x, side * 2.f),
+            pos.y - std::fmod(pos.y, side * 2.f),
+            pos.z - std::fmod(pos.z, side * 2.f),
+        };
+
+        ++idx;
+
+        if (idx & 4) {
+            pos.x += side;
+        }
+
+        if (idx & 2) {
+            pos.y += side;
+        }
+
+        if (idx & 1) {
+            pos.z += side;
+        }
+    }
+
+    return total_color;
 }
 
 uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t extent, size_t depth) {
