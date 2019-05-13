@@ -1,5 +1,6 @@
 #include "core/arg_parse.h"
 #include <fmt/format.h>
+#include "core/Parser.h"
 
 namespace args {
     Parameter::Parameter(const char*& variable, std::string_view value_name, std::string_view long_version):
@@ -108,5 +109,33 @@ namespace args {
         }
 
         return true;
+    }
+}
+
+namespace arg {
+    bool StringValue::parse(std::string_view arg) {
+        this->value = arg;
+        return true;
+    }
+
+    bool NumberValue::parse(std::string_view arg) {
+        bool negative = false;
+        if (arg.size() > 0 && arg[0] == '-') {
+            negative = true;
+            arg.remove_prefix(1);
+        }
+
+        size_t parsed_value;
+        try {
+            parsed_value = parse<size_t>(arg);
+        } catch (parser::ParseError& e) {
+            return false;
+        }
+
+        int64_t value = static_cast<int64_t>(parsed_value) * (negative ? -1 : 1);
+    }
+
+    bool parse(Span<const char*> args, Command& cmd) {
+
     }
 }
