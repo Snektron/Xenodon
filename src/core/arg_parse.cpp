@@ -1,4 +1,5 @@
 #include "core/arg_parse.h"
+#include <cstdlib>
 #include <fmt/format.h>
 #include "core/Parser.h"
 
@@ -80,28 +81,5 @@ namespace args {
         if (pos_args_seen != cmd.positional.size()) {
             throw ParseError("Missing required positional argument <{}>", cmd.positional[pos_args_seen].name);
         }
-    }
-
-    long long parse_int(std::string_view str, long long min, long long max) {
-        long long val;
-        size_t processed;
-
-        try {
-            val = std::stoll(std::string(str), &processed);
-        } catch (const std::invalid_argument&) {
-            throw ParseError("Failed to convert to int");
-        } catch (const std::out_of_range&) {
-            throw ParseError("Out of range");
-        }
-
-        if (processed != str.size()) {
-            throw ParseError("Failed to convert to int");
-        }
-
-        if (val < min || val > max) {
-            throw ParseError("Out of range");
-        }
-
-        return val;
     }
 }

@@ -6,6 +6,8 @@
 #include <vector>
 #include <functional>
 #include <type_traits>
+#include <charconv>
+#include <system_error>
 #include <cstdint>
 #include "utility/Span.h"
 #include "core/Error.h"
@@ -68,8 +70,6 @@ namespace args {
 
     void parse(Span<const char*> args, Command& cmd);
 
-    long long parse_int(std::string_view, long long min, long long max);
-
     inline constexpr auto string_opt(const char** var) {
         return [var](const char* arg) {
             *var = arg;
@@ -77,22 +77,19 @@ namespace args {
         };
     }
 
-    template <typename T, typename U>
-    constexpr const bool is_integer_subset =
-           std::numeric_limits<T>::is_integer
-        && std::numeric_limits<U>::is_integer
-        && std::numeric_limits<T>::min() >= std::numeric_limits<U>::min()
-        && std::numeric_limits<T>::max() <= std::numeric_limits<U>::max();
-
-    template <typename T, typename = std::enable_if_t<is_integer_subset<T, long long>>>
-    inline constexpr auto int_range_opt(T* var, long long min, long long max) {
-        return [var, min, max](const char* arg) {
-            try {
-                *var = static_cast<T>(parse_int(arg, min, max));
-                return true;
-            } catch (const ParseError&) {
+    template <typename T, typename = std::enable_if_t<std::numeric_limits<T>::is_integer>>
+    inline constexpr auto int_range_opt(T* var, T min = std::numeric_limits<T>::min(), T max = std::numeric_limits<T>::max()) {
+        return [var, min, max](std::string_view arg) {
+            T value;
+            auto [end, err] = std::from_chars(arg.begin(), arg.end(), value);
+            if (err != std::errc() || end != arg.end()) {
+                return false;
+            } else if (value < min || value > max) {
                 return false;
             }
+
+            *var = value;
+            return true;
         };
     }
 }

@@ -17,7 +17,7 @@ namespace {
     struct ConvertOptions {
         std::string_view src, dst;
         FileType src_type, dst_type;
-        long long split_difference;
+        uint8_t split_difference;
         bool dag;
     };
 
@@ -104,7 +104,7 @@ void convert(Span<const char*> args) {
         .parameters = {
             {args::string_opt(&src_type_override), "source type", "--src-type", 's'},
             {args::string_opt(&dst_type_override), "destination type", "--dst-type", 'd'},
-            {args::int_range_opt(&opts.split_difference, 0, 255), "split difference", "--split-difference"}
+            {args::int_range_opt<uint8_t>(&opts.split_difference), "split difference", "--split-difference"},
         },
         .positional = {
             {args::string_opt(&src), "source file"},
