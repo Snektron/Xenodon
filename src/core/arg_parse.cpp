@@ -3,48 +3,14 @@
 #include "core/Parser.h"
 
 namespace args {
-    Parameter::Parameter(const char*& variable, std::string_view value_name, std::string_view long_version):
-        variable(&variable),
-        seen(false),
-        value_name(value_name),
-        long_version(long_version),
-        short_version(-1) {
-    }
-
-    Parameter::Parameter(const char*& variable, std::string_view value_name, std::string_view long_version, char short_version):
-        variable(&variable),
-        seen(false),
-        value_name(value_name),
-        long_version(long_version),
-        short_version(short_version) {
-    }
-
-    Flag::Flag(bool& variable, std::string_view long_version):
-        variable(&variable),
-        seen(false),
-        long_version(long_version),
-        short_version(-1) {
-    }
-
-    Flag::Flag(bool& variable, std::string_view long_version, char short_version):
-        variable(&variable),
-        seen(false),
-        long_version(long_version),
-        short_version(short_version) {
-    }
-
-    Positional::Positional(const char*& variable, std::string_view name):
-        variable(&variable), name(name) {
-    }
-
-    bool parse(Span<const char*> args, Command& cmd) {
+    void parse(Span<const char*> args, Command& cmd) {
         auto flag_or_option = [](std::string_view arg) {
             return arg.size() > 0 && arg[0] == '-';
         };
 
         auto find_flag = [&cmd](std::string_view arg) -> Flag* {
             for (auto& flag : cmd.flags) {
-                if (arg == flag.long_version || (arg.size() == 2 && arg[1] == flag.short_version)) {
+                if (arg == flag.long_arg || (arg.size() == 2 && arg[1] == flag.short_arg)) {
                     return &flag;
                 }
             }
@@ -54,12 +20,20 @@ namespace args {
 
         auto find_parameter = [&cmd](std::string_view arg) -> Parameter* {
             for (auto& param : cmd.parameters) {
-                if (arg == param.long_version || (arg.size() == 2 && arg[1] == param.short_version)) {
+                if (arg == param.long_arg || (arg.size() == 2 && arg[1] == param.short_arg)) {
                     return &param;
                 }
             }
 
             return nullptr;
+        };
+
+        auto duplicate_err = [](std::string_view type, std::string_view long_arg, int short_arg) {
+            if (short_arg != -1) {
+                return ParseError("Duplicate specification of {} {}/-{}", type, long_arg, static_cast<char>(short_arg));
+            } else {
+                return ParseError("Duplicate specification of {} {}", type, long_arg);
+            }
         };
 
         size_t pos_args_seen = 0;
@@ -69,8 +43,7 @@ namespace args {
             if (flag_or_option(arg)) {
                 if (Flag* flag = find_flag(arg)) {
                     if (flag->seen) {
-                        fmt::print("Error: Duplicate specification of flag {}/{}\n", flag->long_version, flag->short_version);
-                        return false;
+                        throw duplicate_err("flag", flag->long_arg, flag->short_arg);
                     }
 
                     flag->seen = true;
@@ -78,64 +51,57 @@ namespace args {
                 } else if (Parameter* param = find_parameter(arg)) {
                     ++i;
                     if (param->seen) {
-                        fmt::print("Error: Duplicate specification of parameter {}/-{}\n", param->long_version, (char) param->short_version);
-                        return false;
-                    } else if (i == args.size() || flag_or_option(args[i])) {
-                        fmt::print("Error: Parameter {} expects argument <{}>\n", arg, param->value_name);
-                        return false;
+                        throw duplicate_err("parameter", param->long_arg, param->short_arg);
+                    } else if (i == args.size()) {
+                        throw ParseError("Parameter {} expects argument <{}>", arg, param->value_name);
                     }
 
                     param->seen = true;
-                    *param->variable = args[i];
+                    bool parsed = param->action(args[i]);
+                    if (!parsed) {
+                        throw ParseError("Invalid value for <{}> of parameter {}", param->value_name, arg);
+                    }
                 } else {
-                    fmt::print("Error: Unrecognized option {}\n", arg);
-                    return false;
+                    throw ParseError("Unrecognized option {}", arg);
                 }
             } else if (pos_args_seen == cmd.positional.size()) {
-                fmt::print("Error: Unexpected positional argument '{}'\n", arg);
-                return false;
+                throw ParseError("Unexpected positional argument '{}'", arg);
             } else {
-                *cmd.positional[pos_args_seen].variable = args[i];
+                auto& positional = cmd.positional[pos_args_seen];
+                bool parsed = positional.action(args[i]);
+                if (!parsed) {
+                    throw ParseError("Invalid value for positional argument <{}>", positional.name);
+                }
+
                 ++pos_args_seen;
             }
         }
 
         if (pos_args_seen != cmd.positional.size()) {
-            for (size_t i = pos_args_seen; i < cmd.positional.size(); ++i) {
-                fmt::print("Error: Missing required positional argument <{}>\n", cmd.positional[i].name);
-            }
-
-            return false;
+            throw ParseError("Missing required positional argument <{}>", cmd.positional[pos_args_seen].name);
         }
-
-        return true;
-    }
-}
-
-namespace arg {
-    bool StringValue::parse(std::string_view arg) {
-        this->value = arg;
-        return true;
     }
 
-    bool NumberValue::parse(std::string_view arg) {
-        bool negative = false;
-        if (arg.size() > 0 && arg[0] == '-') {
-            negative = true;
-            arg.remove_prefix(1);
-        }
+    long long parse_int(std::string_view str, long long min, long long max) {
+        long long val;
+        size_t processed;
 
-        size_t parsed_value;
         try {
-            parsed_value = parse<size_t>(arg);
-        } catch (parser::ParseError& e) {
-            return false;
+            val = std::stoll(std::string(str), &processed);
+        } catch (const std::invalid_argument&) {
+            throw ParseError("Failed to convert to int");
+        } catch (const std::out_of_range&) {
+            throw ParseError("Out of range");
         }
 
-        int64_t value = static_cast<int64_t>(parsed_value) * (negative ? -1 : 1);
-    }
+        if (processed != str.size()) {
+            throw ParseError("Failed to convert to int");
+        }
 
-    bool parse(Span<const char*> args, Command& cmd) {
+        if (val < min || val > max) {
+            throw ParseError("Out of range");
+        }
 
+        return val;
     }
 }

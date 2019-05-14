@@ -13,11 +13,14 @@ std::unique_ptr<DirectDisplay> make_direct_display(Span<const char*> args, Event
     const char* config_path = nullptr;
     auto cmd = args::Command {
         .positional = {
-            {config_path, "config path"}
+            {args::string_opt(&config_path), "config path"}
         }
     };
 
-    if (!args::parse(args, cmd)) {
+    try {
+        args::parse(args, cmd);
+    } catch (const args::ParseError& e) {
+        fmt::print("Error: {}\n", e.what());
         return nullptr;
     }
 

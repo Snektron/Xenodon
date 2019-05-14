@@ -55,7 +55,7 @@ bool operator!=(const Octree::Node& lhs, const Octree::Node& rhs) {
 
 struct Octree::ConstructionContext {
     const Grid& src;
-    std::unordered_map<Node, uint32_t> map;
+    std::unordered_map<Node, uint32_t> map = {};
     uint8_t min_channel_diff;
     bool dag;
 };

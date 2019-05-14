@@ -13,14 +13,17 @@ std::unique_ptr<HeadlessDisplay> make_headless_display(Span<const char*> args, E
     const char* output_path = "out.png";
     auto cmd = args::Command {
         .parameters = {
-            {output_path, "output image", "--output", 'o'}
+            {args::string_opt(&output_path), "output image", "--output", 'o'}
         },
         .positional = {
-            {config_path, "config path"}
+            {args::string_opt(&config_path), "config path"}
         }
     };
 
-    if (!args::parse(args, cmd)) {
+    try {
+        args::parse(args, cmd);
+    } catch (const args::ParseError& e) {
+        fmt::print("Error: {}\n", e.what());
         return nullptr;
     }
 

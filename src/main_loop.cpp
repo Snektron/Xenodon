@@ -56,25 +56,25 @@ Vec3F ray(const Vec3F& dir, Vec2F uv) {
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     check_setup(display);
 
-    // const auto grid = Grid::load_tiff("/home/robin/Downloads/ZF-Eye.tif");
+    const auto grid = Grid::load_tiff("/home/robin/Downloads/ZF-Eye.tif");
 
-    auto grid = Grid({16, 16, 16});
+    // auto grid = Grid({16, 16, 16});
 
-    auto set = [&](size_t x, size_t y, size_t z) {
-        grid.set({x, y, z}, Pixel{static_cast<uint8_t>(x * 16), static_cast<uint8_t>(y * 16), static_cast<uint8_t>(z * 16), 255});
-    };
+    // auto set = [&](size_t x, size_t y, size_t z) {
+    //     grid.set({x, y, z}, Pixel{static_cast<uint8_t>(x * 16), static_cast<uint8_t>(y * 16), static_cast<uint8_t>(z * 16), 255});
+    // };
 
-    for (size_t a = 0; a < 16; ++a) {
-        for (size_t b = 0; b < 16; ++b) {
-            for (size_t c = 0; c < 16; ++c) {
-                set(a, b, c);
-            }
-        }
-    }
+    // for (size_t a = 0; a < 16; ++a) {
+    //     for (size_t b = 0; b < 16; ++b) {
+    //         for (size_t c = 0; c < 16; ++c) {
+    //             set(a, b, c);
+    //         }
+    //     }
+    // }
 
     // auto renderer = DdaRaytracer(display, grid);
 
-    const auto octree = Octree(grid, 0, true);
+    const auto octree = Octree(grid, 30, true);
 
     // {
     //     auto image = std::vector<Pixel>(1024 * 1024);
