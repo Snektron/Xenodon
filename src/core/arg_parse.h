@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <charconv>
 #include <system_error>
+#include <filesystem>
 #include <cstdint>
 #include "utility/Span.h"
 #include "core/Error.h"
@@ -89,6 +90,13 @@ namespace args {
             }
 
             *var = value;
+            return true;
+        };
+    }
+
+    inline constexpr auto path_opt(std::filesystem::path* var) {
+        return [var](std::string_view arg) {
+            *var = arg;
             return true;
         };
     }

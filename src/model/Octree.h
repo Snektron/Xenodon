@@ -61,6 +61,10 @@ public:
         return sizeof(Octree) + this->nodes.size() * sizeof(Octree::Node);
     }
 
+    size_t side() const {
+        return this->dim;
+    }
+
 private:
     uint32_t construct(ConstructionContext& ctx, Vec3Sz offset, size_t extent, size_t depth);
 };
