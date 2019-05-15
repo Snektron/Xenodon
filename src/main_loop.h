@@ -3,7 +3,6 @@
 
 struct EventDispatcher;
 struct Display;
-class Logger;
 
 void main_loop(EventDispatcher& dispatcher, Display* display);
 
