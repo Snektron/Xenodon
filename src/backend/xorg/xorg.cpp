@@ -1,57 +1,31 @@
 #include "backend/xorg/xorg.h"
-#include <string_view>
-#include <optional>
 #include <fstream>
-#include <vulkan/vulkan.hpp>
-#include <fmt/format.h>
 #include "core/Error.h"
 #include "core/Logger.h"
 #include "core/Config.h"
-#include "core/arg_parse.h"
 #include "backend/Event.h"
 #include "backend/xorg/XorgMultiGpuConfig.h"
 
-namespace {
-    std::optional<XorgMultiGpuConfig> read_config(const char* file) {
-        auto in = std::ifstream(file);
-        if (!in) {
-            fmt::print("Error: Failed to open config file '{}'\n", file);
-            return std::nullopt;
-        }
-
-        try {
-            return cfg::Config(in).as<XorgMultiGpuConfig>();
-        } catch (const Error& err) {
-            fmt::print("Failed to read config file '{}':\n{}\n", file, err.what());
-            return std::nullopt;
-        }
-    }
-}
-
-std::unique_ptr<XorgDisplay> make_xorg_display(Span<const char*> args, EventDispatcher& dispatcher) {
-    const char* config_path = nullptr;
-
-    auto cmd = args::Command {
-        .parameters = {
-            {args::string_opt(&config_path), "source type", "--multi-gpu", 'm'}
-        }
-    };
-
-    try {
-        args::parse(args, cmd);
-    } catch (const args::ParseError& e) {
-        fmt::print("Error: {}\n", e.what());
-        return nullptr;
-    }
-
+std::unique_ptr<XorgDisplay> create_xorg_display(EventDispatcher& dispatcher, std::filesystem::path multi_gpu_config) {
     LOGGER.log("Using xorg presenting backend");
-    if (config_path) {
-        auto config = read_config(config_path);
-        if (!config) {
-            return nullptr;
-        }
-        return std::make_unique<XorgDisplay>(dispatcher, config.value());
-    } else {
+
+    if (multi_gpu_config.empty()) {
         return std::make_unique<XorgDisplay>(dispatcher, vk::Extent2D{800, 600});
     }
+
+
+    auto in = std::ifstream(multi_gpu_config);
+    if (!in) {
+        throw Error("Failed to open config file '{}'", multi_gpu_config.native());
+    }
+
+    XorgMultiGpuConfig parsed_config;
+
+    try {
+        parsed_config = cfg::Config(in).as<XorgMultiGpuConfig>();
+    } catch (const Error& err) {
+        throw Error("Failed to read config file '{}': {}", multi_gpu_config.native(), err.what());
+    }
+
+    return std::make_unique<XorgDisplay>(dispatcher, parsed_config);
 }

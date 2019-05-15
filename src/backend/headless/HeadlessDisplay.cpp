@@ -9,7 +9,7 @@ namespace {
     constexpr const auto BLACK_PIXEL = 0xFF000000;
 }
 
-HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, const char* out_path):
+HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, std::filesystem::path out_path):
     dispatcher(dispatcher),
     instance(nullptr),
     out_path(out_path) {
@@ -70,7 +70,7 @@ void HeadlessDisplay::save() {
     LOGGER.log("Compressing...");
 
     unsigned error = lodepng::encode(
-        this->out_path,
+        this->out_path.c_str(),
         reinterpret_cast<const unsigned char*>(image.data()),
         enclosing.extent.width,
         enclosing.extent.height
@@ -79,6 +79,6 @@ void HeadlessDisplay::save() {
     if (error) {
         LOGGER.log("Error saving output: {}", lodepng_error_text(error));
     } else {
-        LOGGER.log("Saved output to '{}'", this->out_path);
+        LOGGER.log("Saved output to '{}'", this->out_path.native());
     }
 }

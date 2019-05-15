@@ -1,19 +1,23 @@
 #include <string_view>
 #include <array>
+#include <filesystem>
 #include <cstddef>
 #include <cstdlib>
 #include <vulkan/vulkan.hpp>
 #include <fmt/format.h>
+#include "core/Logger.h"
+#include "core/Error.h"
+#include "core/arg_parse.h"
+#include "backend/backend.h"
+#include "backend/Display.h"
+#include "backend/Event.h"
+#include "backend/headless/headless.h"
+#include "utility/Span.h"
 #include "resources.h"
 #include "version.h"
 #include "main_loop.h"
 #include "sysinfo.h"
 #include "convert.h"
-#include "core/Logger.h"
-#include "backend/Display.h"
-#include "backend/Event.h"
-#include "backend/headless/headless.h"
-#include "utility/Span.h"
 
 #if defined(XENODON_PRESENT_XORG)
     #include "backend/xorg/xorg.h"
@@ -28,69 +32,110 @@ namespace {
         fmt::print(resources::open("resources/help.txt"), program_name);
     }
 
-    std::unique_ptr<Display> make_display(Span<const char*> args, EventDispatcher& dispatcher) {
-        auto backend = std::string_view(args[0]);
-        if (backend == "headless") {
-            return make_headless_display(args.sub(1), dispatcher);
-        } else if (backend == "xorg") {
-            #if defined(XENODON_PRESENT_XORG)
-                return make_xorg_display(args.sub(1), dispatcher);
-            #else
-                fmt::print("Error: Xorg backend was disabled\n");
-                return nullptr;
-            #endif
-        } else if (backend == "direct") {
-            #if defined(XENODON_PRESENT_DIRECT)
-                return make_direct_display(args.sub(1), dispatcher);
-            #else
-                fmt::print("Error: Direct backend was disabled\n");
-                return nullptr;
-            #endif
-        } else {
-            fmt::print("Error: no such presenting backend '{}'\n", backend);
-            return nullptr;
+    struct RenderOptions {
+        bool quiet = false;
+        std::filesystem::path log_output;
+        std::filesystem::path model_path;
+
+        struct {
+            std::filesystem::path config;
+            std::filesystem::path output;
+
+            bool enabled() const {
+                return !this->config.empty();
+            }
+        } headless;
+
+        struct {
+             std::filesystem::path config;
+
+             bool enabled() const {
+                return !this->config.empty();
+            }
+        } direct;
+
+        struct {
+            bool enabled = false;
+            std::filesystem::path multi_gpu_config;
+        } xorg;
+    };
+
+    RenderOptions parse_render_args(Span<const char*> args) {
+        RenderOptions opts;
+
+        auto cmd = args::Command {
+            .flags = {
+                {&opts.quiet, "--quiet", 'q'},
+                {&opts.xorg.enabled, "--xorg"}
+            },
+            .parameters = {
+                {args::path_opt(&opts.log_output), "output path", "--log-output"},
+                {args::path_opt(&opts.headless.config), "config path", "--headless"},
+                {args::path_opt(&opts.headless.output), "output path", "--output"},
+                {args::path_opt(&opts.direct.config), "config path", "--direct"},
+                {args::path_opt(&opts.xorg.multi_gpu_config), "config pathh", "--xorg-multi-gpu"}
+            },
+            .positional = {
+                {args::path_opt(&opts.model_path), "model"}
+            }
+        };
+
+        args::parse(args, cmd);
+
+        int enabled_backends =
+            static_cast<int>(opts.xorg.enabled) +
+            static_cast<int>(opts.headless.enabled()) +
+            static_cast<int>(opts.direct.enabled());
+
+        if (enabled_backends == 0) {
+            throw Error("Missing required backend --xorg, --headless or --direct");
+        } else if (enabled_backends > 1) {
+            throw Error("--xorg, --headless and --direct are mutually exclusive");
         }
+
+        if (!opts.headless.output.empty() && !opts.headless.enabled()) {
+            throw Error("--output requires --headless");
+        } else if (opts.headless.output.empty()) {
+            opts.headless.output = "out.png";
+        }
+
+        if (!opts.xorg.multi_gpu_config.empty() && !opts.xorg.enabled) {
+            throw Error("--xorg-multi-gpu requires --xorg");
+        }
+
+        return opts;
     }
 
     void render(Span<const char*> args) {
-        bool quiet = false;
-        const char* log_output = nullptr;
-
-        size_t i = 0;
-        for (; i < args.size(); ++i) {
-            auto arg = std::string_view(args[i]);
-
-            if (arg.size() == 0 || arg[0] != '-') {
-                break;
-            } else if (arg == "-q" || arg == "--quiet") {
-                quiet = true;
-            } else if (arg == "--log") {
-                if (++i == args.size()) {
-                    fmt::print("Error: --log expects argument <file>\n");
-                    return;
-                }
-
-                log_output = args[i];
-            }
-        }
-
-        if (i == args.size()) {
-            fmt::print("Error: expected argument <present backend>\n");
+        RenderOptions opts;
+        try {
+            opts = parse_render_args(args);
+        } catch (const Error& e) {
+            fmt::print("Error: {}\n", e.what());
             return;
         }
 
-        if (!quiet) {
+        if (!opts.quiet) {
             LOGGER.add_sink<ConsoleSink>();
         }
 
-        if (log_output) {
-            LOGGER.add_sink<FileSink>(log_output);
+        if (!opts.log_output.empty()) {
+            LOGGER.add_sink<FileSink>(opts.log_output);
         }
 
         auto dispatcher = EventDispatcher();
-        auto display = make_display(args.sub(i), dispatcher);
+        std::unique_ptr<Display> display;
 
-        if (!display) {
+        try {
+            if (opts.xorg.enabled) {
+                display = create_xorg_backend(dispatcher, opts.xorg.multi_gpu_config);
+            } else if (opts.direct.enabled()) {
+                display = create_direct_backend(dispatcher, opts.direct.config);
+            } else {
+                display = create_headless_backend(dispatcher, opts.headless.config, opts.headless.output);
+            }
+        } catch (const Error& e) {
+            fmt::print("Error: Failed to initialize backend: {}", e.what());
             return;
         }
 

@@ -2,11 +2,11 @@
 #define _XENODON_BACKEND_HEADLESS_HEADLESS_H
 
 #include <memory>
+#include <filesystem>
 #include "backend/headless/HeadlessDisplay.h"
-#include "utility/Span.h"
 
 struct EventDispatcher;
 
-std::unique_ptr<HeadlessDisplay> make_headless_display(Span<const char*> args, EventDispatcher& dispatcher);
+std::unique_ptr<HeadlessDisplay> create_headless_display(EventDispatcher& dispatcher, std::filesystem::path config, std::filesystem::path output);
 
 #endif

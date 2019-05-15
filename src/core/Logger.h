@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include <fstream>
+#include <filesystem>
 #include <cstddef>
 #include <fmt/format.h>
 
@@ -23,7 +24,7 @@ class FileSink final: public Sink {
     std::ofstream file;
 
 public:
-    FileSink(const char* path);
+    FileSink(std::filesystem::path path);
     void write(std::string_view line) override;
 };
 

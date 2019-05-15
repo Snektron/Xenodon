@@ -2,11 +2,11 @@
 #define _XENODON_BACKEND_XORG_XORG_H
 
 #include <memory>
+#include <filesystem>
 #include "backend/xorg/XorgDisplay.h"
-#include "utility/Span.h"
 
 struct EventDispatcher;
 
-std::unique_ptr<XorgDisplay> make_xorg_display(Span<const char*> args, EventDispatcher& dispatcher);
+std::unique_ptr<XorgDisplay> create_xorg_display(EventDispatcher& dispatcher, std::filesystem::path multi_gpu_config);
 
 #endif

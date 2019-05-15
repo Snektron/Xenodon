@@ -1,6 +1,5 @@
 #include "core/Logger.h"
 #include <iostream>
-#include <string>
 #include <ctime>
 #include <fmt/time.h>
 
@@ -10,7 +9,7 @@ void ConsoleSink::write(std::string_view line) {
     std::cout << line << '\n';
 }
 
-FileSink::FileSink(const char* path):
+FileSink::FileSink(std::filesystem::path path):
     file(path) {
 }
 

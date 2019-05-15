@@ -46,6 +46,7 @@ sources = [
     'src/render/DdaRaytracer.cpp',
     'src/render/SvoRaytracer.cpp',
     'src/render/ComputeSvoRaytracer.cpp',
+    'src/backend/backend.cpp',
     'src/backend/SwapImage.cpp',
     'src/backend/RenderDevice.cpp',
     'src/backend/headless/headless.cpp',
