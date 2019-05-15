@@ -1,11 +1,14 @@
 #include "model/Octree.h"
 #include <algorithm>
+#include <unordered_map>
 #include <fstream>
+#include <string_view>
 #include <cmath>
 #include <fmt/format.h>
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/Grid.h"
+#include "utility/serialization.h"
 
 namespace {
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
@@ -26,6 +29,8 @@ namespace {
     size_t hash_combine(size_t seed, const T& v) {
         return seed ^ (std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
     }
+
+    constexpr const std::string_view SVO_FMT_ID = "XNDN-SVO";
 }
 
 template<>
@@ -34,8 +39,8 @@ struct std::hash<Octree::Node> {
         size_t v = std::hash<uint32_t>{}(node.is_leaf_depth);
         v = hash_combine(v, std::hash<uint32_t>{}(node.color.pack()));
 
-        for (size_t i = 0; i < 8; ++i) {
-            v = hash_combine(v, std::hash<uint32_t>{}(node.children[i]));
+        for (uint32_t child : node.children) {
+            v = hash_combine(v, std::hash<uint32_t>{}(child));
         }
 
         return v;
@@ -60,6 +65,10 @@ struct Octree::ConstructionContext {
     bool dag;
 };
 
+Octree::Octree(size_t dim, std::vector<Node>&& nodes):
+    dim(dim), nodes(std::move(nodes)) {
+}
+
 Octree::Octree(const Grid& src, uint8_t min_channel_diff, bool dag) {
     const auto src_dim = src.dimensions();
     this->dim = std::max({ceil_2pow(src_dim.x), ceil_2pow(src_dim.y), ceil_2pow(src_dim.z)});
@@ -80,6 +89,71 @@ Octree::Octree(const Grid& src, uint8_t min_channel_diff, bool dag) {
         for (uint32_t& child : node.children) {
             child = end - child;
         }
+    }
+}
+
+Octree Octree::load_svo(std::filesystem::path path) {
+    auto in = std::ifstream(path, std::ios::binary);
+    if (!in) {
+        throw Error("Failed to open");
+    }
+
+    char id[SVO_FMT_ID.size()];
+    in.read(id, SVO_FMT_ID.size());
+    if (SVO_FMT_ID != id) {
+        throw Error("Invalid format id");
+    }
+
+    uint64_t dim = read_uint_le<uint64_t>(in);
+    uint64_t num_nodes = read_uint_le<uint64_t>(in);
+
+    auto pos = in.tellg();
+    if (pos == std::ifstream::pos_type(-1)) {
+        throw Error("Failed to tell");
+    }
+
+    in.seekg(0, std::ios_base::end);
+    auto end = in.tellg();
+    if (end == std::ifstream::pos_type(-1)) {
+        throw Error("Failed to tell");
+    }
+
+    in.seekg(pos);
+    size_t remaining = static_cast<size_t>(end - pos);
+    if (remaining != sizeof(Node) * num_nodes) {
+        throw Error("Dimension does not match number of nodes");
+    }
+
+    auto nodes = std::vector<Node>(num_nodes);
+    for (auto& node : nodes) {
+        for (uint32_t& child : node.children) {
+            child = read_uint_le<uint32_t>(in);
+        }
+
+        node.color = Pixel::unpack(read_uint_le<uint32_t>(in));
+        node.is_leaf_depth = read_uint_le<uint32_t>(in);
+    }
+
+    return Octree(static_cast<size_t>(dim), std::move(nodes));
+}
+
+void Octree::save_svo(std::filesystem::path path) const {
+    auto out = std::ofstream(path, std::ios::binary);
+    if (!out) {
+        throw Error("Failed to open");
+    }
+
+    out.write(SVO_FMT_ID.data(), SVO_FMT_ID.size());
+    write_uint_le(out, this->dim);
+    write_uint_le(out, this->nodes.size());
+
+    for (const auto& node : this->nodes) {
+        for (uint32_t child : node.children) {
+            write_uint_le(out, child);
+        }
+
+        write_uint_le(out, node.color.pack());
+        write_uint_le(out, node.is_leaf_depth);
     }
 }
 

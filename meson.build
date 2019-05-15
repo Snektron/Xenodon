@@ -82,6 +82,12 @@ add_project_arguments(
     language: 'cpp'
 )
 
+# C++17 <filesystem> support
+add_project_link_arguments(
+    '-lstdc++fs',
+    language: 'cpp'
+)
+
 # Project-wide dependencies
 vk_dep = dependency('vulkan', method: 'system')
 dependencies = [

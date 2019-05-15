@@ -17,14 +17,14 @@ namespace {
 
     struct TiffError: public Error {
         template <typename... Args>
-        TiffError(const char* path, std::string_view fmt, const Args&... args):
+        TiffError(std::filesystem::path path, std::string_view fmt, const Args&... args):
             Error(format_error(path, fmt, fmt::make_format_args(args...))) {
         }
 
     private:
-        std::string format_error(const char* path, std::string_view fmt, fmt::format_args args) {
+        std::string format_error(std::filesystem::path path, std::string_view fmt, fmt::format_args args) {
             auto buf = fmt::memory_buffer();
-            fmt::format_to(buf, "Error reading file '{}': ", path);
+            fmt::format_to(buf, "Error reading file '{}': ", path.native());
             fmt::vformat_to(buf, fmt, args);
             return fmt::to_string(buf);
         }
@@ -39,10 +39,10 @@ Grid::Grid(Vec3Sz dim):
     }
 }
 
-Grid Grid::load_tiff(const char* path) {
-    auto tiff = TiffPtr(TIFFOpen(path, "r"));
+Grid Grid::load_tiff(std::filesystem::path path) {
+    auto tiff = TiffPtr(TIFFOpen(path.c_str(), "r"));
     if (!tiff) {
-        throw Error("Failed to open TIFF file '{}'", path);
+        throw TiffError(path, "Failed to open");
     }
 
     uint32_t width = 0;
@@ -89,6 +89,21 @@ Grid Grid::load_tiff(const char* path) {
         std::move(data)
     );
 }
+
+// void Grid::save_tiff(const char* path) {
+//     auto tiff = TiffPtr(TIFFOpen(path, "w"));
+//     if (!tiff) {
+//         throw TiffError(path, "Failed to open");
+//     }
+
+//     TIFFSetField(tiff.get(), TIFFTAG_IMAGEWIDTH, this->dim.x);
+//     TIFFSetField(tiff.get(), TIFFTAG_IMAGEHEIGHT, this->dim.y);
+//     TIFFSetField(tiff.get(), TIFFTAG_SAMPLESPERPIXEL, 4); // RGBA = 4 channel per pixel
+//     TIFFSetField(tiff.get(), TIFFTAG_BITSPERSAMPLE, 8); // 8 bits per channel
+//     TIFFSetField(tiff.get(), TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+//     TIFFSetField(tiff.get(), TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+//     TIFFSetField(tiff.get(), TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+// }
 
 Grid::VolScanResult Grid::vol_scan(Vec3Sz bmin, Vec3Sz bmax) const {
     struct {

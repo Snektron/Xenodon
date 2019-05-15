@@ -2,8 +2,9 @@
 #define _XENODON_MODEL_OCTREE_H
 
 #include <vector>
-#include <unordered_map>
 #include <limits>
+#include <filesystem>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include "math/Vec.h"
@@ -25,21 +26,28 @@ public:
 
     // This struct should be kept in sync with resources/svo.frag
     struct Node {
-        uint32_t children[8];
+        std::array<uint32_t, 8> children;
         Pixel color;
         uint32_t is_leaf_depth;
     };
 
     static_assert(sizeof(Node) == 40, "");
 
+
 private:
     struct ConstructionContext;
 
-    std::vector<Node> nodes;
     size_t dim;
+    std::vector<Node> nodes;
+
+    Octree(size_t dim, std::vector<Node>&& nodes);
 
 public:
     Octree(const Grid& src, uint8_t min_channel_diff, bool dag);
+
+    static Octree load_svo(std::filesystem::path path);
+
+    void save_svo(std::filesystem::path path) const;
 
     const Node* find(const Vec3Sz& pos, size_t max_depth = std::numeric_limits<size_t>::max()) const;
 

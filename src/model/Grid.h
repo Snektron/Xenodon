@@ -3,6 +3,7 @@
 
 #include <utility>
 #include <memory>
+#include <filesystem>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include "math/Vec.h"
@@ -27,9 +28,7 @@ private:
 public:
     Grid(Vec3Sz dim);
 
-    static Grid load_tiff(const char* path);
-
-    void save_tiff(const char* path);
+    static Grid load_tiff(std::filesystem::path path);
 
     VolScanResult vol_scan(Vec3Sz bmin, Vec3Sz bmax) const;
 
