@@ -2,6 +2,7 @@
 #include <string_view>
 #include "core/Logger.h"
 #include "graphics/shader/Shader.h"
+#include "graphics/utility.h"
 #include "utility/rect_union.h"
 #include "math/Vec.h"
 #include "resources.h"
@@ -30,59 +31,6 @@ namespace {
             vk::ShaderStageFlagBits::eCompute
         )
     };
-
-    vk::WriteDescriptorSet write_set(const vk::DescriptorSet& set, const vk::DescriptorSetLayoutBinding& binding, const vk::DescriptorImageInfo& image_info) {
-        return vk::WriteDescriptorSet(
-            set,
-            binding.binding,
-            0,
-            1,
-            binding.descriptorType,
-            &image_info,
-            nullptr,
-            nullptr
-        );
-    }
-
-    vk::WriteDescriptorSet write_set(const vk::DescriptorSet& set, const vk::DescriptorSetLayoutBinding& binding, const vk::DescriptorBufferInfo& buffer_info) {
-        return vk::WriteDescriptorSet(
-            set,
-            binding.binding,
-            0,
-            1,
-            binding.descriptorType,
-            nullptr,
-            &buffer_info,
-            nullptr
-        );
-    }
-
-    struct ImageState {
-        vk::ImageLayout layout;
-        vk::PipelineStageFlagBits stage;
-    };
-
-    void image_transition(vk::CommandBuffer cmd_buf, vk::Image image, ImageState src, ImageState dst) {
-        auto barrier = vk::ImageMemoryBarrier(
-            vk::AccessFlags(),
-            vk::AccessFlags(),
-            src.layout,
-            dst.layout,
-            VK_QUEUE_FAMILY_IGNORED,
-            VK_QUEUE_FAMILY_IGNORED,
-            image,
-            vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
-        );
-
-        cmd_buf.pipelineBarrier(
-            src.stage,
-            dst.stage,
-            vk::DependencyFlags(),
-            nullptr,
-            nullptr,
-            barrier
-        );
-    }
 
     vk::UniqueDescriptorPool create_descriptor_pool(const RenderDevice& rendev, uint32_t sets) {
         constexpr const size_t num_bindings = std::tuple_size_v<decltype(LAYOUT_BINDINGS)>;

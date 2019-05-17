@@ -6,6 +6,7 @@
 #include "utility/rect_union.h"
 #include "core/Logger.h"
 #include "graphics/shader/Shader.h"
+#include "graphics/utility.h"
 #include "math/Vec.h"
 
 namespace {
@@ -31,7 +32,8 @@ namespace {
 
 Renderer::Renderer(Display* display, const RenderAlgorithm* algorithm):
     display(display),
-    algorithm(algorithm) {
+    algorithm(algorithm),
+    start(std::chrono::system_clock::now()) {
 
     std::copy(STANDARD_BINDINGS.begin(), STANDARD_BINDINGS.end(), std::back_inserter(this->bindings));
 
@@ -40,14 +42,84 @@ Renderer::Renderer(Display* display, const RenderAlgorithm* algorithm):
 
     this->calculate_display_rect();
     this->create_resources();
+    this->upload_uniform_buffers();
+    this->upload_custom_buffers();
+
+    this->create_descriptor_sets();
+    this->update_descriptor_sets();
+    this->create_command_buffers();
 }
 
 void Renderer::recreate(size_t device, size_t output) {
-    LOGGER.log("Unimplemented method recreate");
+    const uint32_t images = this->display->output(device, output)->num_swap_images();
+
+    for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
+        auto& drsc = this->device_resources[devidx];
+
+        for (size_t outputidx = 0; outputidx < drsc.output_resources.size(); ++outputidx) {
+            auto& orsc = drsc.output_resources[outputidx];
+            orsc.region = orsc.output->region();
+        }
+    }
+
+    this->calculate_display_rect();
+
+    if (static_cast<size_t>(images) != this->device_resources[device].output_resources[output].command_buffers.size()) {
+        LOGGER.log("Recreating device {}, output {} descriptor sets and command buffers", device, output);
+        this->create_descriptor_sets();
+        this->create_command_buffers();
+    }
+
+    this->update_descriptor_sets();
+    this->upload_uniform_buffers();
 }
 
 void Renderer::render() {
-    LOGGER.log("Unimplemented method render");
+    const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+    const auto now = std::chrono::system_clock::now();
+    const float time = std::chrono::duration<float>(now - this->start).count();
+
+    for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
+        auto& drsc = this->device_resources[devidx];
+
+        for (size_t outputidx = 0; outputidx < drsc.output_resources.size(); ++outputidx) {
+            auto& orsc = drsc.output_resources[outputidx];
+
+            uint32_t index = orsc.output->current_swap_index();
+            const auto swap_image = orsc.output->swap_image(index);
+            const auto attachment = orsc.output->color_attachment_descr();
+            auto& cmd_buf = orsc.command_buffers[index].get();
+
+            auto group_size = (Vec2<uint32_t>{orsc.region.extent.width, orsc.region.extent.height} - 1u) / LOCAL_SIZE + 1u;
+
+            cmd_buf.begin(&begin_info);
+
+            image_transition(
+                cmd_buf,
+                swap_image.image,
+                {attachment.initialLayout, vk::PipelineStageFlagBits::eTopOfPipe},
+                {vk::ImageLayout::eGeneral, vk::PipelineStageFlagBits::eComputeShader}
+            );
+
+            cmd_buf.bindPipeline(vk::PipelineBindPoint::eCompute, orsc.pipeline.get());
+            cmd_buf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, drsc.pipeline_layout.get(), 0, orsc.descriptor_sets[index], nullptr);
+            cmd_buf.pushConstants(drsc.pipeline_layout.get(), vk::ShaderStageFlagBits::eCompute, 0, sizeof(float), static_cast<const void*>(&time));
+            cmd_buf.dispatch(group_size.x, group_size.y, 1);
+
+            image_transition(
+                cmd_buf,
+                swap_image.image,
+                {vk::ImageLayout::eGeneral, vk::PipelineStageFlagBits::eComputeShader},
+                {attachment.finalLayout, vk::PipelineStageFlagBits::eBottomOfPipe}
+            );
+
+            cmd_buf.end();
+
+            swap_image.submit(drsc.rendev->compute_queue, cmd_buf, vk::PipelineStageFlagBits::eBottomOfPipe);
+        }
+    }
+
+    this->display->swap_buffers();
 }
 
 void Renderer::create_resources() {
@@ -60,7 +132,7 @@ void Renderer::create_resources() {
         const auto& device = rendev.device;
         const uint32_t outputs = static_cast<uint32_t>(rendev.outputs);
 
-        auto instance = this->algorithm->instantiate(device);
+        auto instance = this->algorithm->instantiate(rendev);
 
         auto descr_set_layout = device->createDescriptorSetLayoutUnique({
             {},
@@ -159,7 +231,7 @@ void Renderer::create_descriptor_sets() {
     }
 }
 
-void ComputeSvoRaytracer::create_command_buffers() {
+void Renderer::create_command_buffers() {
     for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
         auto& drsc = this->device_resources[devidx];
 
@@ -169,6 +241,82 @@ void ComputeSvoRaytracer::create_command_buffers() {
 
             orsc.command_buffers = drsc.rendev->compute_command_pool.allocate_command_buffers(images);
         }
+    }
+}
+
+void Renderer::update_descriptor_sets() {
+    for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
+        auto& drsc = this->device_resources[devidx];
+
+        for (size_t outputidx = 0; outputidx < drsc.output_resources.size(); ++outputidx) {
+            auto& orsc = drsc.output_resources[outputidx];
+            // const auto tree_buffer_info = drsc.tree_buffer.descriptor_info(0, this->model.data().size());
+            const auto uniform_buffer_info = drsc.uniform_buffer.descriptor_info(outputidx, 1);
+            const uint32_t images = orsc.output->num_swap_images();
+
+            for (uint32_t image = 0; image < images; ++image) {
+                auto swap_image = orsc.output->swap_image(image);
+                auto& set = orsc.descriptor_sets[image];
+
+                const auto render_target_info = vk::DescriptorImageInfo(
+                    vk::Sampler(),
+                    swap_image.view,
+                    vk::ImageLayout::eGeneral
+                );
+
+                const auto descriptor_writes = std::array{
+                    write_set(set, STANDARD_BINDINGS[0], uniform_buffer_info),
+                    write_set(set, STANDARD_BINDINGS[1], render_target_info)
+                };
+
+                drsc.rendev->device->updateDescriptorSets(descriptor_writes, nullptr);
+
+                drsc.instance->update_descriptors(set);
+            }
+        }
+    }
+}
+
+void Renderer::upload_uniform_buffers() {
+    for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
+        auto& drsc = this->device_resources[devidx];
+        const auto& rendev = *drsc.rendev;
+        const auto& device = rendev.device;
+        const uint32_t outputs = static_cast<uint32_t>(rendev.outputs);
+
+        auto staging_buffer = Buffer<UniformBuffer>(
+            device,
+            outputs,
+            vk::BufferUsageFlagBits::eTransferSrc,
+            vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+        );
+
+        UniformBuffer* uniforms = staging_buffer.map(0, outputs);
+
+        for (size_t outputidx = 0; outputidx < drsc.output_resources.size(); ++outputidx) {
+            auto& orsc = drsc.output_resources[outputidx];
+
+            uniforms[outputidx].output_region = orsc.region;
+            uniforms[outputidx].display_region = this->display_region;
+        }
+
+        staging_buffer.unmap();
+
+        const auto copy_info = vk::BufferCopy{
+            0,
+            0,
+            sizeof(UniformBuffer) * outputs
+        };
+
+        rendev.compute_command_pool.one_time_submit([&](vk::CommandBuffer cmd_buf) {
+            cmd_buf.copyBuffer(staging_buffer.get(), drsc.uniform_buffer.get(), copy_info);
+        });
+    }
+}
+
+void Renderer::upload_custom_buffers() {
+    for (auto& drsc : this->device_resources) {
+        drsc.instance->upload_buffers();
     }
 }
 

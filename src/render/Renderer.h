@@ -2,6 +2,7 @@
 #define _XENODON_RENDER_RENDERER_H
 
 #include <vector>
+#include <chrono>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include "backend/Display.h"
@@ -46,6 +47,7 @@ class Renderer {
     vk::Rect2D display_region;
     std::vector<DeviceResources> device_resources;
     std::vector<vk::DescriptorSetLayoutBinding> bindings;
+    std::chrono::system_clock::time_point start;
 
 public:
     Renderer(Display* display, const RenderAlgorithm* algorithm);
@@ -56,6 +58,9 @@ private:
     void create_resources();
     void create_descriptor_sets();
     void create_command_buffers();
+    void update_descriptor_sets();
+    void upload_uniform_buffers();
+    void upload_custom_buffers();
     vk::UniqueDescriptorPool create_descriptor_pool(const Device& device, uint32_t sets);
     void calculate_display_rect();
 };

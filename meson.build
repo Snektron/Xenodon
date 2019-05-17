@@ -41,6 +41,7 @@ sources = [
     'src/graphics/memory/Texture3D.cpp',
     'src/graphics/shader/Shader.cpp',
     'src/graphics/command/CommandPool.cpp',
+    'src/graphics/utility.cpp',
     'src/render/FrameResources.cpp',
     'src/render/SimpleShaderRenderer.cpp',
     'src/render/DdaRaytracer.cpp',
