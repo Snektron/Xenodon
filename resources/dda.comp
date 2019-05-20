@@ -5,6 +5,10 @@ struct Rect {
     uvec2 extent;
 };
 
+struct RenderParameters {
+    float density;
+};
+
 layout(local_size_x = 8, local_size_y = 8) in;
 
 layout(push_constant) uniform PushConstant {
@@ -14,6 +18,7 @@ layout(push_constant) uniform PushConstant {
 layout(binding = 0) readonly uniform UniformBuffer {
     Rect output_region;
     Rect display_region;
+    RenderParameters params;
 } uniforms;
 
 layout(binding = 1, rgba8) restrict writeonly uniform image2D render_target;
@@ -33,7 +38,7 @@ vec3 ray(vec3 dir, vec3 up, vec2 uv) {
 }
 
 vec3 get_voxel(ivec3 p) {
-    return texelFetch(model, p, 0).rgb * 0.005;
+    return texelFetch(model, p, 0).rgb * uniforms.params.density;
 }
 
 vec3 trace(vec3 ro, vec3 rd, float tfar) {

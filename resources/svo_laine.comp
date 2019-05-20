@@ -1,14 +1,18 @@
 #version 450
 
+struct Rect {
+    ivec2 offset;
+    uvec2 extent;
+};
+
 struct Node {
     uint children[8];
     uint color;
     uint is_leaf_depth;
 };
 
-struct Rect {
-    ivec2 offset;
-    uvec2 extent;
+struct RenderParameters {
+    float density;
 };
 
 layout(local_size_x = 8, local_size_y = 8) in;
@@ -20,6 +24,7 @@ layout(push_constant) uniform PushConstant {
 layout(binding = 0) readonly uniform UniformBuffer {
     Rect output_region;
     Rect display_region;
+    RenderParameters params;
 } uniforms;
 
 layout(binding = 1, rgba8) restrict writeonly uniform image2D render_target;
@@ -120,7 +125,7 @@ vec4 trace(vec3 ro, vec3 rd) {
             if (t_min <= tv_max) {
                 if (model.nodes[child].is_leaf_depth >= LEAF) {
                     vec4 color = unpackUnorm4x8(model.nodes[child].color);
-                    total_color += color * (tv_max - t_min) * 40.0;
+                    total_color += color * (tv_max - t_min) * uniforms.params.density;
                 } else {
                     // PUSH
                     if (tc_max < h) {

@@ -11,10 +11,15 @@
 #include "graphics/memory/Buffer.h"
 #include "render/RenderAlgorithm.h"
 
+struct RenderParameters {
+    float density;
+};
+
 class Renderer {
     struct UniformBuffer {
         vk::Rect2D output_region;
         vk::Rect2D display_region;
+        RenderParameters params;
     };
 
     struct OutputResources {
@@ -44,13 +49,14 @@ class Renderer {
 
     Display* display;
     const RenderAlgorithm* algorithm;
+    RenderParameters render_params;
     vk::Rect2D display_region;
     std::vector<DeviceResources> device_resources;
     std::vector<vk::DescriptorSetLayoutBinding> bindings;
     std::chrono::system_clock::time_point start;
 
 public:
-    Renderer(Display* display, const RenderAlgorithm* algorithm);
+    Renderer(Display* display, const RenderAlgorithm* algorithm, const RenderParameters& render_params);
     void recreate(size_t device, size_t output);
     void render();
 

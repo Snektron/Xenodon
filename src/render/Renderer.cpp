@@ -30,9 +30,10 @@ namespace {
     };
 }
 
-Renderer::Renderer(Display* display, const RenderAlgorithm* algorithm):
+Renderer::Renderer(Display* display, const RenderAlgorithm* algorithm, const RenderParameters& render_params):
     display(display),
     algorithm(algorithm),
+    render_params(render_params),
     start(std::chrono::system_clock::now()) {
 
     std::copy(STANDARD_BINDINGS.begin(), STANDARD_BINDINGS.end(), std::back_inserter(this->bindings));
@@ -303,6 +304,7 @@ void Renderer::upload_uniform_buffers() {
 
             uniforms[outputidx].output_region = orsc.region;
             uniforms[outputidx].display_region = this->display_region;
+            uniforms[outputidx].params = this->render_params;
         }
 
         staging_buffer.unmap();

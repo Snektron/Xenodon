@@ -53,11 +53,16 @@ void main_loop(EventDispatcher& dispatcher, Display* display) {
     check_setup(display);
 
     const auto grid = std::make_shared<Grid>(Grid::load_tiff("/home/robin/Downloads/ZF-Eye.tif"));
-    // const auto octree = std::make_shared<Octree>(grid, 30, true);
+    const auto octree = std::make_shared<Octree>(*grid.get(), 30, true);
 
-    // auto algo = SvoRaytraceAlgorithm(resources::open("resources/svo_laine.comp"), octree);
-    auto algo = DdaRaytraceAlgorithm(grid);
-    auto renderer = Renderer(display, &algo);
+    auto algo = SvoRaytraceAlgorithm(resources::open("resources/svo_laine.comp"), octree);
+
+    auto render_params = RenderParameters {
+        .density = 40.f
+    };
+
+    // auto algo = DdaRaytraceAlgorithm(grid);
+    auto renderer = Renderer(display, &algo, render_params);
 
     bool quit = false;
     dispatcher.bind_close([&quit] {
