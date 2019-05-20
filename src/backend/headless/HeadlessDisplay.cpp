@@ -35,7 +35,6 @@ Output* HeadlessDisplay::output(size_t device_index, size_t output_index) {
 }
 
 void HeadlessDisplay::swap_buffers() {
-    // TODO: make sure every frame is rendered
     for (const auto& output : this->outputs) {
         output.synchronize();
     }
@@ -53,7 +52,6 @@ void HeadlessDisplay::save() {
     });
 
     LOGGER.log("Saving image...");
-    LOGGER.log("Enclosing size: {}x{}", enclosing.extent.width, enclosing.extent.height);
 
     auto image = std::vector<Pixel>(enclosing.extent.width * enclosing.extent.height, BLACK_PIXEL);
     size_t stride = enclosing.extent.width;

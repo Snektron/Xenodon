@@ -6,14 +6,12 @@
 #include "utility/Span.h"
 
 class Texture3D {
-    const Device* dev;
+    vk::Device dev;
     vk::Image image;
     vk::DeviceMemory mem;
     vk::ImageView image_view;
 
 public:
-    static void layout_transition(vk::CommandBuffer cmd_buf, vk::PipelineStageFlags src_stage, vk::PipelineStageFlags dst_stage, const vk::ImageMemoryBarrier& barrier);
-
     Texture3D(const Device& dev, vk::Format format, vk::Extent3D extent, vk::ImageUsageFlags flags);
 
     Texture3D(const Texture3D&) = delete;
@@ -40,35 +38,8 @@ public:
     }
 
     vk::Device device() const {
-        return this->dev->get();
+        return this->dev;
     }
 };
-
-template <typename T>
-auto Texture3D::upload(Span<T> data, const vk::BufferImageCopy& region, vk::ImageLayout dst_layout) {
-    auto staging_buffer = Buffer<T>(
-        *this->dev,
-        data.size(),
-        vk::BufferUsageFlagBits::eTransferSrc,
-        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-    );
-
-    return [this, staging_buffer = std::move(staging_buffer), data, &region, dst_layout](vk::CommandBuffer cmd_buf) {
-        auto* mapping = staging_buffer.map(0, data.size());
-
-        for (size_t i = 0; i < data.size(); ++i) {
-            mapping[i] = data[i];
-        }
-
-        staging_buffer.unmap();
-
-        cmd_buf.copyBufferToImage(
-            staging_buffer.get(),
-            this->image,
-            dst_layout,
-            region
-        );
-    };
-}
 
 #endif

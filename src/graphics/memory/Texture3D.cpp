@@ -1,23 +1,12 @@
 #include "graphics/memory/Texture3D.h"
 #include "core/Logger.h"
 
-void Texture3D::layout_transition(vk::CommandBuffer cmd_buf, vk::PipelineStageFlags src_stage, vk::PipelineStageFlags dst_stage, const vk::ImageMemoryBarrier& barrier) {
-    cmd_buf.pipelineBarrier(
-        src_stage,
-        dst_stage,
-        vk::DependencyFlags(),
-        nullptr,
-        nullptr,
-        barrier
-    );
-}
-
 Texture3D::Texture3D(Texture3D&& other):
     dev(other.dev),
     image(other.image),
     mem(other.mem),
     image_view(other.image_view) {
-    other.dev = nullptr;
+    other.dev = vk::Device();
     other.image = vk::Image();
     other.mem = vk::DeviceMemory();
     other.image_view = vk::ImageView();
@@ -33,14 +22,14 @@ Texture3D& Texture3D::operator=(Texture3D&& other) {
 
 Texture3D::~Texture3D() {
     if (this->image != vk::Image()) {
-        this->dev->get().destroyImageView(this->image_view);
-        this->dev->get().freeMemory(this->mem);
-        this->dev->get().destroyImage(this->image);
+        this->dev.destroyImageView(this->image_view);
+        this->dev.freeMemory(this->mem);
+        this->dev.destroyImage(this->image);
     }
 }
 
 Texture3D::Texture3D(const Device& dev, vk::Format format, vk::Extent3D extent, vk::ImageUsageFlags flags):
-    dev(&dev) {
+    dev(dev.get()) {
     this->image = dev->createImage({
         {},
         vk::ImageType::e3D,

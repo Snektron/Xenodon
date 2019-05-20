@@ -1,6 +1,7 @@
 #include "render/DdaRaytraceAlgorithm.h"
 #include <utility>
 #include "resources.h"
+#include "graphics/utility.h"
 
 namespace {
     const auto DDA_BINDINGS = std::array {
@@ -32,7 +33,7 @@ DdaRaytraceResources::DdaRaytraceResources(const RenderDevice& rendev, const Gri
         vk::SamplerAddressMode::eClampToBorder
     })) {
 
-     auto copy_info = vk::BufferImageCopy(
+    const auto copy_info = vk::BufferImageCopy(
         0,
         0,
         0,
@@ -45,50 +46,53 @@ DdaRaytraceResources::DdaRaytraceResources(const RenderDevice& rendev, const Gri
         }
     );
 
-    auto uploader = this->grid_texture.upload(
-        grid.pixels(),
-        copy_info,
-        vk::ImageLayout::eTransferDstOptimal
+    const auto pixels = grid.pixels();
+
+    auto staging_buffer = Buffer<Pixel>(
+        rendev.device,
+        pixels.size(),
+        vk::BufferUsageFlagBits::eTransferSrc,
+        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
     );
 
+    {
+        auto* mapping = staging_buffer.map(0, pixels.size());
+
+        for (size_t i = 0; i < pixels.size(); ++i) {
+            mapping[i] = pixels[i];
+        }
+
+        staging_buffer.unmap();
+    }
+
     rendev.compute_command_pool.one_time_submit([&, this](vk::CommandBuffer cmd_buf) {
-        auto barrier0 = vk::ImageMemoryBarrier(
-            vk::AccessFlags(),
-            vk::AccessFlagBits::eTransferRead,
+        const auto initial_state = ImageState{
             vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eTransferDstOptimal,
-            VK_QUEUE_FAMILY_IGNORED,
-            VK_QUEUE_FAMILY_IGNORED,
-            this->grid_texture.get(),
-            vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
-        );
+            vk::PipelineStageFlagBits::eTopOfPipe
+        };
 
-        Texture3D::layout_transition(
-            cmd_buf,
-            vk::PipelineStageFlagBits::eTopOfPipe,
+        const auto upload_state = ImageState{
+            vk::ImageLayout::eTransferDstOptimal,
             vk::PipelineStageFlagBits::eTransfer,
-            barrier0
-        );
+            vk::AccessFlagBits::eTransferWrite
+        };
 
-        uploader(cmd_buf);
-
-        auto barrier1 = vk::ImageMemoryBarrier(
-            vk::AccessFlagBits::eTransferWrite,
-            vk::AccessFlagBits::eShaderRead,
-            vk::ImageLayout::eTransferDstOptimal,
+        const auto render_state = ImageState{
             vk::ImageLayout::eShaderReadOnlyOptimal,
-            VK_QUEUE_FAMILY_IGNORED,
-            VK_QUEUE_FAMILY_IGNORED,
+            vk::PipelineStageFlagBits::eComputeShader,
+            vk::AccessFlagBits::eShaderRead
+        };
+
+        image_transition(cmd_buf, this->grid_texture.get(), initial_state, upload_state);
+
+        cmd_buf.copyBufferToImage(
+            staging_buffer.get(),
             this->grid_texture.get(),
-            vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
+            upload_state.layout,
+            copy_info
         );
 
-        Texture3D::layout_transition(
-            cmd_buf,
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::PipelineStageFlagBits::eComputeShader,
-            barrier1
-        );
+        image_transition(cmd_buf, this->grid_texture.get(), upload_state, render_state);
     });
 }
 

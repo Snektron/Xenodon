@@ -29,8 +29,8 @@ vk::WriteDescriptorSet write_set(vk::DescriptorSet set, const vk::DescriptorSetL
 
 void image_transition(vk::CommandBuffer cmd_buf, vk::Image image, ImageState src, ImageState dst) {
     auto barrier = vk::ImageMemoryBarrier(
-        vk::AccessFlags(),
-        vk::AccessFlags(),
+        src.access_flags,
+        dst.access_flags,
         src.layout,
         dst.layout,
         VK_QUEUE_FAMILY_IGNORED,

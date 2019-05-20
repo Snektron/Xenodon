@@ -6,6 +6,7 @@
 struct ImageState {
     vk::ImageLayout layout;
     vk::PipelineStageFlagBits stage;
+    vk::AccessFlags access_flags = vk::AccessFlags();
 };
 
 vk::WriteDescriptorSet write_set(vk::DescriptorSet set, const vk::DescriptorSetLayoutBinding& binding, const vk::DescriptorImageInfo& image_info);

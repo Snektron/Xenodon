@@ -256,7 +256,6 @@ void Renderer::update_descriptor_sets() {
 
         for (size_t outputidx = 0; outputidx < drsc.output_resources.size(); ++outputidx) {
             auto& orsc = drsc.output_resources[outputidx];
-            // const auto tree_buffer_info = drsc.tree_buffer.descriptor_info(0, this->model.data().size());
             const auto uniform_buffer_info = drsc.uniform_buffer.descriptor_info(outputidx, 1);
             const uint32_t images = orsc.output->num_swap_images();
 
@@ -367,4 +366,6 @@ void Renderer::calculate_display_rect() {
             }
         }
     }
+
+    LOGGER.log("Total resolution: {}x{} pixels", this->display_region.extent.width, this->display_region.extent.height);
 }
