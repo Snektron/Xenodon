@@ -47,6 +47,7 @@ sources = [
     'src/render/DdaRaytracer.cpp',
     'src/render/Renderer.cpp',
     'src/render/SvoRaytraceAlgorithm.cpp',
+    'src/render/DdaRaytraceAlgorithm.cpp',
     'src/backend/backend.cpp',
     'src/backend/SwapImage.cpp',
     'src/backend/RenderDevice.cpp',
@@ -63,6 +64,7 @@ shaders = [
     'resources/fullscreen_quad.vert',
     'resources/julia.frag',
     'resources/dda.frag',
+    'resources/dda.comp',
     'resources/svo.comp',
     'resources/svo_laine.comp',
     'resources/svo2.comp'

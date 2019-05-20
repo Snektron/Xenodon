@@ -13,18 +13,18 @@ void Texture3D::layout_transition(vk::CommandBuffer cmd_buf, vk::PipelineStageFl
 }
 
 Texture3D::Texture3D(Texture3D&& other):
-    device(other.device),
+    dev(other.dev),
     image(other.image),
     mem(other.mem),
     image_view(other.image_view) {
-    other.device = nullptr;
+    other.dev = nullptr;
     other.image = vk::Image();
     other.mem = vk::DeviceMemory();
     other.image_view = vk::ImageView();
 }
 
 Texture3D& Texture3D::operator=(Texture3D&& other) {
-    std::swap(this->device, other.device);
+    std::swap(this->dev, other.dev);
     std::swap(this->image, other.image);
     std::swap(this->mem, other.mem);
     std::swap(this->image_view, other.image_view);
@@ -33,15 +33,15 @@ Texture3D& Texture3D::operator=(Texture3D&& other) {
 
 Texture3D::~Texture3D() {
     if (this->image != vk::Image()) {
-        this->device->get().destroyImageView(this->image_view);
-        this->device->get().freeMemory(this->mem);
-        this->device->get().destroyImage(this->image);
+        this->dev->get().destroyImageView(this->image_view);
+        this->dev->get().freeMemory(this->mem);
+        this->dev->get().destroyImage(this->image);
     }
 }
 
-Texture3D::Texture3D(const Device& device, vk::Format format, vk::Extent3D extent, vk::ImageUsageFlags flags):
-    device(&device) {
-    this->image = device->createImage({
+Texture3D::Texture3D(const Device& dev, vk::Format format, vk::Extent3D extent, vk::ImageUsageFlags flags):
+    dev(&dev) {
+    this->image = dev->createImage({
         {},
         vk::ImageType::e3D,
         format,
@@ -57,10 +57,10 @@ Texture3D::Texture3D(const Device& device, vk::Format format, vk::Extent3D exten
         vk::ImageLayout::eUndefined
     });
 
-    const auto reqs = device->getImageMemoryRequirements(this->image);
+    const auto reqs = dev->getImageMemoryRequirements(this->image);
 
-    this->mem = device.allocate(reqs, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    device->bindImageMemory(this->image, this->mem, 0);
+    this->mem = dev.allocate(reqs, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    dev->bindImageMemory(this->image, this->mem, 0);
 
     auto sub_resource_range = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
 
@@ -71,7 +71,7 @@ Texture3D::Texture3D(const Device& device, vk::Format format, vk::Extent3D exten
         vk::ComponentSwizzle::eA
     );
 
-    this->image_view = device->createImageView({
+    this->image_view = dev->createImageView({
         {},
         this->image,
         vk::ImageViewType::e3D,

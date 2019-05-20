@@ -5,6 +5,7 @@
 #include "backend/Display.h"
 #include "render/DdaRaytracer.h"
 #include "render/SvoRaytraceAlgorithm.h"
+#include "render/DdaRaytraceAlgorithm.h"
 #include "render/Renderer.h"
 #include "core/Logger.h"
 #include "core/Error.h"
@@ -52,10 +53,11 @@ Vec3F ray(const Vec3F& dir, Vec2F uv) {
 void main_loop(EventDispatcher& dispatcher, Display* display) {
     check_setup(display);
 
-    const auto grid = Grid::load_tiff("/home/robin/Downloads/ZF-Eye.tif");
-    const auto octree = std::make_shared<Octree>(grid, 30, true);
+    const auto grid = std::make_shared<Grid>(Grid::load_tiff("/home/robin/Downloads/ZF-Eye.tif"));
+    // const auto octree = std::make_shared<Octree>(grid, 30, true);
 
-    auto algo = SvoRaytraceAlgorithm(resources::open("resources/svo_laine.comp"), octree);
+    // auto algo = SvoRaytraceAlgorithm(resources::open("resources/svo_laine.comp"), octree);
+    auto algo = DdaRaytraceAlgorithm(grid);
     auto renderer = Renderer(display, &algo);
 
     bool quit = false;
