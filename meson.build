@@ -45,8 +45,6 @@ sources = [
     'src/render/FrameResources.cpp',
     'src/render/SimpleShaderRenderer.cpp',
     'src/render/DdaRaytracer.cpp',
-    'src/render/SvoRaytracer.cpp',
-    'src/render/ComputeSvoRaytracer.cpp',
     'src/render/Renderer.cpp',
     'src/render/SvoRaytraceAlgorithm.cpp',
     'src/backend/backend.cpp',
@@ -65,7 +63,6 @@ shaders = [
     'resources/fullscreen_quad.vert',
     'resources/julia.frag',
     'resources/dda.frag',
-    'resources/svo.frag',
     'resources/svo.comp',
     'resources/svo_laine.comp',
     'resources/svo2.comp'

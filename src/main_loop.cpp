@@ -3,9 +3,7 @@
 #include <fmt/format.h>
 #include "backend/Event.h"
 #include "backend/Display.h"
-#include "render/SvoRaytracer.h"
 #include "render/DdaRaytracer.h"
-#include "render/ComputeSvoRaytracer.h"
 #include "render/SvoRaytraceAlgorithm.h"
 #include "render/Renderer.h"
 #include "core/Logger.h"
