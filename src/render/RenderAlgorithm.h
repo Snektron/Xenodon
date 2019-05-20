@@ -7,17 +7,21 @@
 #include "backend/RenderDevice.h"
 #include "utility/Span.h"
 
-struct RenderAlgorithmInstance {
-    virtual ~RenderAlgorithmInstance() = 0;
-    virtual void update_descriptors(vk::DescriptorSet set) = 0;
-    virtual void upload_buffers() = 0;
+struct Binding {
+    uint32_t binding;
+    vk::DescriptorType type;
+};
+
+struct RenderResources {
+    virtual ~RenderResources() = default;
+    virtual void update_descriptors(vk::DescriptorSet set) const = 0;
 };
 
 struct RenderAlgorithm {
     virtual ~RenderAlgorithm() = default;
     virtual std::string_view shader() const = 0;
-    virtual Span<vk::DescriptorSetLayoutBinding> bindings() const = 0;
-    virtual std::unique_ptr<RenderAlgorithmInstance> instantiate(const RenderDevice& rendev) const = 0;
+    virtual Span<Binding> bindings() const = 0;
+    virtual std::unique_ptr<RenderResources> upload_resources(const RenderDevice& rendev) const = 0;
 };
 
 

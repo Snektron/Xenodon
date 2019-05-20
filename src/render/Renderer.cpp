@@ -37,13 +37,18 @@ Renderer::Renderer(Display* display, const RenderAlgorithm* algorithm):
 
     std::copy(STANDARD_BINDINGS.begin(), STANDARD_BINDINGS.end(), std::back_inserter(this->bindings));
 
-    const auto custom_bindings = algorithm->bindings();
-    std::copy(custom_bindings.begin(), custom_bindings.end(), std::back_inserter(this->bindings));
+    for (auto [binding, type] : algorithm->bindings()) {
+        this->bindings.emplace_back(
+            binding,
+            type,
+            1,
+            vk::ShaderStageFlagBits::eCompute
+        );
+    }
 
     this->calculate_display_rect();
     this->create_resources();
     this->upload_uniform_buffers();
-    this->upload_custom_buffers();
 
     this->create_descriptor_sets();
     this->update_descriptor_sets();
@@ -132,7 +137,7 @@ void Renderer::create_resources() {
         const auto& device = rendev.device;
         const uint32_t outputs = static_cast<uint32_t>(rendev.outputs);
 
-        auto instance = this->algorithm->instantiate(rendev);
+        auto res = this->algorithm->upload_resources(rendev);
 
         auto descr_set_layout = device->createDescriptorSetLayoutUnique({
             {},
@@ -184,7 +189,7 @@ void Renderer::create_resources() {
 
         this->device_resources.emplace_back(DeviceResources{
             &rendev,
-            std::move(instance),
+            std::move(res),
 
             std::move(descr_set_layout),
             vk::UniqueDescriptorPool(),
@@ -271,7 +276,7 @@ void Renderer::update_descriptor_sets() {
 
                 drsc.rendev->device->updateDescriptorSets(descriptor_writes, nullptr);
 
-                drsc.instance->update_descriptors(set);
+                drsc.resources->update_descriptors(set);
             }
         }
     }
@@ -311,12 +316,6 @@ void Renderer::upload_uniform_buffers() {
         rendev.compute_command_pool.one_time_submit([&](vk::CommandBuffer cmd_buf) {
             cmd_buf.copyBuffer(staging_buffer.get(), drsc.uniform_buffer.get(), copy_info);
         });
-    }
-}
-
-void Renderer::upload_custom_buffers() {
-    for (auto& drsc : this->device_resources) {
-        drsc.instance->upload_buffers();
     }
 }
 

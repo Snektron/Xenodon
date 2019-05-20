@@ -22,11 +22,11 @@ layout(binding = 0) readonly uniform UniformBuffer {
     Rect display_region;
 } uniforms;
 
-layout(binding = 1) readonly buffer Octree {
+layout(binding = 1, rgba8) restrict writeonly uniform image2D render_target;
+
+layout(binding = 2) readonly buffer Octree {
     Node nodes[];
 } model;
-
-layout(binding = 2, rgba8) restrict writeonly uniform image2D render_target;
 
 const uint LEAF = 1 << 31;
 

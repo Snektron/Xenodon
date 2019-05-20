@@ -29,7 +29,7 @@ class Renderer {
 
     struct DeviceResources {
         const RenderDevice* rendev;
-        std::unique_ptr<RenderAlgorithmInstance> instance;
+        std::unique_ptr<RenderResources> resources;
 
         vk::UniqueDescriptorSetLayout descriptor_set_layout;
         vk::UniqueDescriptorPool descriptor_pool;
@@ -60,7 +60,6 @@ private:
     void create_command_buffers();
     void update_descriptor_sets();
     void upload_uniform_buffers();
-    void upload_custom_buffers();
     vk::UniqueDescriptorPool create_descriptor_pool(const Device& device, uint32_t sets);
     void calculate_display_rect();
 };

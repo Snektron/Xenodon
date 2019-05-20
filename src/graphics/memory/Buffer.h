@@ -7,11 +7,11 @@
 
 template <typename T>
 struct Buffer {
-    vk::Device device;
+    vk::Device dev;
     vk::Buffer buffer;
     vk::DeviceMemory mem;
 
-    Buffer(const Device& device, vk::DeviceSize elements, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags);
+    Buffer(const Device& dev, vk::DeviceSize elements, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags);
 
     Buffer(const Buffer&) = delete;
     Buffer& operator=(const Buffer&) = delete;
@@ -33,36 +33,40 @@ struct Buffer {
     vk::DeviceMemory memory() const {
         return this->mem;
     }
+
+    vk::Device device() const {
+        return this->dev;
+    }
 };
 
 template <typename T>
-Buffer<T>::Buffer(const Device& device, vk::DeviceSize elements, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags):
-    device(device.get()) {
+Buffer<T>::Buffer(const Device& dev, vk::DeviceSize elements, vk::BufferUsageFlags usage_flags, vk::MemoryPropertyFlags memory_flags):
+    dev(dev.get()) {
     auto buffer_create_info = vk::BufferCreateInfo(
         {},
         static_cast<vk::DeviceSize>(elements * sizeof(T)),
         usage_flags
     );
 
-    this->buffer = device->createBuffer(buffer_create_info);
-    const auto reqs = device->getBufferMemoryRequirements(this->buffer);
-    this->mem = device.allocate(reqs, memory_flags);
-    device->bindBufferMemory(this->buffer, this->mem, 0);
+    this->buffer = dev->createBuffer(buffer_create_info);
+    const auto reqs = dev->getBufferMemoryRequirements(this->buffer);
+    this->mem = dev.allocate(reqs, memory_flags);
+    dev->bindBufferMemory(this->buffer, this->mem, 0);
 }
 
 template <typename T>
 Buffer<T>::Buffer(Buffer&& other):
-    device(other.device),
+    dev(other.dev),
     buffer(other.buffer),
     mem(other.mem) {
-    other.device = vk::Device();
+    other.dev = vk::Device();
     other.buffer = vk::Buffer();
     other.mem = vk::DeviceMemory();
 }
 
 template <typename T>
 Buffer<T>& Buffer<T>::operator=(Buffer&& other) {
-    std::swap(this->device, other.device);
+    std::swap(this->dev, other.dev);
     std::swap(this->buffer, other.buffer);
     std::swap(this->mem, other.mem);
     return *this;
@@ -71,19 +75,19 @@ Buffer<T>& Buffer<T>::operator=(Buffer&& other) {
 template <typename T>
 Buffer<T>::~Buffer() {
     if (this->buffer != vk::Buffer()) {
-        this->device.freeMemory(this->mem);
-        this->device.destroyBuffer(this->buffer);
+        this->dev.freeMemory(this->mem);
+        this->dev.destroyBuffer(this->buffer);
     }
 }
 
 template <typename T>
 T* Buffer<T>::map(vk::DeviceSize offset, vk::DeviceSize size) const {
-    return reinterpret_cast<T*>(this->device.mapMemory(this->mem, offset * sizeof(T), size * sizeof(T)));
+    return reinterpret_cast<T*>(this->dev.mapMemory(this->mem, offset * sizeof(T), size * sizeof(T)));
 }
 
 template <typename T>
 void Buffer<T>::unmap() const {
-    this->device.unmapMemory(this->mem);
+    this->dev.unmapMemory(this->mem);
 }
 
 template <typename T>
