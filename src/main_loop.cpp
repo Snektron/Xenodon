@@ -1,6 +1,8 @@
 #include "main_loop.h"
 #include <chrono>
 #include <memory>
+#include <array>
+#include <cassert>
 #include <fmt/format.h>
 #include "backend/Event.h"
 #include "backend/Display.h"
@@ -15,6 +17,25 @@
 #include "resources.h"
 
 namespace {
+    enum class FileType {
+        Tiff,
+        Svo,
+        Unknown
+    };
+
+    struct ShaderOption {
+        std::string_view option;
+        FileType required_type;
+        std::string_view source;
+    };
+
+    constexpr const auto shader_options = std::array {
+        ShaderOption{"dda", FileType::Tiff, resources::open("resources/dda.comp")},
+        ShaderOption{"svo-naive", FileType::Svo, resources::open("resources/svo.comp")},
+        ShaderOption{"svo-laine", FileType::Svo, resources::open("resources/svo_laine.comp")},
+        ShaderOption{"svo-2", FileType::Svo, resources::open("resources/svo2.comp")},
+    };
+
     void check_setup(Display* display) {
         size_t num_devices = display->num_render_devices();
         if (num_devices == 0) {
@@ -41,11 +62,16 @@ namespace {
         LOGGER.log(fmt::to_string(buf));
     }
 
-    enum class FileType {
-        Tiff,
-        Svo,
-        Unknown
-    };
+    std::string_view file_type_to_string(FileType ft) {
+        switch (ft) {
+            case FileType::Tiff:
+                return "tiff";
+            case FileType::Svo:
+                return "svo";
+            case FileType::Unknown:
+                return "unknown";
+        }
+    }
 
     FileType parse_file_type(std::string_view str) {
         if (str == "tiff" || str == "tif") {
@@ -73,20 +99,59 @@ namespace {
         return parse_file_type(extension);
     }
 
-    std::unique_ptr<RenderAlgorithm> create_render_algorithm(const RenderParameters& render_params) {
-        FileType ft = guess_file_type(render_params);
+    const ShaderOption& select_shader(const RenderParameters& render_params, FileType model_type) {
+        if (!render_params.shader.empty()) {
+            for (const auto& opt : shader_options) {
+                if (opt.option == render_params.shader) {
+                    if (opt.required_type == model_type) {
+                        return opt;
+                    } else {
+                        throw Error(
+                            "Shader '{}' is incompatible with model type '{}' (requires '{}')",
+                            opt.option,
+                            file_type_to_string(model_type),
+                            file_type_to_string(opt.required_type)
+                        );
+                    }
+                }
+            }
 
-        switch (ft) {
+            throw Error("Invalid shader '{}'", render_params.shader);
+        } else {
+            // Select a default: the first one of the right file type appearing in the shader_options list
+
+            for (const auto& opt : shader_options) {
+                if (opt.required_type == model_type) {
+                    return opt;
+                }
+            }
+
+            assert(false); // unreachable
+        }
+    }
+
+    std::unique_ptr<RenderAlgorithm> create_render_algorithm(const RenderParameters& render_params) {
+        FileType model_type = guess_file_type(render_params);
+        if (model_type == FileType::Unknown) {
+            throw Error("Failed to parse model file type");
+        }
+
+        LOGGER.log("Model file type: '{}'", file_type_to_string(model_type));
+        const ShaderOption shader = select_shader(render_params, model_type);
+        LOGGER.log("Using shader '{}'", shader.option);
+
+        switch (model_type) {
             case FileType::Tiff: {
+                // There is only one DDA shader, so that should always be picked here
                 auto grid = std::make_shared<Grid>(Grid::load_tiff(render_params.model_path));
                 return std::make_unique<DdaRaytraceAlgorithm>(grid);
             }
             case FileType::Svo: {
                 auto octree = std::make_shared<Octree>(Octree::load_svo(render_params.model_path));
-                return std::make_unique<SvoRaytraceAlgorithm>(resources::open("resources/svo_laine.comp"), octree);
+                return std::make_unique<SvoRaytraceAlgorithm>(shader.source, octree);
             }
-            case FileType::Unknown:
-                throw Error("Failed to parse model file type");
+            default:
+                assert(false); // make compiler happy
         }
     }
 }

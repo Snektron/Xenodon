@@ -11,6 +11,7 @@ struct Display;
 struct RenderParameters {
     std::filesystem::path model_path;
     std::string_view model_type_override;
+    std::string_view shader;
     float density = 1.f;
 };
 
