@@ -49,10 +49,6 @@ public:
 
     void save_svo(const std::filesystem::path& path) const;
 
-    const Node* find(const Vec3Sz& pos, size_t max_depth = std::numeric_limits<size_t>::max()) const;
-
-    Vec3F test_trace(const Vec3F& ro, Vec3F rd, bool debug) const;
-
     Span<Node> data() const {
         return this->nodes;
     }
