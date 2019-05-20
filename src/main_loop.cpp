@@ -1,8 +1,10 @@
 #include "main_loop.h"
 #include <chrono>
+#include <memory>
 #include <fmt/format.h>
 #include "backend/Event.h"
 #include "backend/Display.h"
+#include "render/RenderAlgorithm.h"
 #include "render/SvoRaytraceAlgorithm.h"
 #include "render/DdaRaytraceAlgorithm.h"
 #include "render/Renderer.h"
@@ -38,31 +40,66 @@ namespace {
         fmt::format_to(buf, " {}", num_devices > 1 || display->render_device(0).outputs > 1 ? "outputs" : "output");
         LOGGER.log(fmt::to_string(buf));
     }
-}
 
-Vec3F ray(const Vec3F& dir, Vec2F uv) {
-    uv -= 0.5;
-
-    Vec3F right = normalize(cross(dir, Vec3F{0, 1, 0}));
-    Vec3F up = normalize(cross(right, dir));
-
-    return normalize(uv.x * right + uv.y * up + dir);
-}
-
-void main_loop(EventDispatcher& dispatcher, Display* display) {
-    check_setup(display);
-
-    const auto grid = std::make_shared<Grid>(Grid::load_tiff("/home/robin/Downloads/ZF-Eye.tif"));
-    const auto octree = std::make_shared<Octree>(*grid.get(), 30, true);
-
-    auto algo = SvoRaytraceAlgorithm(resources::open("resources/svo_laine.comp"), octree);
-
-    auto render_params = RenderParameters {
-        .density = 40.f
+    enum class FileType {
+        Tiff,
+        Svo,
+        Unknown
     };
 
-    // auto algo = DdaRaytraceAlgorithm(grid);
-    auto renderer = Renderer(display, &algo, render_params);
+    FileType parse_file_type(std::string_view str) {
+        if (str == "tiff" || str == "tif") {
+            return FileType::Tiff;
+        } else if (str == "svo") {
+            return FileType::Svo;
+        }
+
+        return FileType::Unknown;
+    }
+
+    FileType guess_file_type(const RenderParameters& render_params) {
+        if (!render_params.model_type_override.empty()) {
+            return parse_file_type(render_params.model_type_override);
+        }
+
+        std::string_view extension = render_params.model_path.extension().native();
+        if (extension.empty()) {
+            return FileType::Unknown;
+        }
+
+        // Move past the dot
+        extension.remove_prefix(1);
+
+        return parse_file_type(extension);
+    }
+
+    std::unique_ptr<RenderAlgorithm> create_render_algorithm(const RenderParameters& render_params) {
+        FileType ft = guess_file_type(render_params);
+
+        switch (ft) {
+            case FileType::Tiff: {
+                auto grid = std::make_shared<Grid>(Grid::load_tiff(render_params.model_path));
+                return std::make_unique<DdaRaytraceAlgorithm>(grid);
+            }
+            case FileType::Svo: {
+                auto octree = std::make_shared<Octree>(Octree::load_svo(render_params.model_path));
+                return std::make_unique<SvoRaytraceAlgorithm>(resources::open("resources/svo_laine.comp"), octree);
+            }
+            case FileType::Unknown:
+                throw Error("Failed to parse model file type");
+        }
+    }
+}
+
+void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParameters& render_params) {
+    check_setup(display);
+
+    auto shader_params = Renderer::ShaderParameters {
+        .density = render_params.density
+    };
+
+    auto algo = create_render_algorithm(render_params);
+    auto renderer = Renderer(display, algo.get(), shader_params);
 
     bool quit = false;
     dispatcher.bind_close([&quit] {

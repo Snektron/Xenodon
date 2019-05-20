@@ -92,7 +92,7 @@ Octree::Octree(const Grid& src, uint8_t min_channel_diff, bool dag) {
     }
 }
 
-Octree Octree::load_svo(std::filesystem::path path) {
+Octree Octree::load_svo(const std::filesystem::path& path) {
     auto in = std::ifstream(path, std::ios::binary);
     if (!in) {
         throw Error("Failed to open");
@@ -100,7 +100,8 @@ Octree Octree::load_svo(std::filesystem::path path) {
 
     char id[SVO_FMT_ID.size()];
     in.read(id, SVO_FMT_ID.size());
-    if (SVO_FMT_ID != id) {
+    if (SVO_FMT_ID != std::string_view(id, SVO_FMT_ID.size())) {
+        fmt::print("Fmt id: '{}', got: '{}'\n", SVO_FMT_ID, std::string_view(id, SVO_FMT_ID.size()));
         throw Error("Invalid format id");
     }
 
@@ -121,7 +122,7 @@ Octree Octree::load_svo(std::filesystem::path path) {
     in.seekg(pos);
     size_t remaining = static_cast<size_t>(end - pos);
     if (remaining != sizeof(Node) * num_nodes) {
-        throw Error("Dimension does not match number of nodes");
+        throw Error("File size does not match number of nodes");
     }
 
     auto nodes = std::vector<Node>(num_nodes);
@@ -137,7 +138,7 @@ Octree Octree::load_svo(std::filesystem::path path) {
     return Octree(static_cast<size_t>(dim), std::move(nodes));
 }
 
-void Octree::save_svo(std::filesystem::path path) const {
+void Octree::save_svo(const std::filesystem::path& path) const {
     auto out = std::ofstream(path, std::ios::binary);
     if (!out) {
         throw Error("Failed to open");

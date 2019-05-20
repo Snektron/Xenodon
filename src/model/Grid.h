@@ -28,7 +28,7 @@ private:
 public:
     Grid(Vec3Sz dim);
 
-    static Grid load_tiff(std::filesystem::path path);
+    static Grid load_tiff(const std::filesystem::path& path);
 
     VolScanResult vol_scan(Vec3Sz bmin, Vec3Sz bmax) const;
 

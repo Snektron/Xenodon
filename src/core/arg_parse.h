@@ -9,7 +9,7 @@
 #include <charconv>
 #include <system_error>
 #include <filesystem>
-#include <cstdint>
+#include <cctype>
 #include "utility/Span.h"
 #include "core/Error.h"
 
@@ -71,15 +71,22 @@ namespace args {
 
     void parse(Span<const char*> args, Command& cmd);
 
-    inline constexpr auto string_opt(const char** var) {
+    constexpr auto string_opt(const char** var) {
         return [var](const char* arg) {
             *var = arg;
             return true;
         };
     }
 
+    constexpr auto string_opt(std::string_view* var) {
+        return [var](std::string_view arg) {
+            *var = arg;
+            return true;
+        };
+    }
+
     template <typename T, typename = std::enable_if_t<std::numeric_limits<T>::is_integer>>
-    inline constexpr auto int_range_opt(T* var, T min = std::numeric_limits<T>::min(), T max = std::numeric_limits<T>::max()) {
+    constexpr auto int_range_opt(T* var, T min = std::numeric_limits<T>::min(), T max = std::numeric_limits<T>::max()) {
         return [var, min, max](std::string_view arg) {
             T value;
             auto [end, err] = std::from_chars(arg.begin(), arg.end(), value);
@@ -94,7 +101,38 @@ namespace args {
         };
     }
 
-    inline constexpr auto path_opt(std::filesystem::path* var) {
+    template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    constexpr auto float_range_opt(T* var, T min = std::numeric_limits<T>::lowest(), T max = std::numeric_limits<T>::max()) {
+        return [var, min, max](const char* arg) {
+            for (auto c : std::string_view(arg)) {
+                if (!std::isdigit(c) && c != '.' && c != '-') {
+                    return false;
+                }
+            }
+
+            T value;
+            char* end;
+
+            if constexpr (std::is_same_v<T, float>) {
+                value = std::strtof(arg, &end);
+            } else if constexpr (std::is_same_v<T, double>) {
+                value = std::strtod(arg, &end);
+            } else if constexpr (std::is_same_v<T, long double>) {
+                value = std::strtold(arg, &end);
+            }
+
+            if (end == arg) {
+                return false;
+            } else if (value < min || value > max) {
+                return false;
+            }
+
+            *var = value;
+            return true;
+        };
+    }
+
+    constexpr auto path_opt(std::filesystem::path* var) {
         return [var](std::string_view arg) {
             *var = arg;
             return true;

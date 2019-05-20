@@ -45,9 +45,9 @@ private:
 public:
     Octree(const Grid& src, uint8_t min_channel_diff, bool dag);
 
-    static Octree load_svo(std::filesystem::path path);
+    static Octree load_svo(const std::filesystem::path& path);
 
-    void save_svo(std::filesystem::path path) const;
+    void save_svo(const std::filesystem::path& path) const;
 
     const Node* find(const Vec3Sz& pos, size_t max_depth = std::numeric_limits<size_t>::max()) const;
 

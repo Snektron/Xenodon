@@ -24,7 +24,7 @@ Grid::Grid(Vec3Sz dim):
     }
 }
 
-Grid Grid::load_tiff(std::filesystem::path path) {
+Grid Grid::load_tiff(const std::filesystem::path& path) {
     auto tiff = TiffPtr(TIFFOpen(path.c_str(), "r"));
     if (!tiff) {
         throw Error("Failed to open");

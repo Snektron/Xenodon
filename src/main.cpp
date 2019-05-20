@@ -11,21 +11,11 @@
 #include "backend/backend.h"
 #include "backend/Display.h"
 #include "backend/Event.h"
-#include "backend/headless/headless.h"
 #include "utility/Span.h"
 #include "resources.h"
-#include "version.h"
 #include "main_loop.h"
 #include "sysinfo.h"
 #include "convert.h"
-
-#if defined(XENODON_PRESENT_XORG)
-    #include "backend/xorg/xorg.h"
-#endif
-
-#if defined(XENODON_PRESENT_DIRECT)
-    #include "backend/direct/direct.h"
-#endif
 
 namespace {
     void print_help(const char* program_name) {
@@ -35,7 +25,8 @@ namespace {
     struct RenderOptions {
         bool quiet = false;
         std::filesystem::path log_output;
-        std::filesystem::path model_path;
+
+        RenderParameters render_params;
 
         struct {
             std::filesystem::path config;
@@ -73,10 +64,12 @@ namespace {
                 {args::path_opt(&opts.headless.config), "config path", "--headless"},
                 {args::path_opt(&opts.headless.output), "output path", "--output"},
                 {args::path_opt(&opts.direct.config), "config path", "--direct"},
-                {args::path_opt(&opts.xorg.multi_gpu_config), "config pathh", "--xorg-multi-gpu"}
+                {args::path_opt(&opts.xorg.multi_gpu_config), "config path", "--xorg-multi-gpu"},
+                {args::float_range_opt(&opts.render_params.density, 0.f), "density", "--density"},
+                {args::string_opt(&opts.render_params.model_type_override), "model type", "--model-type"}
             },
             .positional = {
-                {args::path_opt(&opts.model_path), "model"}
+                {args::path_opt(&opts.render_params.model_path), "model"}
             }
         };
 
@@ -139,12 +132,16 @@ namespace {
             return;
         }
 
-        main_loop(dispatcher, display.get());
+        try {
+            main_loop(dispatcher, display.get(), opts.render_params);
+        } catch (const Error& e) {
+            fmt::print("Error: {}\n", e.what());
+        }
     }
 }
 
 int main(int argc, const char* argv[]) {
-    if (argc <= 1) {
+    if (argc < 2) {
         fmt::print("Error: Subcommand required, see `{} help`\n", argv[0]);
         return 0;
     }
