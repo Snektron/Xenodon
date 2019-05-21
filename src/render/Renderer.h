@@ -30,7 +30,9 @@ private:
         // the Camera struct cant be used here directly because of
         // different alignment requirements of CPU and GPU.
         struct {
-            Vec4F dir, pos, up;
+            Vec4F forward;
+            Vec4F up;
+            Vec4F translation;
         } camera;
 
         float time;

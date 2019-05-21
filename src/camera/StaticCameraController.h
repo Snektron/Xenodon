@@ -4,7 +4,7 @@
 #include "camera/CameraController.h"
 #include "camera/Camera.h"
 
-class StaticCameraController {
+class StaticCameraController: public CameraController {
     Camera cam;
 
 public:

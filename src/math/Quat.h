@@ -101,42 +101,42 @@ struct Quat {
 
 template <typename T, typename U>
 constexpr auto operator+(const Quat<T>& lhs, const Quat<U>& rhs) {
-    return make_quat(lhs.elements + rhs.elements);
+    return Quat(lhs.elements + rhs.elements);
 }
 
 template <typename T, typename U>
 constexpr auto operator+(const T& lhs, const Quat<U>& rhs) {
-    return make_quat(lhs + rhs.elements);
+    return Quat(lhs + rhs.elements);
 }
 
 template <typename T, typename U>
 constexpr auto operator+(const Quat<T>& lhs, const U& rhs) {
-    return make_quat(lhs.elements + rhs);
+    return Quat(lhs.elements + rhs);
 }
 
 template <typename T, typename U>
 constexpr auto operator-(const Quat<T>& lhs, const Quat<U>& rhs) {
-    return make_quat(lhs.elements - rhs.elements);
+    return Quat(lhs.elements - rhs.elements);
 }
 
 template <typename T, typename U>
 constexpr auto operator-(const T& lhs, const Quat<U>& rhs) {
-    return make_quat(lhs - rhs.elements);
+    return Quat(lhs - rhs.elements);
 }
 
 template <typename T, typename U>
 constexpr auto operator-(const Quat<T>& lhs, const U& rhs) {
-    return make_quat(lhs.elements - rhs);
+    return Quat(lhs.elements - rhs);
 }
 
 template <typename T>
 constexpr auto operator-(const Quat<T>& q) {
-    return make_quat(-q.elements);
+    return Quat(-q.elements);
 }
 
 template <typename T, typename U>
 constexpr auto operator*(const Quat<T>& lhs, const Quat<U>& rhs) {
-    return make_quat(
+    return Quat(
         lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y,
         lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x,
         lhs.w * rhs.z + lhs.x * rhs.y - lhs.y * rhs.x + lhs.z * rhs.w,
@@ -146,27 +146,27 @@ constexpr auto operator*(const Quat<T>& lhs, const Quat<U>& rhs) {
 
 template <typename T, typename U>
 constexpr auto operator*(const Quat<T>& lhs, const Vec3<U>& rhs) {
-    return (lhs * make_quat<U>(rhs, 0)).vector;
+    return (lhs * Quat<U>(rhs, 0)).vector;
 }
 
 template <typename T, typename U>
 constexpr auto operator*(const T& lhs, const Quat<U>& rhs) {
-    return make_quat(lhs * rhs.elements);
+    return Quat(lhs * rhs.elements);
 }
 
 template <typename T, typename U>
 constexpr auto operator*(const Quat<T>& lhs, const U& rhs) {
-    return make_quat(lhs.elements * rhs);
+    return Quat(lhs.elements * rhs);
 }
 
 template <typename T, typename U>
 constexpr auto operator/(const T& lhs, const Quat<U>& rhs) {
-    return make_quat(lhs / rhs.elements);
+    return Quat(lhs / rhs.elements);
 }
 
 template <typename T, typename U>
 constexpr auto operator/(const Quat<T>& lhs, const U& rhs) {
-    return make_quat(lhs.elements / rhs);
+    return Quat(lhs.elements / rhs);
 }
 
 template <typename Os, typename T>
@@ -184,7 +184,7 @@ Os& operator<<(Os& os, const Quat<T>& q) {
 
 template <typename T>
 constexpr auto conjugate(const Quat<T>& q) {
-    return make_quat(-q.vector, q.scalar);
+    return Quat(-q.vector, q.scalar);
 }
 
 template <typename T>

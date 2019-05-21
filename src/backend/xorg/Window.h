@@ -35,6 +35,7 @@ class Window {
     EventDispatcher* dispatcher;
     uint16_t width, height;
     XcbKeySymbolsPtr key_symbols;
+    int16_t mouse_x, mouse_y;
 
 public:
     using ResizeCallback = std::function<void(vk::Extent2D resize_callback)>;

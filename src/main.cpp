@@ -67,7 +67,7 @@ namespace {
                 {args::path_opt(&opts.xorg.multi_gpu_config), "config path", "--xorg-multi-gpu"},
                 {args::float_range_opt(&opts.render_params.density, 0.f), "density", "--density"},
                 {args::string_opt(&opts.render_params.model_type_override), "model type", "--model-type"},
-                {args::string_opt(&opts.render_params.shader), "shader", "--shader"}
+                {args::string_opt(&opts.render_params.shader), "shader", "--shader", 's'}
             },
             .positional = {
                 {args::path_opt(&opts.render_params.model_path), "model"}

@@ -13,11 +13,10 @@ namespace {
     constexpr const uint32_t EVENT_MASK =
           XCB_EVENT_MASK_KEY_RELEASE
         | XCB_EVENT_MASK_KEY_PRESS
-        | XCB_EVENT_MASK_EXPOSURE
         | XCB_EVENT_MASK_STRUCTURE_NOTIFY
         | XCB_EVENT_MASK_POINTER_MOTION
         | XCB_EVENT_MASK_BUTTON_PRESS
-        | XCB_EVENT_MASK_BUTTON_RELEASE;
+        | XCB_EVENT_MASK_ENTER_WINDOW;
 
     const char* x_strerr(int err) {
         switch (err) {
@@ -79,7 +78,7 @@ void Window::handle_event(ResizeCallback cbk, const xcb_generic_event_t& event) 
 
     switch (static_cast<int>(event.response_type) & ~0x80) {
         case XCB_CLIENT_MESSAGE: {
-            const auto& event_args = reinterpret_cast<const xcb_client_message_event_t&>(event);
+            const auto& event_args = *reinterpret_cast<const xcb_client_message_event_t*>(&event);
 
             if (event_args.data.data32[0] == this->atom_wm_delete_window->atom) {
                 this->dispatcher->dispatch_close_event();
@@ -88,17 +87,17 @@ void Window::handle_event(ResizeCallback cbk, const xcb_generic_event_t& event) 
             break;
         }
         case XCB_KEY_PRESS: {
-            const auto& event_args = reinterpret_cast<const xcb_key_press_event_t&>(event);
+            const auto& event_args = *reinterpret_cast<const xcb_key_press_event_t*>(&event);
             dispatch_key_event(Action::Press, event_args.detail);
             break;
         }
         case XCB_KEY_RELEASE: {
-            const auto& event_args = reinterpret_cast<const xcb_key_release_event_t&>(event);
+            const auto& event_args = *reinterpret_cast<const xcb_key_release_event_t*>(&event);
             dispatch_key_event(Action::Release, event_args.detail);
             break;
         }
         case XCB_CONFIGURE_NOTIFY: {
-            const auto& event_args = reinterpret_cast<const xcb_configure_notify_event_t&>(event);
+            const auto& event_args = *reinterpret_cast<const xcb_configure_notify_event_t*>(&event);
 
             // Is the notification a window drag event?
             if (this->width == event_args.width && this->height == event_args.height)
@@ -120,6 +119,27 @@ void Window::handle_event(ResizeCallback cbk, const xcb_generic_event_t& event) 
             // Theres only a single gpu and screen at all times
             this->dispatcher->dispatch_swapchain_recreate_event(0, 0);
 
+            break;
+        }
+        case XCB_MOTION_NOTIFY: {
+            const auto& event_args = *reinterpret_cast<const xcb_motion_notify_event_t*>(&event);
+
+            int dx = -static_cast<int>(this->mouse_x - event_args.event_x);
+            int dy = static_cast<int>(this->mouse_y - event_args.event_y);
+
+            this->mouse_x = event_args.event_x;
+            this->mouse_y = event_args.event_y;
+
+            if (dx != 0 || dy != 0) {
+                this->dispatcher->dispatch_mouse_motion_event(dx, dy);
+            }
+
+            break;
+        }
+        case XCB_ENTER_NOTIFY: {
+            const auto& event_args = *reinterpret_cast<const xcb_enter_notify_event_t*>(&event);
+            this->mouse_x = event_args.event_x;
+            this->mouse_y = event_args.event_y;
             break;
         }
     }
@@ -192,9 +212,9 @@ void Window::init_window(xcb_screen_t* screen, vk::Extent2D extent, bool overrid
     }
 
     {
-        this->atom_wm_delete_window = this->atom(false, std::string_view{"WM_DELETE_WINDOW"});
+        this->atom_wm_delete_window = this->atom(false, "WM_DELETE_WINDOW");
 
-        AtomReply atom_wm_protocols = this->atom(true, std::string_view{"WM_PROTOCOLS"});
+        AtomReply atom_wm_protocols = this->atom(true, "WM_PROTOCOLS");
 
         xcb_change_property(
             this->connection.get(),

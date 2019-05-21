@@ -4,7 +4,9 @@
 #include "math/Vec.h"
 
 struct Camera {
-    Vec3F dir, pos, up;
+    Vec3F forward;
+    Vec3F up;
+    Vec3F translation;
 };
 
 #endif

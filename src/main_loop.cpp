@@ -12,6 +12,7 @@
 #include "render/DdaRaytraceAlgorithm.h"
 #include "render/Renderer.h"
 #include "camera/Camera.h"
+#include "camera/OrbitCameraController.h"
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/Grid.h"
@@ -168,10 +169,39 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     auto algo = create_render_algorithm(render_params);
     auto renderer = Renderer(display, algo.get(), shader_params);
 
-    const auto cam = Camera {
-        .dir = Vec3F(-1, 0, 0),
-        .pos = Vec3F(3, 1.5f, 1.5f),
-        .up = Vec3F(0, 1, 0)
+    auto controller = OrbitCameraController();
+
+    Action left = Action::Release;
+    Action right = Action::Release;
+    Action up = Action::Release;
+    Action down = Action::Release;
+    Action roll_left = Action::Release;
+    Action roll_right = Action::Release;
+    Action zoom_in = Action::Release;
+    Action zoom_out = Action::Release;
+
+    dispatcher.bind(Key::A, [&](Action a) { left = a; });
+    dispatcher.bind(Key::D, [&](Action a) { right = a; });
+    dispatcher.bind(Key::W, [&](Action a) { up = a; });
+    dispatcher.bind(Key::S, [&](Action a) { down = a; });
+    dispatcher.bind(Key::Q, [&](Action a) { roll_left = a; });
+    dispatcher.bind(Key::E, [&](Action a) { roll_right = a; });
+    dispatcher.bind(Key::Up, [&](Action a) { zoom_in = a; });
+    dispatcher.bind(Key::Down, [&](Action a) { zoom_out = a; });
+
+    auto update_camera = [&](float dt) {
+        const float sensivity = dt;
+        const float zoom_sensivity = dt;
+
+        float dyaw = (left == Action::Press ? sensivity : 0.f) + (right == Action::Press ? -sensivity : 0.f);
+        float dpitch = (up == Action::Press ? sensivity : 0.f) + (down == Action::Press ? -sensivity : 0.f);
+        float droll = (roll_left == Action::Press ? sensivity : 0.f) + (roll_right == Action::Press ? -sensivity : 0.f);
+        float dzoom = (zoom_in == Action::Press ? -zoom_sensivity : 0.f) + (zoom_out == Action::Press ? zoom_sensivity : 0.f);
+
+        controller.rotate_yaw(dyaw);
+        controller.rotate_pitch(dpitch);
+        controller.rotate_roll(droll);
+        controller.zoom(dzoom);
     };
 
     bool quit = false;
@@ -189,21 +219,30 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     });
 
     auto start = std::chrono::high_resolution_clock::now();
+    auto last_frame = start;
     size_t frames = 0;
 
     LOGGER.log("Starting render loop...");
     while (!quit) {
         ++frames;
 
-        renderer.render(cam);
+        auto frame_start = std::chrono::high_resolution_clock::now();
+        float dt = std::chrono::duration<float>(frame_start - last_frame).count();
+        last_frame = frame_start;
 
-        auto now = std::chrono::high_resolution_clock::now();
-        auto diff = std::chrono::duration<double>(now - start);
+        update_camera(dt);
 
-        if (diff > std::chrono::seconds{5}) {
-            LOGGER.log("FPS: {}", static_cast<double>(frames) / diff.count());
-            frames = 0;
-            start = now;
+        renderer.render(controller.camera());
+
+        {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto diff = std::chrono::duration<double>(now - start);
+
+            if (diff > std::chrono::seconds{5}) {
+                LOGGER.log("FPS: {}", static_cast<double>(frames) / diff.count());
+                frames = 0;
+                start = now;
+            }
         }
 
         display->poll_events();

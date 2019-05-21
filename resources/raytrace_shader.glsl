@@ -4,7 +4,9 @@
 // Define common structures, bindings and functions that every shader needs
 
 struct Camera {
-    vec4 dir, pos, up;
+    vec4 forward;
+    vec4 up;
+    vec4 translation;
 };
 
 struct Rect {
