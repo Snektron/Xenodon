@@ -16,6 +16,8 @@
 class Renderer {
 public:
     struct ShaderParameters {
+        Vec4F voxel_ratio;
+        Vec4<unsigned> model_dim;
         float density;
     };
 

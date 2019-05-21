@@ -4,6 +4,7 @@
 #include <string_view>
 #include <filesystem>
 #include "utility/Span.h"
+#include "math/Vec.h"
 
 struct EventDispatcher;
 struct Display;
@@ -12,6 +13,7 @@ struct RenderParameters {
     std::filesystem::path model_path;
     std::string_view model_type_override;
     std::string_view shader;
+    Vec3F voxel_ratio = Vec3F(1, 1, 1);
     float density = 1.f;
 };
 

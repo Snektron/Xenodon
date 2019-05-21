@@ -71,6 +71,34 @@ namespace args {
 
     void parse(Span<const char*> args, Command& cmd);
 
+    template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    bool parse_float(std::string_view str, T& out) {
+        for (auto c : str) {
+            if (!std::isdigit(c) && c != '.' && c != '-') {
+                return false;
+            }
+        }
+
+        T value;
+        char* end;
+
+        // use std::string because c++ cant into float parsing
+        if constexpr (std::is_same_v<T, float>) {
+            value = std::strtof(std::string(str).c_str(), &end);
+        } else if constexpr (std::is_same_v<T, double>) {
+            value = std::strtod(std::string(str).c_str(), &end);
+        } else if constexpr (std::is_same_v<T, long double>) {
+            value = std::strtold(std::string(str).c_str(), &end);
+        }
+
+        if (end == str) {
+            return false;
+        }
+
+        out = value;
+        return true;
+    }
+
     constexpr auto string_opt(const char** var) {
         return [var](const char* arg) {
             *var = arg;
@@ -103,27 +131,13 @@ namespace args {
 
     template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
     constexpr auto float_range_opt(T* var, T min = std::numeric_limits<T>::lowest(), T max = std::numeric_limits<T>::max()) {
-        return [var, min, max](const char* arg) {
-            for (auto c : std::string_view(arg)) {
-                if (!std::isdigit(c) && c != '.' && c != '-') {
-                    return false;
-                }
-            }
-
+        return [var, min, max](std::string_view arg) {
             T value;
-            char* end;
-
-            if constexpr (std::is_same_v<T, float>) {
-                value = std::strtof(arg, &end);
-            } else if constexpr (std::is_same_v<T, double>) {
-                value = std::strtod(arg, &end);
-            } else if constexpr (std::is_same_v<T, long double>) {
-                value = std::strtold(arg, &end);
+            if (!parse_float(arg, value)) {
+                return false;
             }
 
-            if (end == arg) {
-                return false;
-            } else if (value < min || value > max) {
+            if (value < min || value > max) {
                 return false;
             }
 

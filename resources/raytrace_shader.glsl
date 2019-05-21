@@ -15,6 +15,8 @@ struct Rect {
 };
 
 struct RenderParameters {
+    vec4 voxel_ratio;
+    uvec4 model_dim;
     float density;
 };
 

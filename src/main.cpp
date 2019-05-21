@@ -51,6 +51,38 @@ namespace {
         } xorg;
     };
 
+    auto voxel_ratio_opt(Vec3F* var) {
+        return [var](std::string_view arg) {
+            const auto first = arg.find(':');
+            const auto second = arg.find(':', first + 1);
+
+            if (first == std::string_view::npos || second == std::string_view::npos) {
+                return false;
+            }
+
+            const std::string_view x = arg.substr(0, first);
+            const std::string_view y = arg.substr(first + 1, second - first - 1);
+            const std::string_view z = arg.substr(second + 1);
+
+            if (x.empty() || y.empty() || z.empty()) {
+                return false;
+            }
+
+            Vec3F value;
+            bool valid = true;
+            valid &= args::parse_float(x, value.x);
+            valid &= args::parse_float(y, value.y);
+            valid &= args::parse_float(z, value.z);
+
+            if (valid && value.x > 0 && value.y > 0 && value.z > 0) {
+                *var = value;
+                return true;
+            }
+
+            return false;
+        };
+    }
+
     RenderOptions parse_render_args(Span<const char*> args) {
         RenderOptions opts;
 
@@ -67,7 +99,8 @@ namespace {
                 {args::path_opt(&opts.xorg.multi_gpu_config), "config path", "--xorg-multi-gpu"},
                 {args::float_range_opt(&opts.render_params.density, 0.f), "density", "--density"},
                 {args::string_opt(&opts.render_params.model_type_override), "model type", "--model-type"},
-                {args::string_opt(&opts.render_params.shader), "shader", "--shader", 's'}
+                {args::string_opt(&opts.render_params.shader), "shader", "--shader", 's'},
+                {voxel_ratio_opt(&opts.render_params.voxel_ratio), "voxel dimension ratio", "--voxel-ratio", 'r'}
             },
             .positional = {
                 {args::path_opt(&opts.render_params.model_path), "model"}

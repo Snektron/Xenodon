@@ -133,7 +133,12 @@ namespace {
         }
     }
 
-    std::unique_ptr<RenderAlgorithm> create_render_algorithm(const RenderParameters& render_params) {
+    struct CreateRenderAlgorithmResult {
+        std::unique_ptr<RenderAlgorithm> algo;
+        Vec3Sz model_dim;
+    };
+
+    CreateRenderAlgorithmResult create_render_algorithm(const RenderParameters& render_params) {
         FileType model_type = guess_file_type(render_params);
         if (model_type == FileType::Unknown) {
             throw Error("Failed to parse model file type");
@@ -147,11 +152,17 @@ namespace {
             case FileType::Tiff: {
                 // There is only one DDA shader, so that should always be picked here
                 auto grid = std::make_shared<Grid>(Grid::load_tiff(render_params.model_path));
-                return std::make_unique<DdaRaytraceAlgorithm>(grid);
+                return {
+                    std::make_unique<DdaRaytraceAlgorithm>(grid),
+                    grid->dimensions()
+                };
             }
             case FileType::Svo: {
                 auto octree = std::make_shared<Octree>(Octree::load_svo(render_params.model_path));
-                return std::make_unique<SvoRaytraceAlgorithm>(shader.source, octree);
+                return {
+                    std::make_unique<SvoRaytraceAlgorithm>(shader.source, octree),
+                    Vec3Sz(octree->side())
+                };
             }
             default:
                 assert(false); // make compiler happy
@@ -162,11 +173,15 @@ namespace {
 void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParameters& render_params) {
     check_setup(display);
 
+    auto [algo, dim] = create_render_algorithm(render_params);
+    LOGGER.log("Model dimensions: {}x{}x{}", dim.x, dim.y, dim.z);
+
     auto shader_params = Renderer::ShaderParameters {
+        .voxel_ratio = Vec4F(render_params.voxel_ratio, 0),
+        .model_dim = Vec4<unsigned>(static_cast<Vec3<unsigned>>(dim), 0),
         .density = render_params.density
     };
 
-    auto algo = create_render_algorithm(render_params);
     auto renderer = Renderer(display, algo.get(), shader_params);
 
     auto controller = OrbitCameraController();
