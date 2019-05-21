@@ -1,50 +1,9 @@
 #version 450
 
-struct Rect {
-    ivec2 offset;
-    uvec2 extent;
-};
+#include "raytrace_shader.glsl"
+#include "octree.glsl"
 
-struct Node {
-    uint children[8];
-    uint color;
-    uint is_leaf_depth;
-};
-
-struct RenderParameters {
-    float density;
-};
-
-layout(local_size_x = 8, local_size_y = 8) in;
-
-layout(push_constant) uniform PushConstant {
-    float time;
-} push;
-
-layout(binding = 0) readonly uniform UniformBuffer {
-    Rect output_region;
-    Rect display_region;
-    RenderParameters params;
-} uniforms;
-
-layout(binding = 1, rgba8) restrict writeonly uniform image2D render_target;
-
-layout(binding = 2) readonly buffer Octree {
-    Node nodes[];
-} model;
-
-const uint LEAF = 1 << 31;
 const float EPSILON = 0.0001;
-
-vec3 ray(vec3 dir, vec3 up, vec2 uv) {
-    uv -= 0.5;
-    uv.y *= float(uniforms.display_region.extent.y) / float(uniforms.display_region.extent.x);
-
-    vec3 right = normalize(cross(up, dir));
-    up = normalize(cross(right, dir));
-
-    return normalize(uv.x * right + uv.y * up + dir);
-}
 
 vec2 aabb_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rrd) {
     vec3 tbot = (bmin - ro) * rrd;

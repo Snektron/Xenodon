@@ -183,11 +183,12 @@ if not cxx.has_header('vulkan/vulkan.hpp', dependencies: vk_dep)
 endif
 
 # GLSL -> SPIR-V compiler
-glslc = find_program('glslangValidator')
+# glslc should be included in the LunarG SDK
+glslc = find_program('glslc')
 spv_gen = generator(
     glslc,
     output: '@PLAINNAME@.spv',
-    arguments: ['-V', '@INPUT@', '-o', '@OUTPUT@']
+    arguments: ['--target-env=vulkan1.1', '@INPUT@', '-o', '@OUTPUT@']
 )
 
 # Compile resources into the binary

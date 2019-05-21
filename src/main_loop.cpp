@@ -2,6 +2,7 @@
 #include <chrono>
 #include <memory>
 #include <array>
+#include <algorithm>
 #include <cassert>
 #include <fmt/format.h>
 #include "backend/Event.h"
@@ -10,6 +11,7 @@
 #include "render/SvoRaytraceAlgorithm.h"
 #include "render/DdaRaytraceAlgorithm.h"
 #include "render/Renderer.h"
+#include "camera/Camera.h"
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/Grid.h"
@@ -29,7 +31,7 @@ namespace {
         std::string_view source;
     };
 
-    constexpr const auto shader_options = std::array {
+    constexpr const auto SHADER_OPTIONS = std::array {
         ShaderOption{"dda", FileType::Tiff, resources::open("resources/dda.comp")},
         ShaderOption{"svo-naive", FileType::Svo, resources::open("resources/svo.comp")},
         ShaderOption{"svo-laine", FileType::Svo, resources::open("resources/svo_laine.comp")},
@@ -101,26 +103,26 @@ namespace {
 
     const ShaderOption& select_shader(const RenderParameters& render_params, FileType model_type) {
         if (!render_params.shader.empty()) {
-            for (const auto& opt : shader_options) {
-                if (opt.option == render_params.shader) {
-                    if (opt.required_type == model_type) {
-                        return opt;
-                    } else {
-                        throw Error(
-                            "Shader '{}' is incompatible with model type '{}' (requires '{}')",
-                            opt.option,
-                            file_type_to_string(model_type),
-                            file_type_to_string(opt.required_type)
-                        );
-                    }
-                }
+            auto it = std::find_if(SHADER_OPTIONS.begin(), SHADER_OPTIONS.end(), [&](const auto& opt) {
+                return opt.option == render_params.shader;
+            });
+
+            if (it == SHADER_OPTIONS.end()) {
+                throw Error("Invalid shader '{}'", render_params.shader);
+            } else if (it->required_type == model_type) {
+                return *it;
+            } else {
+                throw Error(
+                    "Shader '{}' is incompatible with model type '{}' (requires '{}')",
+                    it->option,
+                    file_type_to_string(model_type),
+                    file_type_to_string(it->required_type)
+                );
             }
-
-            throw Error("Invalid shader '{}'", render_params.shader);
         } else {
-            // Select a default: the first one of the right file type appearing in the shader_options list
+            // Select a default: the first one of the right file type appearing in the SHADER_OPTIONS list
 
-            for (const auto& opt : shader_options) {
+            for (const auto& opt : SHADER_OPTIONS) {
                 if (opt.required_type == model_type) {
                     return opt;
                 }
@@ -166,6 +168,12 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     auto algo = create_render_algorithm(render_params);
     auto renderer = Renderer(display, algo.get(), shader_params);
 
+    const auto cam = Camera {
+        .dir = Vec3F(-1, 0, 0),
+        .pos = Vec3F(3, 1.5f, 1.5f),
+        .up = Vec3F(0, 1, 0)
+    };
+
     bool quit = false;
     dispatcher.bind_close([&quit] {
         quit = true;
@@ -187,7 +195,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     while (!quit) {
         ++frames;
 
-        renderer.render();
+        renderer.render(cam);
 
         auto now = std::chrono::high_resolution_clock::now();
         auto diff = std::chrono::duration<double>(now - start);

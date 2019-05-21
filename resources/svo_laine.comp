@@ -1,49 +1,7 @@
 #version 450
 
-struct Rect {
-    ivec2 offset;
-    uvec2 extent;
-};
-
-struct Node {
-    uint children[8];
-    uint color;
-    uint is_leaf_depth;
-};
-
-struct RenderParameters {
-    float density;
-};
-
-layout(local_size_x = 8, local_size_y = 8) in;
-
-layout(push_constant) uniform PushConstant {
-    float time;
-} push;
-
-layout(binding = 0) readonly uniform UniformBuffer {
-    Rect output_region;
-    Rect display_region;
-    RenderParameters params;
-} uniforms;
-
-layout(binding = 1, rgba8) restrict writeonly uniform image2D render_target;
-
-layout(binding = 2) readonly buffer Octree {
-    Node nodes[];
-} model;
-
-const uint LEAF = 1 << 31;
-
-vec3 ray(vec3 dir, vec3 up, vec2 uv) {
-    uv -= 0.5;
-    uv.y *= float(uniforms.display_region.extent.y) / float(uniforms.display_region.extent.x);
-
-    vec3 right = normalize(cross(up, dir));
-    up = normalize(cross(right, dir));
-
-    return normalize(uv.x * right + uv.y * up + dir);
-}
+#include "raytrace_shader.glsl"
+#include "octree.glsl"
 
 vec2 aabb_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rd) {
     vec3 rrd = 1.0 / (rd + 0.00000001);
@@ -193,12 +151,8 @@ void main() {
     ivec2 pixel = uniforms.output_region.offset + ivec2(index);
     vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
 
-    float time = push.time * 1.2;
-    vec3 center = vec3(1.5, 1.5, 1.5);
-
-    vec3 ro = center + vec3(sin(time), 0, cos(time)) * 3;
-    vec3 rd = normalize(center - ro);
-    rd = ray(rd, vec3(0, 1, 0), uv);
+    vec3 ro = push.camera.pos.xyz;
+    vec3 rd = ray(push.camera.dir.xyz, push.camera.up.xyz, uv);
 
     vec2 t = aabb_intersect(vec3(1), vec3(2), ro, rd);
     ro += t.x * rd;

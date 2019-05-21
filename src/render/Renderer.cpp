@@ -80,10 +80,15 @@ void Renderer::recreate(size_t device, size_t output) {
     this->upload_uniform_buffers();
 }
 
-void Renderer::render() {
+void Renderer::render(const Camera& cam) {
     const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
     const auto now = std::chrono::system_clock::now();
     const float time = std::chrono::duration<float>(now - this->start).count();
+
+    const auto push_constants = PushConstantBuffer {
+        {Vec4F(cam.dir, 0), Vec4F(cam.pos, 0), Vec4F(cam.up, 0)},
+        time
+    };
 
     for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
         auto& drsc = this->device_resources[devidx];
@@ -109,7 +114,7 @@ void Renderer::render() {
 
             cmd_buf.bindPipeline(vk::PipelineBindPoint::eCompute, orsc.pipeline.get());
             cmd_buf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, drsc.pipeline_layout.get(), 0, orsc.descriptor_sets[index], nullptr);
-            cmd_buf.pushConstants(drsc.pipeline_layout.get(), vk::ShaderStageFlagBits::eCompute, 0, sizeof(float), static_cast<const void*>(&time));
+            cmd_buf.pushConstants(drsc.pipeline_layout.get(), vk::ShaderStageFlagBits::eCompute, 0, sizeof(PushConstantBuffer), static_cast<const void*>(&push_constants));
             cmd_buf.dispatch(group_size.x, group_size.y, 1);
 
             image_transition(
@@ -151,7 +156,7 @@ void Renderer::create_resources() {
         const auto push_constant_range = vk::PushConstantRange(
             vk::ShaderStageFlagBits::eCompute,
             0,
-            sizeof(float)
+            sizeof(PushConstantBuffer)
         );
 
         auto pipeline_layout = device->createPipelineLayoutUnique({

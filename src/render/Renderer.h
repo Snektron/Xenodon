@@ -10,6 +10,8 @@
 #include "backend/RenderDevice.h"
 #include "graphics/memory/Buffer.h"
 #include "render/RenderAlgorithm.h"
+#include "camera/Camera.h"
+#include "math/Vec.h"
 
 class Renderer {
 public:
@@ -23,6 +25,18 @@ private:
         vk::Rect2D display_region;
         ShaderParameters params;
     };
+
+    struct PushConstantBuffer {
+        // the Camera struct cant be used here directly because of
+        // different alignment requirements of CPU and GPU.
+        struct {
+            Vec4F dir, pos, up;
+        } camera;
+
+        float time;
+    };
+
+    static_assert(sizeof(PushConstantBuffer) <= 128, "Vulkan minimum supported push constant range is maximum 128 bytes");
 
     struct OutputResources {
         Output* output;
@@ -60,7 +74,7 @@ private:
 public:
     Renderer(Display* display, const RenderAlgorithm* algorithm, const ShaderParameters& shader_params);
     void recreate(size_t device, size_t output);
-    void render();
+    void render(const Camera& cam);
 
 private:
     void create_resources();
