@@ -4,7 +4,6 @@
 // Most formulas in this file are taken from https://en.wikipedia.org/wiki/Quaternion
 
 #include <cmath>
-#include "math/Mat.h"
 #include "math/Vec.h"
 
 const static double SLERP_THRESHOLD = 0.9995;
@@ -93,10 +92,6 @@ struct Quat {
     constexpr Vec3<T> up() const;
 
     constexpr Vec3<T> right() const;
-
-    constexpr Mat4<T> to_matrix() const;
-
-    constexpr Mat4<T> to_view_matrix() const;
 };
 
 template <typename T, typename U>
@@ -349,40 +344,6 @@ constexpr Vec3<T> Quat<T>::right() const {
         dbl(qi * qj + qr * qk),
         dbl(qi * qk - qr * qj)
     );
-}
-
-// See https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
-template <typename T>
-constexpr Mat4<T> Quat<T>::to_matrix() const {
-    Mat4<T> result;
-
-    auto qr = this->w;
-    auto qi = this->x;
-    auto qj = this->y;
-    auto qk = this->z;
-
-    auto one = static_cast<T>(1);
-
-    result(0, 0) = one - dbl(qj * qj + qk * qk);
-    result(1, 1) = one - dbl(qi * qi + qk * qk);
-    result(2, 2) = one - dbl(qi * qi + qj * qj);
-
-    result(1, 0) = dbl(qi * qj + qr * qk);
-    result(2, 0) = dbl(qi * qk - qr * qj);
-
-    result(0, 1) = dbl(qi * qj - qr * qk);
-    result(2, 1) = dbl(qr * qi + qj * qk);
-
-    result(0, 2) = dbl(qr * qj + qi * qk);
-    result(1, 2) = dbl(qj * qk - qr * qi);
-
-    result(3, 3) = one;
-    return result;
-}
-
-template <typename T>
-constexpr Mat4<T> Quat<T>::to_view_matrix() const {
-    return ::normalize(*this).conjugate().to_matrix();
 }
 
 #endif
