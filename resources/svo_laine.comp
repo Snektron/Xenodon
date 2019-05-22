@@ -25,9 +25,9 @@ float v3max(vec3 v) {
 }
 
 uint cxor(uint x, bvec3 a) {
-    x ^= mix(0, 1, a.x);
+    x ^= mix(0, 4, a.x);
     x ^= mix(0, 2, a.y);
-    x ^= mix(0, 4, a.z);
+    x ^= mix(0, 1, a.z);
     return x;
 }
 
@@ -46,7 +46,7 @@ vec4 trace(vec3 ro, vec3 rd) {
 
     bvec3 gt0 = greaterThan(rd, vec3(0));
     t_bias = mix(t_bias, 3.0 * t_coeff - t_bias, gt0);
-    uint octant_mask = cxor(7, gt0);
+    uint octant_mask = cxor(0, gt0);
 
     float t_min = v3max(2.0 * t_coeff - t_bias);
     float t_max = v3min(t_coeff - t_bias);
@@ -132,7 +132,7 @@ vec4 trace(vec3 ro, vec3 rd) {
             pos = uintBitsToFloat(sh << scale);
 
             sh %= 2;
-            idx = sh.x + sh.y * 2 + sh.z * 4;
+            idx = sh.x * 4 + sh.y * 2 + sh.z;
 
             h = 0;
         }
@@ -151,11 +151,12 @@ void main() {
     ivec2 pixel = uniforms.output_region.offset + ivec2(index);
     vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
 
-    vec3 ro = push.camera.translation.xyz + vec3(1);
+    vec3 ro = push.camera.translation.xyz / uniforms.params.voxel_ratio.xyz + vec3(1);
     vec3 rd = ray(push.camera.forward.xyz, push.camera.up.xyz, uv);
+    rd = normalize(rd / uniforms.params.voxel_ratio.xyz);
 
     vec2 t = aabb_intersect(vec3(1), vec3(2), ro, rd);
-    ro += t.x * rd;
+    ro += max(t.x, 0) * rd;
     vec4 color = trace(ro, rd);
 
     imageStore(render_target, ivec2(index), vec4(color.rgb, 1));

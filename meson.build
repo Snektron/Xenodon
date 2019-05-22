@@ -70,7 +70,7 @@ resources = [
 
 add_project_arguments(
     [
-        # '-march=native',
+        '-march=native',
         '-Wconversion',
         '-Wall',
         '-Wextra',

@@ -32,7 +32,7 @@ uint find(vec3 pos, out vec3 base, out float side) {
 
         extent *= 0.5;
         bvec3 mask = greaterThanEqual(pos, offset + extent);
-        int child = int(dot(vec3(mask), vec3(4, 2, 1)));
+        int child = int(mask.x) * 4 + int(mask.y) * 2 + int(mask.z);
         offset += vec3(mask) * vec3(extent);
         index = model.nodes[index].children[child];
     }
@@ -78,6 +78,9 @@ void main() {
 
     vec3 ro = push.camera.translation.xyz;
     vec3 rd = ray(push.camera.forward.xyz, push.camera.up.xyz, uv);
+
+    ro /= uniforms.params.voxel_ratio.xyz;
+    rd = normalize(rd / uniforms.params.voxel_ratio.xyz);
 
     vec4 color = trace(ro, rd);
 
