@@ -2,9 +2,10 @@
 #define XENODON_VERSION_H
 
 #include <vulkan/vulkan.hpp>
+#include <string_view>
 
 namespace version {
-    constexpr const char* NAME = @NAME@;
+    constexpr const std::string_view NAME = @NAME@;
     constexpr const unsigned MAJOR = @MAJOR@;
     constexpr const unsigned MINOR = @MINOR@;
     constexpr const unsigned PATCH = @PATCH@;

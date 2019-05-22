@@ -234,8 +234,8 @@ void Window::init_window(xcb_screen_t* screen, vk::Extent2D extent, bool overrid
             XCB_ATOM_WM_NAME,
             XCB_ATOM_STRING,
             8,
-            std::strlen(version::NAME),
-            version::NAME
+            version::NAME.size(),
+            version::NAME.data()
         );
     }
 
