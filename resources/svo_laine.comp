@@ -151,7 +151,7 @@ void main() {
     ivec2 pixel = uniforms.output_region.offset + ivec2(index);
     vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
 
-    vec3 ro = push.camera.translation.xyz;
+    vec3 ro = push.camera.translation.xyz + vec3(1);
     vec3 rd = ray(push.camera.forward.xyz, push.camera.up.xyz, uv);
 
     vec2 t = aabb_intersect(vec3(1), vec3(2), ro, rd);

@@ -2,7 +2,7 @@
 #include <algorithm>
 
 OrbitCameraController::OrbitCameraController():
-    center{1.5f, 1.5f, 1.5f},
+    center{0.5f, 0.5f, 0.5f},
     rotation(QuatF::axis_angle(0, 1, 0, -1.57f)),
     distance(2.f) {
 }
