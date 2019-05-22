@@ -3,7 +3,7 @@
 
 OrbitCameraController::OrbitCameraController():
     center{0.5f, 0.5f, 0.5f},
-    rotation(QuatF::axis_angle(0, 1, 0, -1.57f)),
+    rotation(QuatF::identity()),
     distance(2.f) {
 }
 

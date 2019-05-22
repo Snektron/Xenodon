@@ -45,4 +45,12 @@ vec3 ray(vec3 dir, vec3 up, vec2 uv) {
     return normalize(uv.x * right + uv.y * up + dir);
 }
 
+float min_elem(vec3 v) {
+    return min(v.x, min(v.y, v.z));
+}
+
+float max_elem(vec3 v) {
+    return max(v.x, max(v.y, v.z));
+}
+
 #endif

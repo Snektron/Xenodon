@@ -1,6 +1,6 @@
 #version 450
 
-#include "raytrace_shader.glsl"
+#include "common.glsl"
 #include "octree.glsl"
 
 const float EPSILON = 0.0001;

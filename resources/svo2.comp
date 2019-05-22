@@ -1,19 +1,11 @@
 #version 450
 
-#include "raytrace_shader.glsl"
+#include "common.glsl"
 #include "octree.glsl"
-
-float min_elem(vec3 v) {
-    return min(v.x, min(v.y, v.z));
-}
-
-float max_elem(vec3 v) {
-    return max(v.x, max(v.y, v.z));
-}
 
 vec4 trace(vec3 ro, vec3 rd) {
     const uint float_mantissa_size = 23;
-    const float epsilon = 0.00001;
+    const float epsilon = exp2(-float(float_mantissa_size));
 
     // Adjust the ray direction if one of its values is close to 0
     rd = mix(rd, step(rd, vec3(0)) * epsilon * 2.0 - epsilon, lessThan(abs(rd), vec3(epsilon)));

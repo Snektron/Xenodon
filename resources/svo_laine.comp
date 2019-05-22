@@ -1,7 +1,11 @@
 #version 450
 
-#include "raytrace_shader.glsl"
+#include "common.glsl"
 #include "octree.glsl"
+
+// Implementation of 'Efficient Sparse Voxel Octrees' by Laine & Karras
+// Most of the implementation is ported from the CUDA reference implementation
+// see https://code.google.com/archive/p/efficient-sparse-voxel-octrees/
 
 vec2 aabb_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rd) {
     vec3 rrd = 1.0 / (rd + 0.00000001);
@@ -14,14 +18,6 @@ vec2 aabb_intersect(vec3 bmin, vec3 bmax, vec3 ro, vec3 rd) {
     t = min(tmax.xx, tmax.yz);
     float t1 = min(t.x, t.y);
     return vec2(t0, t1);
-}
-
-float v3min(vec3 v) {
-    return min(v.x, min(v.y, v.z));
-}
-
-float v3max(vec3 v) {
-    return max(v.x, max(v.y, v.z));
 }
 
 uint cxor(uint x, bvec3 a) {
@@ -48,8 +44,8 @@ vec4 trace(vec3 ro, vec3 rd) {
     t_bias = mix(t_bias, 3.0 * t_coeff - t_bias, gt0);
     uint octant_mask = cxor(0, gt0);
 
-    float t_min = v3max(2.0 * t_coeff - t_bias);
-    float t_max = v3min(t_coeff - t_bias);
+    float t_min = max_elem(2.0 * t_coeff - t_bias);
+    float t_max = min_elem(t_coeff - t_bias);
     float h = t_max;
 
     t_min = max(t_min, 0.0);
@@ -71,7 +67,7 @@ vec4 trace(vec3 ro, vec3 rd) {
 
     while (scale < cast_stack_depth) {
         vec3 t_corner = pos * t_coeff - t_bias;
-        float tc_max = v3min(t_corner);
+        float tc_max = min_elem(t_corner);
 
         uint child = model.nodes[parent].children[idx ^ octant_mask];
 

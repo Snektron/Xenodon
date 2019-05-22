@@ -81,17 +81,17 @@ namespace args {
 
         T value;
         char* end;
+        auto cpp_cant_into_float_parsing = std::string(str);
 
-        // use std::string because c++ cant into float parsing
         if constexpr (std::is_same_v<T, float>) {
-            value = std::strtof(std::string(str).c_str(), &end);
+            value = std::strtof(cpp_cant_into_float_parsing.c_str(), &end);
         } else if constexpr (std::is_same_v<T, double>) {
-            value = std::strtod(std::string(str).c_str(), &end);
+            value = std::strtod(cpp_cant_into_float_parsing.c_str(), &end);
         } else if constexpr (std::is_same_v<T, long double>) {
-            value = std::strtold(std::string(str).c_str(), &end);
+            value = std::strtold(cpp_cant_into_float_parsing.c_str(), &end);
         }
 
-        if (end == str) {
+        if (end != &*cpp_cant_into_float_parsing.end()) {
             return false;
         }
 
