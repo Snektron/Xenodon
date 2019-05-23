@@ -35,10 +35,11 @@ vec4 trace(vec3 ro, vec3 rd) {
     float side = 0.5;
 
     vec4 total_color = vec4(0);
+    float density = uniforms.params.density * voxel_density_ratio(rd);
 
     uint i = 0;
 
-    while (stack_index < float_mantissa_size && i < 1000) {
+    while (stack_index < float_mantissa_size && i < 5000) {
         ++i;
 
         vec3 box_min = pos * rrd - bias;
@@ -52,7 +53,7 @@ vec4 trace(vec3 ro, vec3 rd) {
 
             if (model.nodes[child].is_leaf_depth >= LEAF) {
                 vec4 color = unpackUnorm4x8(model.nodes[child].color);
-                total_color += color * (t_max - t_min) * uniforms.params.density;
+                total_color += color * (t_max - t_min) * density;
             } else {
                 if (idx != 7) {
                     node_stack[stack_index] = parent_idx;

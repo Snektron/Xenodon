@@ -53,4 +53,10 @@ float max_elem(vec3 v) {
     return max(v.x, max(v.y, v.z));
 }
 
+float voxel_density_ratio(vec3 rd) {
+    vec3 rd2 = rd * rd;
+    vec3 dim2 = uniforms.params.voxel_ratio.xyz * uniforms.params.voxel_ratio.xyz;
+    return sqrt(dot(rd2, dim2) / dot(rd2, vec3(1)));
+}
+
 #endif

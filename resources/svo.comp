@@ -49,6 +49,7 @@ vec4 trace(vec3 ro, vec3 rd) {
     t.x = max(t.x, 0);
 
     vec4 total = vec4(0);
+    float density = uniforms.params.density * voxel_density_ratio(rd);
 
     for (int i = 0; i < 500 && t.x + EPSILON < t.y; ++i) {
         vec3 p = (t.x + EPSILON) * rd + ro;
@@ -60,7 +61,7 @@ vec4 trace(vec3 ro, vec3 rd) {
         t.x = s.y;
 
         vec4 color = unpackUnorm4x8(model.nodes[node].color);
-        total += color * (s.y - s.x) * uniforms.params.density;
+        total += color * (s.y - s.x) * density;
     }
 
     return total;

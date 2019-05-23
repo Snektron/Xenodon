@@ -64,6 +64,7 @@ vec4 trace(vec3 ro, vec3 rd) {
     }
 
     vec4 total_color = vec4(0);
+    float density = uniforms.params.density * voxel_density_ratio(rd);
 
     while (scale < cast_stack_depth) {
         vec3 t_corner = pos * t_coeff - t_bias;
@@ -79,7 +80,7 @@ vec4 trace(vec3 ro, vec3 rd) {
             if (t_min <= tv_max) {
                 if (model.nodes[child].is_leaf_depth >= LEAF) {
                     vec4 color = unpackUnorm4x8(model.nodes[child].color);
-                    total_color += color * (tv_max - t_min) * uniforms.params.density;
+                    total_color += color * (tv_max - t_min) * density;
                 } else {
                     // PUSH
                     if (tc_max < h) {

@@ -41,7 +41,7 @@ vec3 trace(vec3 ro, vec3 rd) {
         return vec3(0);
     }
 
-    float density = uniforms.params.density / side;
+    float density = uniforms.params.density / side * voxel_density_ratio(rd);
 
     t_min = max(t_min, 0);
 
