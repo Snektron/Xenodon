@@ -86,7 +86,8 @@ namespace {
                 Device(physdev, families, DEVICE_EXTENSIONS),
                 queue_families.value().graphics_family,
                 queue_families.value().compute_family,
-                static_cast<uint32_t>(surfaces.size())
+                static_cast<uint32_t>(surfaces.size()),
+                physdev.properties().limits.timestampPeriod
             );
         } else {
             throw Error("Gpu does not support required queues");

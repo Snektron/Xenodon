@@ -47,7 +47,8 @@ namespace {
                         Device(physdev, families, DEVICE_EXTENSIONS),
                         queue_families.value().graphics_family,
                         queue_families.value().compute_family,
-                        1
+                        1,
+                        physdev.properties().limits.timestampPeriod
                     );
                 }
             }

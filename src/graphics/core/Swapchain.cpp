@@ -162,7 +162,6 @@ vk::Result Swapchain::swap_buffers() {
 
     dev.waitForFences(current_image.frame_fence.get(), true, std::numeric_limits<uint64_t>::max());
     dev.resetFences(current_image.frame_fence.get());
-    // dev.waitIdle();
 
     auto present_info = vk::PresentInfoKHR(
         1,

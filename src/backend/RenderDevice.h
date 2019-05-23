@@ -16,8 +16,9 @@ struct RenderDevice {
     uint32_t outputs;
     CommandPool graphics_command_pool;
     CommandPool compute_command_pool;
+    float timestamp_period;
 
-    RenderDevice(Device&& device, uint32_t graphics_queue_family, uint32_t compute_queue_family, uint32_t outputs);
+    RenderDevice(Device&& device, uint32_t graphics_queue_family, uint32_t compute_queue_family, uint32_t outputs, float timestamp_period);
 };
 
 #endif

@@ -1,6 +1,7 @@
 #ifndef _XENODON_GRAPHICS_CORE_QUEUE_H
 #define _XENODON_GRAPHICS_CORE_QUEUE_H
 
+#include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include "graphics/core/Device.h"
 

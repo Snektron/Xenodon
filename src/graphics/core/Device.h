@@ -21,17 +21,6 @@ public:
 
     vk::UniqueDeviceMemory allocate_unique(vk::MemoryRequirements requirements, vk::MemoryPropertyFlags flags) const;
 
-    vk::UniqueRenderPass create_present_render_pass(uint32_t binding, vk::AttachmentDescription attachment) const;
-
-    vk::UniquePipeline create_pipeline(
-        Span<vk::PipelineShaderStageCreateInfo> shaders,
-        vk::PipelineLayout pipeline_layout,
-        vk::RenderPass render_pass,
-        vk::Extent2D extent
-    ) const;
-
-    vk::UniqueDescriptorSetLayout create_uniform_layout(uint32_t binding) const;
-
     vk::Device get() const {
         return this->dev.get();
     }

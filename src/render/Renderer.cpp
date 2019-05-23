@@ -115,7 +115,9 @@ void Renderer::render(const Camera& cam) {
             cmd_buf.bindPipeline(vk::PipelineBindPoint::eCompute, orsc.pipeline.get());
             cmd_buf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, drsc.pipeline_layout.get(), 0, orsc.descriptor_sets[index], nullptr);
             cmd_buf.pushConstants(drsc.pipeline_layout.get(), vk::ShaderStageFlagBits::eCompute, 0, sizeof(PushConstantBuffer), static_cast<const void*>(&push_constants));
+            drsc.stats.pre_dispatch(outputidx, cmd_buf);
             cmd_buf.dispatch(group_size.x, group_size.y, 1);
+            drsc.stats.post_dispatch(outputidx, cmd_buf);
 
             image_transition(
                 cmd_buf,
@@ -131,6 +133,10 @@ void Renderer::render(const Camera& cam) {
     }
 
     this->display->swap_buffers();
+
+    for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
+        this->device_resources[devidx].stats.collect();
+    }
 }
 
 void Renderer::create_resources() {
@@ -196,6 +202,7 @@ void Renderer::create_resources() {
         this->device_resources.emplace_back(DeviceResources{
             &rendev,
             std::move(res),
+            RenderStatistics(this->display, i),
 
             std::move(descr_set_layout),
             vk::UniqueDescriptorPool(),

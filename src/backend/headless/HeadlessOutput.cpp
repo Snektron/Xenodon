@@ -26,7 +26,8 @@ namespace {
                 Device(physdev, families),
                 queue_families.value().graphics_family,
                 queue_families.value().compute_family,
-                1
+                1,
+                physdev.properties().limits.timestampPeriod
             );
         } else {
             throw Error("Gpu does not support required queues");
