@@ -86,7 +86,11 @@ void Renderer::render(const Camera& cam) {
     const float time = std::chrono::duration<float>(now - this->start).count();
 
     const auto push_constants = PushConstantBuffer {
-        {Vec4F(cam.forward, 0), Vec4F(cam.up, 0), Vec4F(cam.translation, 0)},
+        .camera = {
+            Vec4F(cam.forward, 0),
+            Vec4F(cam.up, 0),
+            Vec4F(cam.translation / this->shader_params.voxel_ratio.xyz, 0) // pre-divide
+        },
         time
     };
 

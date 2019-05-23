@@ -35,14 +35,17 @@ layout(binding = 0) readonly uniform UniformBuffer {
 
 layout(binding = 1, rgba8) restrict writeonly uniform image2D render_target;
 
-vec3 ray(vec3 dir, vec3 up, vec2 uv) {
+vec3 ray(vec2 uv) {
     uv -= 0.5;
     uv.y *= float(uniforms.display_region.extent.y) / float(uniforms.display_region.extent.x);
 
+    vec3 dir = push.camera.forward.xyz;
+    vec3 up = push.camera.up.xyz;
     vec3 right = normalize(cross(up, dir));
     up = normalize(cross(right, dir));
 
-    return normalize(uv.x * right + uv.y * up + dir);
+    vec3 rd = normalize(uv.x * right + uv.y * up + dir);
+    return normalize(rd / uniforms.params.voxel_ratio.xyz);
 }
 
 float min_elem(vec3 v) {
@@ -53,10 +56,12 @@ float max_elem(vec3 v) {
     return max(v.x, max(v.y, v.z));
 }
 
-float voxel_density_ratio(vec3 rd) {
+// Calculate the density of a voxel for some ray. The base
+// density is multiplied by the amount the ray is stretched
+float voxel_density(vec3 rd) {
     vec3 rd2 = rd * rd;
     vec3 dim2 = uniforms.params.voxel_ratio.xyz * uniforms.params.voxel_ratio.xyz;
-    return sqrt(dot(rd2, dim2) / dot(rd2, vec3(1)));
+    return uniforms.params.density * sqrt(dot(rd2, dim2) / dot(rd2, vec3(1)));
 }
 
 #endif

@@ -64,7 +64,7 @@ vec4 trace(vec3 ro, vec3 rd) {
     }
 
     vec4 total_color = vec4(0);
-    float density = uniforms.params.density * voxel_density_ratio(rd);
+    float density = voxel_density(rd);
 
     while (scale < cast_stack_depth) {
         vec3 t_corner = pos * t_coeff - t_bias;
@@ -148,9 +148,8 @@ void main() {
     ivec2 pixel = uniforms.output_region.offset + ivec2(index);
     vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
 
-    vec3 ro = push.camera.translation.xyz / uniforms.params.voxel_ratio.xyz + vec3(1);
-    vec3 rd = ray(push.camera.forward.xyz, push.camera.up.xyz, uv);
-    rd = normalize(rd / uniforms.params.voxel_ratio.xyz);
+    vec3 ro = push.camera.translation.xyz + vec3(1);
+    vec3 rd = ray(uv);
 
     vec2 t = aabb_intersect(vec3(1), vec3(2), ro, rd);
     ro += max(t.x, 0) * rd;

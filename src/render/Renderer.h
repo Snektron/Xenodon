@@ -34,7 +34,7 @@ private:
         struct {
             Vec4F forward;
             Vec4F up;
-            Vec4F translation;
+            Vec4F translation_scaled;
         } camera;
 
         float time;

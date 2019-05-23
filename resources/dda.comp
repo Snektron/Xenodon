@@ -41,7 +41,7 @@ vec3 trace(vec3 ro, vec3 rd) {
         return vec3(0);
     }
 
-    float density = uniforms.params.density / side * voxel_density_ratio(rd);
+    float density = voxel_density(rd) / side;
 
     t_min = max(t_min, 0);
 
@@ -85,10 +85,7 @@ void main() {
 
     float side = max_elem(vec3(textureSize(model, 0)));
     vec3 ro = push.camera.translation.xyz * side;
-    vec3 rd = ray(push.camera.forward.xyz, push.camera.up.xyz, uv);
-
-    ro /= uniforms.params.voxel_ratio.xyz;
-    rd = normalize(rd / uniforms.params.voxel_ratio.xyz);
+    vec3 rd = ray(uv);
 
     vec3 color = trace(ro, rd);
     imageStore(render_target, ivec2(index), vec4(color, 1));
