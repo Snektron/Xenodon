@@ -28,14 +28,11 @@ uint cxor(uint x, bvec3 a) {
 }
 
 vec4 trace(vec3 ro, vec3 rd) {
-    const uint cast_stack_depth = 23;
-    const float epsilon = exp2(-float(cast_stack_depth));
+    const uint cast_stack_depth = FLOAT_MANTISSA_BITS;
 
     // Add an extra slot to avoid out-of-bounds read
     uint node_stack[cast_stack_depth + 1];
     float t_max_stack[cast_stack_depth + 1];
-
-    rd = mix(rd, step(rd, vec3(0)) * epsilon * 2.0 - epsilon, lessThan(abs(rd), vec3(epsilon)));
 
     vec3 t_coeff = 1.0 / -abs(rd);
     vec3 t_bias = t_coeff * ro;

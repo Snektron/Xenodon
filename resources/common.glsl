@@ -35,6 +35,14 @@ layout(binding = 0) readonly uniform UniformBuffer {
 
 layout(binding = 1, rgba8) restrict writeonly uniform image2D render_target;
 
+const uint FLOAT_MANTISSA_BITS = 23;
+
+// Adjust the ray direction so that no component is zero
+vec3 adjust_ray(vec3 rd) {
+    const float epsilon = exp2(-float(FLOAT_MANTISSA_BITS));
+    return mix(rd, step(rd, vec3(0)) * epsilon * 2.0 - epsilon, lessThan(abs(rd), vec3(epsilon)));
+}
+
 vec3 ray(vec2 uv) {
     uv -= 0.5;
     uv.y *= float(uniforms.display_region.extent.y) / float(uniforms.display_region.extent.x);
@@ -45,7 +53,7 @@ vec3 ray(vec2 uv) {
     up = normalize(cross(right, dir));
 
     vec3 rd = normalize(uv.x * right + uv.y * up + dir);
-    return normalize(rd / uniforms.params.voxel_ratio.xyz);
+    return adjust_ray(normalize(rd / uniforms.params.voxel_ratio.xyz));
 }
 
 float min_elem(vec3 v) {

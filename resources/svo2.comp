@@ -4,28 +4,20 @@
 #include "octree.glsl"
 
 vec4 trace(vec3 ro, vec3 rd) {
-    const uint float_mantissa_size = 23;
-    const float epsilon = exp2(-float(float_mantissa_size));
-
-    // Adjust the ray direction if one of its values is close to 0
-    rd = mix(rd, step(rd, vec3(0)) * epsilon * 2.0 - epsilon, lessThan(abs(rd), vec3(epsilon)));
-
-    if (any(lessThan(abs(rd), vec3(epsilon)))) {
-        return vec4(1, 0, 1, 1);
-    }
-
     vec3 rrd = 1.0 / rd;
     vec3 bias = rrd * ro;
 
-    int stack_index = int(float_mantissa_size - 1);
+    const uint cast_stack_depth = FLOAT_MANTISSA_BITS;
+
+    int stack_index = int(cast_stack_depth - 1);
 
     // Extra slot to prevent out-of-bounds read
-    uint node_stack[float_mantissa_size + 1];
-    uint child_index_stack[float_mantissa_size + 1];
-    float side_stack[float_mantissa_size + 1];
+    uint node_stack[cast_stack_depth + 1];
+    uint child_index_stack[cast_stack_depth + 1];
+    float side_stack[cast_stack_depth + 1];
 
-    node_stack[float_mantissa_size] = 0;
-    child_index_stack[float_mantissa_size] = 8;
+    node_stack[cast_stack_depth] = 0;
+    child_index_stack[cast_stack_depth] = 8;
 
     uint parent_idx = 0;
     Node parent = model.nodes[parent_idx];
@@ -39,7 +31,7 @@ vec4 trace(vec3 ro, vec3 rd) {
 
     uint i = 0;
 
-    while (stack_index < float_mantissa_size && i < 5000) {
+    while (stack_index < cast_stack_depth && i < 5000) {
         ++i;
 
         vec3 box_min = pos * rrd - bias;
@@ -75,7 +67,7 @@ vec4 trace(vec3 ro, vec3 rd) {
         if (idx == 7) {
             ++stack_index;
 
-            if (stack_index >= float_mantissa_size) {
+            if (stack_index >= cast_stack_depth) {
                 return total_color;
             }
 

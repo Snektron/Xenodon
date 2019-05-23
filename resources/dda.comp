@@ -17,12 +17,6 @@ vec3 select(vec3 x, bvec3 c) {
 }
 
 vec3 trace(vec3 ro, vec3 rd) {
-    const uint float_mantissa_size = 23;
-    const float epsilon = exp2(-float(float_mantissa_size));
-
-    // Adjust the ray direction if one of its values is close to 0
-    rd = mix(rd, step(rd, vec3(0)) * epsilon * 2.0 - epsilon, lessThan(abs(rd), vec3(epsilon)));
-
     vec3 rrd = 1.0 / rd;
     vec3 bias = rrd * ro;
 
