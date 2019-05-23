@@ -24,7 +24,6 @@ layout(local_size_x = 8, local_size_y = 8) in;
 
 layout(push_constant) uniform PushConstant {
     Camera camera;
-    float time;
 } push;
 
 layout(binding = 0) readonly uniform UniformBuffer {

@@ -2,7 +2,6 @@
 #define _XENODON_RENDER_RENDERER_H
 
 #include <vector>
-#include <chrono>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include "backend/Display.h"
@@ -36,8 +35,6 @@ private:
             Vec4F up;
             Vec4F translation_scaled;
         } camera;
-
-        float time;
     };
 
     static_assert(sizeof(PushConstantBuffer) <= 128, "Vulkan minimum supported push constant range is maximum 128 bytes");
@@ -73,7 +70,6 @@ private:
     vk::Rect2D display_region;
     std::vector<DeviceResources> device_resources;
     std::vector<vk::DescriptorSetLayoutBinding> bindings;
-    std::chrono::system_clock::time_point start;
 
 public:
     Renderer(Display* display, const RenderAlgorithm* algorithm, const ShaderParameters& shader_params);

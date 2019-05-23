@@ -33,8 +33,7 @@ namespace {
 Renderer::Renderer(Display* display, const RenderAlgorithm* algorithm, const ShaderParameters& shader_params):
     display(display),
     algorithm(algorithm),
-    shader_params(shader_params),
-    start(std::chrono::system_clock::now()) {
+    shader_params(shader_params) {
 
     std::copy(STANDARD_BINDINGS.begin(), STANDARD_BINDINGS.end(), std::back_inserter(this->bindings));
 
@@ -82,8 +81,6 @@ void Renderer::recreate(size_t device, size_t output) {
 
 void Renderer::render(const Camera& cam) {
     const auto begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-    const auto now = std::chrono::system_clock::now();
-    const float time = std::chrono::duration<float>(now - this->start).count();
 
     const auto push_constants = PushConstantBuffer {
         .camera = {
@@ -91,7 +88,6 @@ void Renderer::render(const Camera& cam) {
             Vec4F(cam.up, 0),
             Vec4F(cam.translation / this->shader_params.voxel_ratio.xyz, 0) // pre-divide
         },
-        time
     };
 
     for (size_t devidx = 0; devidx < this->device_resources.size(); ++devidx) {
