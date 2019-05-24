@@ -34,7 +34,7 @@ namespace {
 
     constexpr const auto SHADER_OPTIONS = std::array {
         ShaderOption{"dda", FileType::Tiff, resources::open("resources/dda.comp")},
-        ShaderOption{"svo-naive", FileType::Svo, resources::open("resources/svo.comp")},
+        ShaderOption{"svo-naive", FileType::Svo, resources::open("resources/svo_naive.comp")},
         ShaderOption{"svo-laine", FileType::Svo, resources::open("resources/svo_laine.comp")},
         ShaderOption{"svo-2", FileType::Svo, resources::open("resources/svo2.comp")},
     };
@@ -257,7 +257,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
         renderer.render(controller.camera());
         auto stats = renderer.stats();
 
-        fmt::print("total_rays: {}, total_render_time: {} ms\n", stats.total_rays, stats.total_render_time);
+        LOGGER.log("total_rays: {}, total_render_time: {} ms, mray/s: {}", stats.total_rays, stats.total_render_time, stats.mrays_per_s());
 
         {
             auto now = std::chrono::high_resolution_clock::now();

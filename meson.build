@@ -60,7 +60,7 @@ sources = [
 
 shaders = [
     'resources/dda.comp',
-    'resources/svo.comp',
+    'resources/svo_naive.comp',
     'resources/svo_laine.comp',
     'resources/svo2.comp'
 ]

@@ -17,6 +17,10 @@ RenderStats& RenderStats::combine(const RenderStats& other) {
     return *this;
 }
 
+double RenderStats::mrays_per_s() const {
+    return static_cast<double>(this->total_rays) / (this->total_render_time * 1'000);
+}
+
 RenderStatsCollector::RenderStatsCollector(Display* display, size_t device_index):
     rendev(&display->render_device(device_index)) {
 
@@ -65,11 +69,11 @@ void RenderStatsCollector::collect() {
 
     this->current_stats.total_render_time = 0;
     this->current_stats.max_render_time = 0;
-    this->current_stats.min_render_time = std::numeric_limits<float>::max();
+    this->current_stats.min_render_time = std::numeric_limits<double>::max();
 
     for (size_t i = 0; i < this->timestamp_buffer.size(); i += QUERY_COUNT) {
         uint64_t diff = this->timestamp_buffer[i + 1] - this->timestamp_buffer[i];
-        float time = static_cast<float>(diff) * this->rendev->timestamp_period / 1'000'000.f;
+        double time = static_cast<double>(diff) * static_cast<double>(this->rendev->timestamp_period) / 1'000'000.0;
         this->current_stats.total_render_time += time;
         this->current_stats.max_render_time = std::max(this->current_stats.max_render_time, time);
         this->current_stats.min_render_time = std::min(this->current_stats.min_render_time, time);

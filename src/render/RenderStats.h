@@ -14,13 +14,14 @@ struct RenderStats {
     size_t outputs = 0;
 
     // Sum of render times over all outputs, in ms
-    float total_render_time = 0;
+    double total_render_time = 0;
 
     // The minimum and maximum time a shader took, in ms
-    float max_render_time = 0;
-    float min_render_time = std::numeric_limits<float>::max();
+    double max_render_time = 0;
+    double min_render_time = std::numeric_limits<double>::max();
 
     RenderStats& combine(const RenderStats& other);
+    double mrays_per_s() const;
 };
 
 class RenderStatsCollector {

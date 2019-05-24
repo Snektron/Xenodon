@@ -67,14 +67,12 @@ vec4 trace(vec3 ro, vec3 rd) {
         vec3 t_corner = pos * t_coeff - t_bias;
         float tc_max = min_elem(t_corner);
 
-        uint child = model.nodes[parent].children[idx ^ octant_mask];
-
         if (t_min <= t_max) {
-            float hlf = scale_exp2 * 0.5;
             float tv_max = min(t_max, tc_max);
-            vec3 t_center = hlf * t_coeff + t_corner;
 
             if (t_min <= tv_max) {
+                uint child = model.nodes[parent].children[idx ^ octant_mask];
+
                 if (model.nodes[child].is_leaf_depth >= LEAF) {
                     vec4 color = unpackUnorm4x8(model.nodes[child].color);
                     total_color += color * (tv_max - t_min) * density;
@@ -90,7 +88,10 @@ vec4 trace(vec3 ro, vec3 rd) {
                     parent = child;
 
                     --scale;
-                    scale_exp2 = hlf;
+                    scale_exp2 *= 0.5;
+
+                    vec3 t_center = scale_exp2 * t_coeff + t_corner;
+
                     bvec3 a = greaterThan(t_center, vec3(t_min));
                     idx = cxor(0, a);
                     pos += mix(vec3(0), vec3(scale_exp2), a);
