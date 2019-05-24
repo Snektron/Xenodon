@@ -33,7 +33,6 @@ public:
 
     static_assert(sizeof(Node) == 40, "");
 
-
 private:
     struct ConstructionContext;
 
@@ -48,6 +47,8 @@ public:
     static Octree load_svo(const std::filesystem::path& path);
 
     void save_svo(const std::filesystem::path& path) const;
+
+    const Octree::Node* find(const Vec3Sz& pos, size_t max_depth) const;
 
     Span<Node> data() const {
         return this->nodes;

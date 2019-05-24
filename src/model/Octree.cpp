@@ -158,6 +158,45 @@ void Octree::save_svo(const std::filesystem::path& path) const {
     }
 }
 
+const Octree::Node* Octree::find(const Vec3Sz& pos, size_t max_depth) const {
+    size_t extent = this->dim;
+    if (pos.x > extent || pos.y > extent || pos.z > extent) {
+        return nullptr;
+    }
+
+    size_t index = 0;
+    auto offset = Vec3Sz{0, 0, 0};
+
+    while (true) {
+        extent /= 2;
+
+        if (this->nodes[index].is_leaf_depth & LEAF || extent == 0 || max_depth == 0) {
+            return &this->nodes[index];
+        }
+
+        size_t child_index = 0;
+
+        if (pos.x >= offset.x + extent) {
+            child_index |= X_POS;
+            offset.x += extent;
+        }
+
+        if (pos.y >= offset.y + extent) {
+            child_index |= Y_POS;
+            offset.y += extent;
+        }
+
+        if (pos.z >= offset.z + extent) {
+            child_index |= Z_POS;
+            offset.z += extent;
+        }
+
+        index = this->nodes[index].children[child_index];
+
+        --max_depth;
+    }
+}
+
 uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t extent, size_t depth) {
     auto insert = [&](const Node& node) {
         uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
