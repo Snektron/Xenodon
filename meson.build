@@ -45,7 +45,7 @@ sources = [
     'src/render/Renderer.cpp',
     'src/render/SvoRaytraceAlgorithm.cpp',
     'src/render/DdaRaytraceAlgorithm.cpp',
-    'src/render/RenderStatistics.cpp',
+    'src/render/RenderStats.cpp',
     'src/camera/OrbitCameraController.cpp',
     'src/backend/backend.cpp',
     'src/backend/SwapImage.cpp',

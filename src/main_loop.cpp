@@ -71,6 +71,7 @@ namespace {
                 return "tiff";
             case FileType::Svo:
                 return "svo";
+            default:
             case FileType::Unknown:
                 return "unknown";
         }
@@ -195,14 +196,20 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     Action zoom_in = Action::Release;
     Action zoom_out = Action::Release;
 
-    dispatcher.bind(Key::A, [&](Action a) { left = a; });
-    dispatcher.bind(Key::D, [&](Action a) { right = a; });
-    dispatcher.bind(Key::W, [&](Action a) { up = a; });
-    dispatcher.bind(Key::S, [&](Action a) { down = a; });
-    dispatcher.bind(Key::Q, [&](Action a) { roll_left = a; });
-    dispatcher.bind(Key::E, [&](Action a) { roll_right = a; });
-    dispatcher.bind(Key::Up, [&](Action a) { zoom_in = a; });
-    dispatcher.bind(Key::Down, [&](Action a) { zoom_out = a; });
+    auto bind_action = [](Action& var) {
+        return [&var](Action a) {
+            var = a;
+        };
+    };
+
+    dispatcher.bind(Key::A, bind_action(left));
+    dispatcher.bind(Key::D, bind_action(right));
+    dispatcher.bind(Key::W, bind_action(up));
+    dispatcher.bind(Key::S, bind_action(down));
+    dispatcher.bind(Key::Q, bind_action(roll_left));
+    dispatcher.bind(Key::E, bind_action(roll_right));
+    dispatcher.bind(Key::Up, bind_action(zoom_in));
+    dispatcher.bind(Key::Down, bind_action(zoom_out));
 
     auto update_camera = [&](float dt) {
         const float sensivity = dt;
@@ -248,6 +255,9 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
         update_camera(dt);
 
         renderer.render(controller.camera());
+        auto stats = renderer.stats();
+
+        fmt::print("total_rays: {}, total_render_time: {} ms\n", stats.total_rays, stats.total_render_time);
 
         {
             auto now = std::chrono::high_resolution_clock::now();

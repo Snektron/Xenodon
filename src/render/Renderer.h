@@ -9,7 +9,7 @@
 #include "backend/RenderDevice.h"
 #include "graphics/memory/Buffer.h"
 #include "render/RenderAlgorithm.h"
-#include "render/RenderStatistics.h"
+#include "render/RenderStats.h"
 #include "camera/Camera.h"
 #include "math/Vec.h"
 
@@ -53,7 +53,7 @@ private:
     struct DeviceResources {
         const RenderDevice* rendev;
         std::unique_ptr<RenderResources> resources;
-        RenderStatistics stats;
+        RenderStatsCollector stats_collector;
 
         vk::UniqueDescriptorSetLayout descriptor_set_layout;
         vk::UniqueDescriptorPool descriptor_pool;
@@ -77,6 +77,7 @@ public:
     Renderer(Display* display, const RenderAlgorithm* algorithm, const ShaderParameters& shader_params);
     void recreate(size_t device, size_t output);
     void render(const Camera& cam);
+    RenderStats stats() const;
 
 private:
     void create_resources();
