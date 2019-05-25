@@ -173,7 +173,7 @@ void Octree::save_svo(const std::filesystem::path& path) const {
 
 std::pair<const Octree::Node*, size_t> Octree::find(const Vec3Sz& pos, size_t max_depth) const {
     size_t extent = this->dim;
-    if (pos.x > extent || pos.y > extent || pos.z > extent) {
+    if (pos.x >= extent || pos.y >= extent || pos.z >= extent) {
         return {nullptr, 0};
     }
 

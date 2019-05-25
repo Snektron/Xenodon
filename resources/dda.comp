@@ -46,7 +46,6 @@ vec3 trace(vec3 ro, vec3 rd) {
     vec3 t_delta = abs(rrd);
     vec3 sgn = sign(rd);
     ivec3 step = ivec3(sgn);
-
     vec3 side_dist = (sgn * (floor(ro) - ro + 0.5) + 0.5) * t_delta;
 
     float t = min_elem(side_dist);

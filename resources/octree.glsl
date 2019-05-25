@@ -13,6 +13,7 @@ layout(binding = 2) readonly buffer Octree {
     Node nodes[];
 } model;
 
-const uint LEAF = 1 << 31;
+const uint LEAF_MASK = 1 << 31;
+const uint DEPTH_MASK = 0x7FFFFFFF;
 
 #endif

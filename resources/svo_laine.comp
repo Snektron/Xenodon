@@ -73,7 +73,7 @@ vec4 trace(vec3 ro, vec3 rd) {
             if (t_min <= tv_max) {
                 uint child = model.nodes[parent].children[idx ^ octant_mask];
 
-                if (model.nodes[child].is_leaf_depth >= LEAF) {
+                if (model.nodes[child].is_leaf_depth >= LEAF_MASK) {
                     vec4 color = unpackUnorm4x8(model.nodes[child].color);
                     total_color += color * (tv_max - t_min) * density;
                 } else {

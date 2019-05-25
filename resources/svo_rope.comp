@@ -1,0 +1,155 @@
+#version 450
+
+#include "common.glsl"
+#include "octree.glsl"
+
+const float MIN_STEP_SIZE = 0.00001;
+
+uint find(vec3 pos, out vec3 base, out float side) {
+    float extent = 1.0;
+
+    uint parent = 0; // root
+    vec3 offset = vec3(0);
+
+    while (true) {
+        if (model.nodes[parent].is_leaf_depth >= LEAF_MASK) {
+            base = offset;
+            side = extent;
+            return parent;
+        }
+
+        extent *= 0.5;
+        bvec3 mask = greaterThanEqual(pos, offset + extent);
+        int child = int(mask.x) * 4 + int(mask.y) * 2 + int(mask.z);
+        offset += vec3(mask) * vec3(extent);
+        parent = model.nodes[parent].children[child];
+    }
+}
+
+uint find_relative(uint parent, vec3 offset, vec3 pos, out vec3 base, out float side) {
+    float extent = exp2(-float(model.nodes[parent].is_leaf_depth & DEPTH_MASK));
+    offset = offset - mod(offset, extent);
+
+    while (true) {
+        if (model.nodes[parent].is_leaf_depth >= LEAF_MASK) {
+            base = offset;
+            side = extent;
+            return parent;
+        }
+
+        extent *= 0.5;
+        bvec3 mask = greaterThanEqual(pos, offset + extent);
+        int child = int(mask.x) * 4 + int(mask.y) * 2 + int(mask.z);
+        offset += vec3(mask) * vec3(extent);
+        parent = model.nodes[parent].children[child];
+    }
+
+    return 0;
+}
+
+uint neighbor_index(uvec3 neighbor_base, vec3 far, out vec3 mask) {
+    // Due to the problem that some components may be exactly equal,
+    // dont use fancy vector magic
+    if (far.x < min(far.y, far.z)) {
+        mask = vec3(1, 0, 0);
+        return neighbor_base.x;
+    } else if (far.y < far.z) {
+        mask = vec3(0, 1, 0);
+        return neighbor_base.y;
+    } else {
+        mask = vec3(0, 0, 1);
+        return neighbor_base.z;
+    }
+}
+
+vec4 trace(vec3 ro, vec3 rd) {
+    vec3 sgn = sign(rd);
+    uvec3 neighbor_base = uvec3(1, 3, 5) - uvec3(max(sgn, ivec3(0)));
+
+    // Add this to avoid some floating point errors
+    sgn += 0.1;
+
+    vec3 rrd = 1.0 / rd;
+    vec3 bias = rrd * ro;
+
+    vec3 box_min = -bias;
+    vec3 box_max = rrd - bias;
+
+    float t_min = max_elem(min(box_min, box_max));
+    float t_max = min_elem(max(box_min, box_max));
+
+    if (t_min > t_max) {
+        // Ray misses bounding cube
+        return vec4(0);
+    }
+
+    t_min = max(t_min, 0);
+
+    float density = voxel_density(rd);
+
+    // Search for the first node and get its intersection
+    vec3 pos = ro + t_min * rd;
+
+    vec3 offset;
+    float side;
+    uint node = find(pos, offset, side);
+
+    vec3 node_min = offset * rrd - bias;
+    vec3 node_max = (offset + side) * rrd - bias;
+
+    vec3 far = max(node_min, node_max);
+
+    float u_min = max_elem(min(node_min, node_max));
+    float u_max = min_elem(far);
+
+    float step = u_max - max(u_min, 0);
+    vec4 color = unpackUnorm4x8(model.nodes[node].color);
+    vec4 total = color * step * density;
+
+    vec3 mask;
+    uint n = neighbor_index(neighbor_base, far, mask);
+    node = model.nodes[node].children[n];
+    offset += mask * sgn * side;
+
+    while (node != 0) {
+        pos = ro + u_max * rd;
+        node = find_relative(node, offset, pos, offset, side);
+
+        node_min = offset * rrd - bias;
+        node_max = (offset + side) * rrd - bias;
+
+        far = max(node_min, node_max);
+
+        u_min = max_elem(min(node_min, node_max));
+        u_max = min_elem(far);
+        step = u_max - max(u_min, 0);
+        color = unpackUnorm4x8(model.nodes[node].color);
+
+        total += color * step * density;
+
+        vec3 mask;
+        uint n = neighbor_index(neighbor_base, far, mask);
+        node = model.nodes[node].children[n];
+        offset += mask * sgn * side;
+    }
+
+    return total;
+}
+
+void main() {
+    uvec2 index = gl_GlobalInvocationID.xy;
+
+    if (any(greaterThanEqual(index, uniforms.output_region.extent))) {
+        return;
+    }
+
+    ivec2 pixel = uniforms.output_region.offset + ivec2(index);
+    vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
+
+    vec3 ro = push.camera.translation.xyz;
+    vec3 rd = ray(uv);
+
+    vec4 color = trace(ro, rd);
+
+    imageStore(render_target, ivec2(index), vec4(color.rgb, 1));
+}

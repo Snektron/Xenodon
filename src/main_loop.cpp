@@ -37,6 +37,7 @@ namespace {
         ShaderOption{"svo-naive", FileType::Svo, resources::open("resources/svo_naive.comp")},
         ShaderOption{"svo-laine", FileType::Svo, resources::open("resources/svo_laine.comp")},
         ShaderOption{"svo-2", FileType::Svo, resources::open("resources/svo2.comp")},
+        ShaderOption{"svo-rope", FileType::Svo, resources::open("resources/svo_rope.comp")}
     };
 
     void check_setup(Display* display) {

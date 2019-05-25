@@ -62,7 +62,8 @@ shaders = [
     'resources/dda.comp',
     'resources/svo_naive.comp',
     'resources/svo_laine.comp',
-    'resources/svo2.comp'
+    'resources/svo2.comp',
+    'resources/svo_rope.comp'
 ]
 
 resources = [
