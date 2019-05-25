@@ -15,10 +15,12 @@ void convert(Span<const char*> args) {
 
     uint8_t split_difference = 0;
     bool dag = false;
+    bool rope = false;
 
     auto cmd = args::Command {
         .flags = {
-            {&dag, "--dag"}
+            {&dag, "--dag"},
+            {&rope, "--rope"}
         },
         .parameters = {
             {args::int_range_opt<uint8_t>(&split_difference), "split difference", "--split-difference"}
@@ -33,6 +35,11 @@ void convert(Span<const char*> args) {
         args::parse(args, cmd);
     } catch (const args::ParseError& e) {
         fmt::print("Error: {}\n", e.what());
+        return;
+    }
+
+    if (dag && rope) {
+        fmt::print("Error: --dag and --rope are mutually exclusive\n");
         return;
     }
 
@@ -52,7 +59,7 @@ void convert(Span<const char*> args) {
         fmt::print(" Size: {:n} bytes\n", grid->memory_footprint());
     }
 
-    const auto octree = Octree(*grid, split_difference, dag);
+    const auto octree = Octree(*grid, split_difference, dag ? Octree::Type::Dag : rope ? Octree::Type::Rope : Octree::Type::Full);
 
     {
         fmt::print("Generated octree:\n");

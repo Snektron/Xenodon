@@ -5,6 +5,7 @@
 #include <limits>
 #include <filesystem>
 #include <array>
+#include <utility>
 #include <cstddef>
 #include <cstdint>
 #include "math/Vec.h"
@@ -15,6 +16,12 @@ class Grid;
 
 class Octree {
 public:
+    enum class Type {
+        Full,
+        Dag,
+        Rope
+    };
+
     constexpr const static size_t X_NEG = 0;
     constexpr const static size_t X_POS = 1 << 2;
     constexpr const static size_t Y_NEG = 0;
@@ -23,12 +30,17 @@ public:
     constexpr const static size_t Z_POS = 1 << 0;
 
     constexpr const static uint32_t LEAF = 1u << 31u;
+    constexpr const static size_t ROOT = 0;
 
     // This struct should be kept in sync with resources/svo.frag
     struct Node {
         std::array<uint32_t, 8> children;
         Pixel color;
         uint32_t is_leaf_depth;
+
+        bool is_leaf() const {
+            return (this->is_leaf_depth & LEAF) != 0;
+        }
     };
 
     static_assert(sizeof(Node) == 40, "");
@@ -42,13 +54,13 @@ private:
     Octree(size_t dim, std::vector<Node>&& nodes);
 
 public:
-    Octree(const Grid& src, uint8_t min_channel_diff, bool dag);
+    Octree(const Grid& src, uint8_t min_channel_diff, Type type);
 
     static Octree load_svo(const std::filesystem::path& path);
 
     void save_svo(const std::filesystem::path& path) const;
 
-    const Octree::Node* find(const Vec3Sz& pos, size_t max_depth) const;
+    std::pair<const Octree::Node*, size_t> find(const Vec3Sz& pos, size_t max_depth) const;
 
     Span<Node> data() const {
         return this->nodes;
@@ -64,6 +76,14 @@ public:
 
 private:
     uint32_t construct(ConstructionContext& ctx, Vec3Sz offset, size_t extent, size_t depth);
+
+    template <typename F>
+    void walk_leaves_r(F f, const Vec3Sz& pos, size_t extent, size_t depth, Node& node);
+
+    template <typename F>
+    void walk_leaves(F f);
+
+    void generate_ropes();
 };
 
 #endif

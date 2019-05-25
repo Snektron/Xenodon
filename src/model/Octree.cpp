@@ -62,33 +62,46 @@ struct Octree::ConstructionContext {
     const Grid& src;
     std::unordered_map<Node, uint32_t> map = {};
     uint8_t min_channel_diff;
-    bool dag;
+    Type type;
 };
 
 Octree::Octree(size_t dim, std::vector<Node>&& nodes):
     dim(dim), nodes(std::move(nodes)) {
 }
 
-Octree::Octree(const Grid& src, uint8_t min_channel_diff, bool dag) {
+Octree::Octree(const Grid& src, uint8_t min_channel_diff, Type type) {
     const auto src_dim = src.dimensions();
     this->dim = std::max({ceil_2pow(src_dim.x), ceil_2pow(src_dim.y), ceil_2pow(src_dim.z)});
 
     auto ctx = ConstructionContext{
         .src = src,
         .min_channel_diff = min_channel_diff,
-        .dag = dag
+        .type = type
     };
 
     this->construct(ctx, Vec3Sz{0, 0, 0}, this->dim, 0);
 
     this->nodes.shrink_to_fit();
+
+    // Flip the nodes so the root is 0
     std::reverse(this->nodes.begin(), this->nodes.end());
 
     uint32_t end = static_cast<uint32_t>(this->nodes.size()) - 1;
     for (auto& node : this->nodes) {
-        for (uint32_t& child : node.children) {
-            child = end - child;
+        // If the node is a leaf, reset all of its child pointers to the root.
+        if (node.is_leaf()) {
+            for (uint32_t& child : node.children) {
+                child = ROOT;
+            }
+        } else {
+            for (uint32_t& child : node.children) {
+                child = end - child;
+            }
         }
+    }
+
+    if (type == Type::Rope) {
+        this->generate_ropes();
     }
 }
 
@@ -158,10 +171,10 @@ void Octree::save_svo(const std::filesystem::path& path) const {
     }
 }
 
-const Octree::Node* Octree::find(const Vec3Sz& pos, size_t max_depth) const {
+std::pair<const Octree::Node*, size_t> Octree::find(const Vec3Sz& pos, size_t max_depth) const {
     size_t extent = this->dim;
     if (pos.x > extent || pos.y > extent || pos.z > extent) {
-        return nullptr;
+        return {nullptr, 0};
     }
 
     size_t index = 0;
@@ -170,8 +183,8 @@ const Octree::Node* Octree::find(const Vec3Sz& pos, size_t max_depth) const {
     while (true) {
         extent /= 2;
 
-        if (this->nodes[index].is_leaf_depth & LEAF || extent == 0 || max_depth == 0) {
-            return &this->nodes[index];
+        if (this->nodes[index].is_leaf() || extent == 0 || max_depth == 0) {
+            return {&this->nodes[index], index};
         }
 
         size_t child_index = 0;
@@ -201,7 +214,7 @@ uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t exten
     auto insert = [&](const Node& node) {
         uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
 
-        if (ctx.dag) {
+        if (ctx.type == Type::Dag) {
             auto [it, inserted] = ctx.map.insert({node, node_index});
             if (inserted) {
                 this->nodes.push_back(node);
@@ -267,4 +280,52 @@ uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t exten
 
         return insert(node);
     }
+}
+
+template <typename F>
+void Octree::walk_leaves_r(F f, const Vec3Sz& pos, size_t extent, size_t depth, Node& node) {
+    if (node.is_leaf()) {
+        f(pos, extent, depth, node);
+        return;
+    }
+
+    size_t h_extent = extent / 2;
+    size_t child = 0;
+
+    for (auto xoff : {size_t{0}, h_extent}) {
+        for (auto yoff : {size_t{0}, h_extent}) {
+            for (auto zoff : {size_t{0}, h_extent}) {
+                auto child_pos = Vec3Sz{pos.x + xoff, pos.y + yoff, pos.z + zoff};
+                auto& child_node = this->nodes[node.children[child++]];
+                this->walk_leaves_r(f, child_pos, h_extent, depth + 1, child_node);
+            }
+        }
+    }
+}
+
+template <typename F>
+void Octree::walk_leaves(F f) {
+    this->walk_leaves_r(f, {0, 0, 0}, this->dim, 0, this->nodes[ROOT]);
+}
+
+void Octree::generate_ropes() {
+    this->walk_leaves([this](const Vec3Sz& pos, size_t extent, size_t depth, Node& node) {
+        auto node_xpos = this->find(pos + Vec3Sz{extent, 0, 0}, depth).second;
+        auto node_xneg = this->find(pos + Vec3Sz{-extent, 0, 0}, depth).second;
+
+        auto node_ypos = this->find(pos + Vec3Sz{ 0, extent, 0}, depth).second;
+        auto node_yneg = this->find(pos + Vec3Sz{ 0, -extent, 0}, depth).second;
+
+        auto node_zpos = this->find(pos + Vec3Sz{0, 0, extent}, depth).second;
+        auto node_zneg = this->find(pos + Vec3Sz{0, 0, -extent}, depth).second;
+
+        node.children[0] = static_cast<uint32_t>(node_xpos);
+        node.children[1] = static_cast<uint32_t>(node_xneg);
+
+        node.children[2] = static_cast<uint32_t>(node_ypos);
+        node.children[3] = static_cast<uint32_t>(node_yneg);
+
+        node.children[4] = static_cast<uint32_t>(node_zpos);
+        node.children[5] = static_cast<uint32_t>(node_zneg);
+    });
 }
