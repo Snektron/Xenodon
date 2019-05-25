@@ -67,6 +67,7 @@ vec4 trace(vec3 ro, vec3 rd) {
         uint node = find(p, offset, side);
 
         vec2 isect = aabb_intersect(vec3(0), vec3(side), ro - offset, rrd);
+        isect.x = max(isect.x, 0);
         float step = max(isect.y - isect.x, MIN_STEP_SIZE);
         t += step;
 

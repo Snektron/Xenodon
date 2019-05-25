@@ -41,7 +41,7 @@ void convert(Span<const char*> args) {
     try {
         grid = std::make_unique<Grid>(Grid::load_tiff(src));
     } catch (const Error& e) {
-        fmt::print("Error reading '{}': {}", src.native(), e.what());
+        fmt::print("Error reading '{}': {}\n", src.native(), e.what());
         return;
     }
 
@@ -64,6 +64,6 @@ void convert(Span<const char*> args) {
     try {
         octree.save_svo(dst);
     } catch (const std::runtime_error& e) {
-        fmt::print("Error writing '{}': {}", dst.native(), e.what());
+        fmt::print("Error writing '{}': {}\n", dst.native(), e.what());
     }
 }
