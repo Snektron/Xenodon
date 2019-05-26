@@ -61,7 +61,7 @@ sources = [
 shaders = [
     'resources/dda.comp',
     'resources/svo_naive.comp',
-    'resources/svo_laine.comp',
+    'resources/esvo.comp',
     'resources/svo2.comp',
     'resources/svo_rope.comp'
 ]
@@ -72,7 +72,7 @@ resources = [
 
 add_project_arguments(
     [
-        '-march=native',
+#        '-march=native',
         '-Wconversion',
         '-Wall',
         '-Wextra',
