@@ -1,7 +1,9 @@
 #include "render/RenderStats.h"
 #include <array>
 #include <algorithm>
-#include <cstdint>
+#include <fstream>
+#include <fmt/format.h>
+#include "core/Error.h"
 
 namespace {
     // For each output, 2 queries must be made: start and end time
@@ -78,4 +80,76 @@ void RenderStatsCollector::collect() {
         this->current_stats.max_render_time = std::max(this->current_stats.max_render_time, time);
         this->current_stats.min_render_time = std::min(this->current_stats.min_render_time, time);
     }
+}
+
+void RenderStatsAccumulator::start() {
+    this->start_time = std::chrono::high_resolution_clock::now();
+}
+
+void RenderStatsAccumulator::stop() {
+    this->stop_time = std::chrono::high_resolution_clock::now();
+}
+
+size_t RenderStatsAccumulator::total_rays() const {
+    size_t total_rays = 0;
+    for (const auto& stats : this->all_stats) {
+        total_rays += stats.total_rays;
+    }
+
+    return total_rays;
+}
+
+double RenderStatsAccumulator::total_render_time() const {
+    double total_render_time = 0;
+    for (const auto& stats : this->all_stats) {
+        total_render_time += stats.total_render_time;
+    }
+
+    return total_render_time;
+}
+
+double RenderStatsAccumulator::mrays_per_s() const {
+    return static_cast<double>(this->total_rays()) / (this->total_render_time() * 1'000);
+}
+
+std::chrono::duration<double> RenderStatsAccumulator::total_time() const {
+    return this->stop_time - this->start_time;
+}
+
+double RenderStatsAccumulator::fps() const {
+    return this->all_stats.size() / this->total_time().count();
+}
+
+void RenderStatsAccumulator::save(std::filesystem::path path) const {
+    fmt::memory_buffer out;
+
+    fmt::format_to(out, "total rays: {}\n", this->total_rays());
+    fmt::format_to(out, "total render time: {}\n", this->total_render_time());
+    fmt::format_to(out, "total mray/s: {}\n", this->mrays_per_s());
+    fmt::format_to(out, "average fps: {}\n", this->fps());
+    fmt::format_to(out, "frames: {}\n", this->all_stats.size());
+    fmt::format_to(out, "# Frame number: total rays, outputs, total render time, max render time, min render time, mray/s\n");
+
+    for (size_t frame_index = 0; frame_index < this->all_stats.size(); ++frame_index) {
+        const auto& frame = this->all_stats[frame_index];
+
+        fmt::format_to(
+            out,
+            "frame {}: {} rays, {}, {} ms, {} ms, {} ms, {} mray/s\n",
+            frame_index,
+            frame.total_rays,
+            frame.outputs,
+            frame.total_render_time,
+            frame.max_render_time,
+            frame.min_render_time,
+            frame.mrays_per_s()
+        );
+    }
+
+    auto out_file = std::ofstream(path);
+    if (!out_file) {
+        throw Error("Failed to open render stats output path '{}'", path.native());
+    }
+
+    out_file << fmt::to_string(out);
 }

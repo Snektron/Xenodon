@@ -100,7 +100,8 @@ namespace {
                 {args::float_range_opt(&opts.render_params.density, 0.f), "density", "--density"},
                 {args::string_opt(&opts.render_params.model_type_override), "model type", "--model-type"},
                 {args::string_opt(&opts.render_params.shader), "shader", "--shader", 's'},
-                {voxel_ratio_opt(&opts.render_params.voxel_ratio), "voxel dimension ratio", "--voxel-ratio", 'r'}
+                {voxel_ratio_opt(&opts.render_params.voxel_ratio), "voxel dimension ratio", "--voxel-ratio", 'r'},
+                {args::path_opt(&opts.render_params.stats_save_path), "stats output", "--stats-output"}
             },
             .positional = {
                 {args::path_opt(&opts.render_params.model_path), "model"}

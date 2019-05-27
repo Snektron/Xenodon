@@ -245,32 +245,39 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     auto last_frame = start;
     size_t frames = 0;
 
+    auto accum = RenderStatsAccumulator();
+    accum.start();
+
     LOGGER.log("Starting render loop...");
     while (!quit) {
         ++frames;
 
-        auto frame_start = std::chrono::high_resolution_clock::now();
-        float dt = std::chrono::duration<float>(frame_start - last_frame).count();
-        last_frame = frame_start;
-
-        update_camera(dt);
-
         renderer.render(controller.camera());
-        auto stats = renderer.stats();
 
-        LOGGER.log("total_rays: {}, total_render_time: {} ms, mray/s: {}", stats.total_rays, stats.total_render_time, stats.mrays_per_s());
+        auto frame_end = std::chrono::high_resolution_clock::now();
+        update_camera(std::chrono::duration<float>(frame_end - last_frame).count());
+        last_frame = frame_end;
 
-        {
-            auto now = std::chrono::high_resolution_clock::now();
-            auto diff = std::chrono::duration<double>(now - start);
+        accum(renderer.stats());
 
-            if (diff > std::chrono::seconds{5}) {
-                LOGGER.log("FPS: {}", static_cast<double>(frames) / diff.count());
-                frames = 0;
-                start = now;
-            }
+
+        auto now = std::chrono::high_resolution_clock::now();
+        auto diff = std::chrono::duration<double>(now - start);
+
+        if (diff > std::chrono::seconds{5}) {
+            LOGGER.log("FPS: {}", static_cast<double>(frames) / diff.count());
+            frames = 0;
+            start = now;
         }
 
         display->poll_events();
+    }
+
+    accum.stop();
+    LOGGER.log("total_rays: {}, total_render_time: {} ms, mray/s: {}, fps: {}", accum.total_rays(), accum.total_render_time(), accum.mrays_per_s(), accum.fps());
+
+    if (!render_params.stats_save_path.empty()) {
+        accum.save(render_params.stats_save_path);
+        LOGGER.log("Saved stats to '{}'", render_params.stats_save_path.native());
     }
 }
