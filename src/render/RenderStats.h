@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <limits>
+#include <chrono>
+#include <filesystem>
 #include <cstddef>
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
@@ -39,6 +41,27 @@ public:
     const RenderStats& stats() const {
         return this->current_stats;
     }
+};
+
+class RenderStatsAccumulator {
+    std::vector<RenderStats> all_stats;
+    std::chrono::high_resolution_clock::time_point start_time;
+    std::chrono::high_resolution_clock::time_point stop_time;
+
+public:
+    void start();
+    void stop();
+
+    void operator()(const RenderStats& stats) {
+        this->all_stats.push_back(stats);
+    }
+
+    size_t total_rays() const;
+    double total_render_time() const;
+    double mrays_per_s() const;
+    std::chrono::duration<double> total_time() const;
+    double fps() const;
+    void save(std::filesystem::path path) const;
 };
 
 #endif
