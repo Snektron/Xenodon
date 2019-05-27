@@ -257,12 +257,17 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
 
     accum.stop();
     LOGGER.log(
-        "total_rays: {}, total_render_time: {} ms, mray/s: {}, fps: {}, frames: {}",
+        "total rays: {}, total render time: {}ms, mray/s: {}",
         accum.total_rays(),
         accum.total_render_time(),
-        accum.mrays_per_s(),
+        accum.mrays_per_s()
+    );
+
+    LOGGER.log(
+        "frames: {}, fps: {}, total time: {}s",
+        accum.frames(),
         accum.fps(),
-        accum.frames()
+        accum.total_time().count()
     );
 
     if (!render_params.stats_save_path.empty()) {

@@ -3,10 +3,11 @@
 
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include "backend/Display.h"
 #include "backend/Event.h"
 
-std::unique_ptr<Display> create_headless_backend(EventDispatcher& dispatcher, std::filesystem::path config, std::filesystem::path output);
+std::unique_ptr<Display> create_headless_backend(EventDispatcher& dispatcher, std::filesystem::path config, std::optional<std::filesystem::path> output);
 
 std::unique_ptr<Display> create_xorg_backend(EventDispatcher& dispatcher, std::filesystem::path multi_gpu_config);
 

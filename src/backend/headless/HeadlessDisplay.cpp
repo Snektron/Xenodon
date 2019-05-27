@@ -9,7 +9,7 @@ namespace {
     constexpr const auto BLACK_PIXEL = 0xFF000000;
 }
 
-HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, std::filesystem::path out_path):
+HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, std::optional<std::filesystem::path> out_path):
     dispatcher(dispatcher),
     instance(nullptr),
     out_path(out_path) {
@@ -39,11 +39,15 @@ void HeadlessDisplay::swap_buffers() {
         output.synchronize();
     }
 
-    this->save();
+    if (this->out_path.has_value()) {
+        this->save();
+    }
 }
 
 void HeadlessDisplay::poll_events() {
-    this->dispatcher.dispatch_close_event();
+    if (this->out_path.has_value()) {
+        this->dispatcher.dispatch_close_event();
+    }
 }
 
 void HeadlessDisplay::save() {
@@ -68,7 +72,7 @@ void HeadlessDisplay::save() {
     LOGGER.log("Compressing...");
 
     unsigned error = lodepng::encode(
-        this->out_path.c_str(),
+        this->out_path.value().c_str(),
         reinterpret_cast<const unsigned char*>(image.data()),
         enclosing.extent.width,
         enclosing.extent.height
@@ -77,6 +81,6 @@ void HeadlessDisplay::save() {
     if (error) {
         LOGGER.log("Error saving output: {}", lodepng_error_text(error));
     } else {
-        LOGGER.log("Saved output to '{}'", this->out_path.native());
+        LOGGER.log("Saved output to '{}'", this->out_path.value().native());
     }
 }

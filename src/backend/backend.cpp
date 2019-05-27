@@ -10,7 +10,7 @@
     #include "backend/direct/direct.h"
 #endif
 
-std::unique_ptr<Display> create_headless_backend(EventDispatcher& dispatcher, std::filesystem::path config, std::filesystem::path output) {
+std::unique_ptr<Display> create_headless_backend(EventDispatcher& dispatcher, std::filesystem::path config, std::optional<std::filesystem::path> output) {
     return create_headless_display(dispatcher, config, output);
 }
 

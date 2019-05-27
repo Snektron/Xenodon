@@ -31,6 +31,7 @@ namespace {
         struct {
             std::filesystem::path config;
             std::filesystem::path output;
+            bool dont_save = false;
 
             bool enabled() const {
                 return !this->config.empty();
@@ -92,7 +93,8 @@ namespace {
             .flags = {
                 {&opts.quiet, "--quiet", 'q'},
                 {&opts.xorg.enabled, "--xorg"},
-                {&benchmark_camera, "--benchmark-camera"}
+                {&benchmark_camera, "--benchmark-camera"},
+                {&opts.headless.dont_save, "--dont-save"}
             },
             .parameters = {
                 {args::path_opt(&opts.log_output), "output path", "--log-output"},
@@ -124,10 +126,16 @@ namespace {
             throw Error("--xorg, --headless and --direct are mutually exclusive");
         }
 
+        if (!opts.headless.enabled() && opts.headless.dont_save) {
+            throw Error("--dont-save requires --headless");
+        }
+
         if (!opts.headless.output.empty() && !opts.headless.enabled()) {
             throw Error("--output requires --headless");
         } else if (opts.headless.output.empty()) {
             opts.headless.output = "out.png";
+        } else if (opts.headless.dont_save) {
+            throw Error("--dont-save and --output are mutually exclusive");
         }
 
         if (!opts.xorg.multi_gpu_config.empty() && !opts.xorg.enabled) {
@@ -165,7 +173,8 @@ namespace {
             } else if (opts.direct.enabled()) {
                 display = create_direct_backend(dispatcher, opts.direct.config);
             } else {
-                display = create_headless_backend(dispatcher, opts.headless.config, opts.headless.output);
+                auto output = !opts.headless.dont_save ? std::optional(opts.headless.output) : std::nullopt;
+                display = create_headless_backend(dispatcher, opts.headless.config, output);
             }
         } catch (const Error& e) {
             fmt::print("Error: Failed to initialize backend: {}", e.what());

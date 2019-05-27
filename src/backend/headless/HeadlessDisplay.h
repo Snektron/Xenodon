@@ -4,6 +4,7 @@
 #include <vector>
 #include <string_view>
 #include <filesystem>
+#include <optional>
 #include <vulkan/vulkan.hpp>
 #include "graphics/core/Instance.h"
 #include "backend/Display.h"
@@ -17,10 +18,10 @@ class HeadlessDisplay final: public Display {
     EventDispatcher& dispatcher;
     Instance instance;
     std::vector<HeadlessOutput> outputs;
-    std::filesystem::path out_path;
+    std::optional<std::filesystem::path> out_path;
 
 public:
-    HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, std::filesystem::path out_path);
+    HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, std::optional<std::filesystem::path> out_path);
 
     size_t num_render_devices() const override;
     const RenderDevice& render_device(size_t device_index) override;

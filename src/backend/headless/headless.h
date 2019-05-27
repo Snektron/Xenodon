@@ -2,11 +2,12 @@
 #define _XENODON_BACKEND_HEADLESS_HEADLESS_H
 
 #include <memory>
+#include <optional>
 #include <filesystem>
 #include "backend/headless/HeadlessDisplay.h"
 
 struct EventDispatcher;
 
-std::unique_ptr<HeadlessDisplay> create_headless_display(EventDispatcher& dispatcher, std::filesystem::path config, std::filesystem::path output);
+std::unique_ptr<HeadlessDisplay> create_headless_display(EventDispatcher& dispatcher, std::filesystem::path config, std::optional<std::filesystem::path> output);
 
 #endif

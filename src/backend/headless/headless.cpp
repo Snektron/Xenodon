@@ -5,7 +5,7 @@
 #include "backend/Event.h"
 #include "backend/headless/HeadlessConfig.h"
 
-std::unique_ptr<HeadlessDisplay> create_headless_display(EventDispatcher& dispatcher, std::filesystem::path config, std::filesystem::path output) {
+std::unique_ptr<HeadlessDisplay> create_headless_display(EventDispatcher& dispatcher, std::filesystem::path config, std::optional<std::filesystem::path> output) {
     LOGGER.log("Using headless presenting backend");
 
     auto in = std::ifstream(config);
