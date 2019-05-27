@@ -6,6 +6,7 @@
 struct CameraController {
     virtual ~CameraController() = default;
     virtual Camera camera() = 0;
+    virtual bool update(float dt) = 0;
 };
 
 #endif

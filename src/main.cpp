@@ -86,10 +86,13 @@ namespace {
     RenderOptions parse_render_args(Span<const char*> args) {
         RenderOptions opts;
 
+        bool benchmark_camera = false;
+
         auto cmd = args::Command {
             .flags = {
                 {&opts.quiet, "--quiet", 'q'},
-                {&opts.xorg.enabled, "--xorg"}
+                {&opts.xorg.enabled, "--xorg"},
+                {&benchmark_camera, "--benchmark-camera"}
             },
             .parameters = {
                 {args::path_opt(&opts.log_output), "output path", "--log-output"},
@@ -130,6 +133,8 @@ namespace {
         if (!opts.xorg.multi_gpu_config.empty() && !opts.xorg.enabled) {
             throw Error("--xorg-multi-gpu requires --xorg");
         }
+
+        opts.render_params.camera_type = benchmark_camera ? CameraType::Benchmark : CameraType::Orbit;
 
         return opts;
     }

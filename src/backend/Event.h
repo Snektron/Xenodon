@@ -27,7 +27,11 @@ private:
 
 public:
     void bind(Key key, ActionCallback f) {
-        this->key_bindings[key] = f;
+        if (f == nullptr) {
+            this->key_bindings.erase(key);
+        } else {
+            this->key_bindings[key] = f;
+        }
     }
 
     void bind_close(DisplayClosedCallback f) {

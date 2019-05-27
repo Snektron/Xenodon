@@ -13,6 +13,7 @@
 #include "render/Renderer.h"
 #include "camera/Camera.h"
 #include "camera/OrbitCameraController.h"
+#include "camera/BenchmarkCameraController.h"
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/Grid.h"
@@ -170,6 +171,24 @@ namespace {
                 assert(false); // make compiler happy
         }
     }
+
+    std::unique_ptr<CameraController> create_camera_controller(EventDispatcher& dispatcher, const RenderParameters& render_params) {
+        switch (render_params.camera_type) {
+            case CameraType::Orbit: {
+                // LOGGER.log("Using orbit camera controller: use w/s to change pitch, a/d to change yaw, q/e to change roll and up/down to zoom");
+                LOGGER.log("Using orbit camera controller. Controlls: ");
+                LOGGER.log(" - w/s to change pitch");
+                LOGGER.log(" - a/d to change yaw");
+                LOGGER.log(" - q/e to change roll");
+                LOGGER.log(" - up/down to zoom");
+                return std::make_unique<OrbitCameraController>(dispatcher);
+            }
+            case CameraType::Benchmark: {
+                LOGGER.log("Using benchmark camera controller");
+                return std::make_unique<BenchmarkCameraController>();
+            }
+        }
+    }
 }
 
 void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParameters& render_params) {
@@ -186,46 +205,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
 
     auto renderer = Renderer(display, algo.get(), shader_params);
 
-    auto controller = OrbitCameraController();
-
-    Action left = Action::Release;
-    Action right = Action::Release;
-    Action up = Action::Release;
-    Action down = Action::Release;
-    Action roll_left = Action::Release;
-    Action roll_right = Action::Release;
-    Action zoom_in = Action::Release;
-    Action zoom_out = Action::Release;
-
-    auto bind_action = [](Action& var) {
-        return [&var](Action a) {
-            var = a;
-        };
-    };
-
-    dispatcher.bind(Key::A, bind_action(left));
-    dispatcher.bind(Key::D, bind_action(right));
-    dispatcher.bind(Key::W, bind_action(up));
-    dispatcher.bind(Key::S, bind_action(down));
-    dispatcher.bind(Key::Q, bind_action(roll_left));
-    dispatcher.bind(Key::E, bind_action(roll_right));
-    dispatcher.bind(Key::Up, bind_action(zoom_in));
-    dispatcher.bind(Key::Down, bind_action(zoom_out));
-
-    auto update_camera = [&](float dt) {
-        const float sensivity = dt;
-        const float zoom_sensivity = dt;
-
-        float dyaw = (left == Action::Press ? sensivity : 0.f) + (right == Action::Press ? -sensivity : 0.f);
-        float dpitch = (up == Action::Press ? sensivity : 0.f) + (down == Action::Press ? -sensivity : 0.f);
-        float droll = (roll_left == Action::Press ? sensivity : 0.f) + (roll_right == Action::Press ? -sensivity : 0.f);
-        float dzoom = (zoom_in == Action::Press ? -zoom_sensivity : 0.f) + (zoom_out == Action::Press ? zoom_sensivity : 0.f);
-
-        controller.rotate_yaw(dyaw);
-        controller.rotate_pitch(dpitch);
-        controller.rotate_roll(droll);
-        controller.zoom(dzoom);
-    };
+    auto controller = create_camera_controller(dispatcher, render_params);
 
     bool quit = false;
     dispatcher.bind_close([&quit] {
@@ -252,14 +232,16 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     while (!quit) {
         ++frames;
 
-        renderer.render(controller.camera());
-
-        auto frame_end = std::chrono::high_resolution_clock::now();
-        update_camera(std::chrono::duration<float>(frame_end - last_frame).count());
-        last_frame = frame_end;
-
+        renderer.render(controller->camera());
         accum(renderer.stats());
 
+        auto frame_end = std::chrono::high_resolution_clock::now();
+        float dt = std::chrono::duration<float>(frame_end - last_frame).count();
+        if (controller->update(dt)) {
+            break;
+        }
+
+        last_frame = frame_end;
 
         auto now = std::chrono::high_resolution_clock::now();
         auto diff = std::chrono::duration<double>(now - start);
@@ -274,7 +256,14 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     }
 
     accum.stop();
-    LOGGER.log("total_rays: {}, total_render_time: {} ms, mray/s: {}, fps: {}", accum.total_rays(), accum.total_render_time(), accum.mrays_per_s(), accum.fps());
+    LOGGER.log(
+        "total_rays: {}, total_render_time: {} ms, mray/s: {}, fps: {}, frames: {}",
+        accum.total_rays(),
+        accum.total_render_time(),
+        accum.mrays_per_s(),
+        accum.fps(),
+        accum.frames()
+    );
 
     if (!render_params.stats_save_path.empty()) {
         accum.save(render_params.stats_save_path);

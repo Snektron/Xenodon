@@ -9,12 +9,18 @@
 struct EventDispatcher;
 struct Display;
 
+enum class CameraType {
+    Orbit,
+    Benchmark
+};
+
 struct RenderParameters {
     std::filesystem::path model_path;
     std::string_view model_type_override;
     std::string_view shader;
     std::filesystem::path stats_save_path;
     Vec3F voxel_ratio = Vec3F(1, 1, 1);
+    CameraType camera_type;
     float density = 1.f;
 };
 

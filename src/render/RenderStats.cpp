@@ -117,7 +117,11 @@ std::chrono::duration<double> RenderStatsAccumulator::total_time() const {
 }
 
 double RenderStatsAccumulator::fps() const {
-    return this->all_stats.size() / this->total_time().count();
+    return static_cast<double>(this->frames()) / this->total_time().count();
+}
+
+size_t RenderStatsAccumulator::frames() const {
+    return this->all_stats.size();
 }
 
 void RenderStatsAccumulator::save(std::filesystem::path path) const {
@@ -127,10 +131,10 @@ void RenderStatsAccumulator::save(std::filesystem::path path) const {
     fmt::format_to(out, "total render time: {}\n", this->total_render_time());
     fmt::format_to(out, "total mray/s: {}\n", this->mrays_per_s());
     fmt::format_to(out, "average fps: {}\n", this->fps());
-    fmt::format_to(out, "frames: {}\n", this->all_stats.size());
+    fmt::format_to(out, "frames: {}\n", this->frames());
     fmt::format_to(out, "# Frame number: total rays, outputs, total render time, max render time, min render time, mray/s\n");
 
-    for (size_t frame_index = 0; frame_index < this->all_stats.size(); ++frame_index) {
+    for (size_t frame_index = 0; frame_index < this->frames(); ++frame_index) {
         const auto& frame = this->all_stats[frame_index];
 
         fmt::format_to(

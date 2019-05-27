@@ -61,6 +61,7 @@ public:
     double mrays_per_s() const;
     std::chrono::duration<double> total_time() const;
     double fps() const;
+    size_t frames() const;
     void save(std::filesystem::path path) const;
 };
 

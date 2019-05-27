@@ -47,6 +47,7 @@ sources = [
     'src/render/DdaRaytraceAlgorithm.cpp',
     'src/render/RenderStats.cpp',
     'src/camera/OrbitCameraController.cpp',
+    'src/camera/BenchmarkCameraController.cpp',
     'src/backend/backend.cpp',
     'src/backend/SwapImage.cpp',
     'src/backend/RenderDevice.cpp',
