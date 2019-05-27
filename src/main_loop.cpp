@@ -35,7 +35,7 @@ namespace {
     constexpr const auto SHADER_OPTIONS = std::array {
         ShaderOption{"dda", FileType::Tiff, resources::open("resources/dda.comp")},
         ShaderOption{"svo-naive", FileType::Svo, resources::open("resources/svo_naive.comp")},
-        ShaderOption{"svo-laine", FileType::Svo, resources::open("resources/esvo.comp")},
+        ShaderOption{"esvo", FileType::Svo, resources::open("resources/esvo.comp")},
         ShaderOption{"svo-2", FileType::Svo, resources::open("resources/svo2.comp")},
         ShaderOption{"svo-rope", FileType::Svo, resources::open("resources/svo_rope.comp")}
     };
