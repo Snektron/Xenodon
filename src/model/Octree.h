@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <array>
 #include <utility>
+#include <variant>
+#include <functional>
 #include <cstddef>
 #include <cstdint>
 #include "math/Vec.h"
@@ -17,7 +19,7 @@ class Grid;
 class Octree {
 public:
     enum class Type {
-        Full,
+        Sparse,
         Dag,
         Rope
     };
@@ -43,7 +45,31 @@ public:
         }
     };
 
-    static_assert(sizeof(Node) == 40, "");
+    static_assert(sizeof(Node) == 40, "Compiler didnt pack Node struct properly");
+
+    struct ChannelDiffHeuristic {
+        uint8_t channel_diff;
+    };
+
+    struct StdDevHeuristic {
+        double stddev;
+    };
+
+    using SplitHeuristic = std::variant<ChannelDiffHeuristic, StdDevHeuristic>;
+
+    struct ConstructionParameters {
+        const Grid& src;
+        Type type;
+        SplitHeuristic heuristic;
+        std::function<void(size_t)> report = nullptr;
+    };
+
+    struct ConstructionStats {
+        size_t total_leaves;
+        size_t unique_leaves;
+        size_t total_nodes;
+        size_t depth;
+    };
 
 private:
     struct ConstructionContext;
@@ -54,7 +80,7 @@ private:
     Octree(size_t dim, std::vector<Node>&& nodes);
 
 public:
-    Octree(const Grid& src, uint8_t min_channel_diff, Type type);
+    static std::pair<Octree, ConstructionStats> from_grid(const ConstructionParameters& params);
 
     static Octree load_svo(const std::filesystem::path& path);
 

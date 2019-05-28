@@ -132,3 +132,80 @@ Grid::VolScanResult Grid::vol_scan(Vec3Sz bmin, Vec3Sz bmax) const {
         .max_diff = static_cast<uint8_t>(std::max({diff.r, diff.g, diff.b, diff.a}))
     };
 }
+
+Grid::StdDevResult Grid::stddev_scan(Vec3Sz bmin, Vec3Sz bmax) const {
+    bmin.x = std::min(this->dim.x, bmin.x);
+    bmin.y = std::min(this->dim.y, bmin.y);
+    bmin.z = std::min(this->dim.z, bmin.z);
+
+    bmax.x = std::min(this->dim.x, bmax.x);
+    bmax.y = std::min(this->dim.y, bmax.y);
+    bmax.z = std::min(this->dim.z, bmax.z);
+
+    size_t n = (bmax.x - bmin.x) * (bmax.y - bmin.y) * (bmax.z - bmin.z);
+    if (n == 0) {
+        return StdDevResult {
+            .avg = {0, 0, 0, 0},
+            .stddev = 0
+        };
+    }
+
+    struct {
+        size_t r, g, b, a;
+    } accum = {0, 0, 0, 0};
+
+    for (size_t z = bmin.z; z < bmax.z; ++z) {
+        size_t z_base = z * this->dim.x * this->dim.y;
+        for (size_t y = bmin.y; y < bmax.y; ++y) {
+            size_t y_base = y * this->dim.x + z_base;
+            for (size_t x = bmin.x; x < bmax.x; ++x) {
+                const auto pix = this->data[y_base + x];
+
+                accum.r += static_cast<size_t>(pix.r);
+                accum.g += static_cast<size_t>(pix.g);
+                accum.b += static_cast<size_t>(pix.b);
+                accum.a += static_cast<size_t>(pix.a);
+            }
+        }
+    }
+
+    double nd = static_cast<double>(n);
+
+    struct {
+        double r, g, b, a;
+    } avg = {
+        static_cast<double>(accum.r) / nd,
+        static_cast<double>(accum.g) / nd,
+        static_cast<double>(accum.b) / nd,
+        static_cast<double>(accum.a) / nd
+    };
+
+    double stddev = 0;
+
+    auto diff = [](uint8_t x, double u) {
+        double y = static_cast<double>(x) - u;
+        return y * y;
+    };
+
+    for (size_t z = bmin.z; z < bmax.z; ++z) {
+        size_t z_base = z * this->dim.x * this->dim.y;
+        for (size_t y = bmin.y; y < bmax.y; ++y) {
+            size_t y_base = y * this->dim.x + z_base;
+            for (size_t x = bmin.x; x < bmax.x; ++x) {
+                const auto pix = this->data[y_base + x];
+
+                stddev += diff(pix.r, avg.r) + diff(pix.g, avg.g) + diff(pix.b, avg.b) + diff(pix.a, avg.a);
+            }
+        }
+    }
+
+    return {
+        .avg = {
+            static_cast<uint8_t>(avg.r),
+            static_cast<uint8_t>(avg.g),
+            static_cast<uint8_t>(avg.b),
+            static_cast<uint8_t>(avg.a)
+        },
+        .stddev = std::sqrt(stddev / nd)
+    };
+}

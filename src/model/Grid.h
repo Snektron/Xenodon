@@ -17,6 +17,11 @@ public:
         uint8_t max_diff;
     };
 
+    struct StdDevResult {
+        Pixel avg;
+        double stddev;
+    };
+
 private:
     Vec3Sz dim;
     std::unique_ptr<Pixel[]> data;
@@ -31,6 +36,8 @@ public:
     static Grid load_tiff(const std::filesystem::path& path);
 
     VolScanResult vol_scan(Vec3Sz bmin, Vec3Sz bmax) const;
+
+    StdDevResult stddev_scan(Vec3Sz bmin, Vec3Sz bmax) const;
 
     Vec3Sz dimensions() const {
         return this->dim;

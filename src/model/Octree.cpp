@@ -59,35 +59,36 @@ bool operator!=(const Octree::Node& lhs, const Octree::Node& rhs) {
 }
 
 struct Octree::ConstructionContext {
-    const Grid& src;
     std::unordered_map<Node, uint32_t> map = {};
-    uint8_t min_channel_diff;
-    Type type;
+    const Octree::ConstructionParameters& params;
+    Octree::ConstructionStats stats;
 };
 
 Octree::Octree(size_t dim, std::vector<Node>&& nodes):
     dim(dim), nodes(std::move(nodes)) {
 }
 
-Octree::Octree(const Grid& src, uint8_t min_channel_diff, Type type) {
-    const auto src_dim = src.dimensions();
-    this->dim = std::max({ceil_2pow(src_dim.x), ceil_2pow(src_dim.y), ceil_2pow(src_dim.z)});
-
+std::pair<Octree, Octree::ConstructionStats> Octree::from_grid(const ConstructionParameters& params) {
     auto ctx = ConstructionContext{
-        .src = src,
-        .min_channel_diff = min_channel_diff,
-        .type = type
+        .params = params,
+        .stats = {
+            .total_leaves = 0,
+            .unique_leaves = 0,
+            .total_nodes = 0,
+            .depth = 0
+        }
     };
 
-    this->construct(ctx, Vec3Sz{0, 0, 0}, this->dim, 0);
+    const auto src_dim = params.src.dimensions();
+    auto dim = std::max({ceil_2pow(src_dim.x), ceil_2pow(src_dim.y), ceil_2pow(src_dim.z)});
 
-    this->nodes.shrink_to_fit();
+    auto octree = Octree(dim, std::vector<Octree::Node>());
 
-    // Flip the nodes so the root is 0
-    std::reverse(this->nodes.begin(), this->nodes.end());
+    octree.construct(ctx, Vec3Sz{0, 0, 0}, dim, 0);
+    octree.nodes.shrink_to_fit();
 
-    uint32_t end = static_cast<uint32_t>(this->nodes.size()) - 1;
-    for (auto& node : this->nodes) {
+    uint32_t end = static_cast<uint32_t>(octree.nodes.size()) - 1;
+    for (auto& node : octree.nodes) {
         // If the node is a leaf, reset all of its child pointers to the root.
         if (node.is_leaf()) {
             for (uint32_t& child : node.children) {
@@ -100,9 +101,11 @@ Octree::Octree(const Grid& src, uint8_t min_channel_diff, Type type) {
         }
     }
 
-    if (type == Type::Rope) {
-        this->generate_ropes();
+    if (params.type == Type::Rope) {
+        octree.generate_ropes();
     }
+
+    return {octree, ctx.stats};
 }
 
 Octree Octree::load_svo(const std::filesystem::path& path) {
@@ -211,25 +214,50 @@ std::pair<const Octree::Node*, size_t> Octree::find(const Vec3Sz& pos, size_t ma
 }
 
 uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t extent, size_t depth) {
+    ctx.stats.depth = std::max(ctx.stats.depth, depth);
+
+    auto push_node = [&](const Node& node) {
+        this->nodes.push_back(node);
+        if (ctx.params.report && this->nodes.size() % 1'000'000 == 0) {
+            ctx.params.report(this->nodes.size());
+        }
+        ++ctx.stats.total_nodes;
+    };
+
     auto insert = [&](const Node& node) {
         uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
+        bool leaf = node.is_leaf();
 
-        if (ctx.type == Type::Dag) {
+        if (ctx.params.type == Type::Dag) {
             auto [it, inserted] = ctx.map.insert({node, node_index});
             if (inserted) {
-                this->nodes.push_back(node);
+                push_node(node);
+
+                if (leaf) {
+                    ++ctx.stats.unique_leaves;
+                }
+            }
+
+            if (leaf) {
+                ++ctx.stats.total_leaves;
             }
 
             return it->second;
         } else {
-            this->nodes.push_back(node);
+            push_node(node);
+
+            if (leaf) {
+                ++ctx.stats.total_leaves;
+                ++ctx.stats.unique_leaves;
+            }
+
             return node_index;
         }
     };
 
-    bool isect_min = offset.x < ctx.src.dimensions().x &&
-        offset.y < ctx.src.dimensions().y &&
-        offset.z < ctx.src.dimensions().z;
+    bool isect_min = offset.x < ctx.params.src.dimensions().x &&
+        offset.y < ctx.params.src.dimensions().y &&
+        offset.z < ctx.params.src.dimensions().z;
 
     // The current area is outside the source area
     if (!isect_min) {
@@ -238,18 +266,29 @@ uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t exten
             .color = Pixel{0, 0, 0, 0},
             .is_leaf_depth = LEAF | static_cast<uint32_t>(depth),
         };
-
         return insert(node);
     }
 
     // If the current area is partly outside the source cube, continue splitting
-    bool isect_max = offset.x + extent < ctx.src.dimensions().x &&
-        offset.y + extent < ctx.src.dimensions().y &&
-        offset.z + extent < ctx.src.dimensions().z;
+    bool isect_max = offset.x + extent < ctx.params.src.dimensions().x &&
+        offset.y + extent < ctx.params.src.dimensions().y &&
+        offset.z + extent < ctx.params.src.dimensions().z;
 
-    auto [avg, max_diff] = ctx.src.vol_scan(offset, offset + extent);
+    bool split = false;
+    Pixel avg;
 
-    if ((max_diff <= ctx.min_channel_diff && isect_max) || extent == 1) {
+    if (const auto* chan_diff_heuristic = std::get_if<ChannelDiffHeuristic>(&ctx.params.heuristic)) {
+        auto [avg_pix, max_diff] = ctx.params.src.vol_scan(offset, offset + extent);
+        avg = avg_pix;
+        split = max_diff > chan_diff_heuristic->channel_diff;
+    } else {
+        const auto& stddev_heuristic = std::get<StdDevHeuristic>(ctx.params.heuristic);
+        auto [avg_pix, stddev] = ctx.params.src.stddev_scan(offset, offset + extent);
+        avg = avg_pix;
+        split = stddev > stddev_heuristic.stddev;
+    }
+
+    if ((!split && isect_max) || extent == 1) {
         // This node is a leaf node
         const auto node = Node{
             .children = {0},
