@@ -87,7 +87,10 @@ std::pair<Octree, Octree::ConstructionStats> Octree::from_grid(const Constructio
     octree.construct(ctx, Vec3Sz{0, 0, 0}, dim, 0);
     octree.nodes.shrink_to_fit();
 
+    std::reverse(octree.nodes.begin(), octree.nodes.end());
+
     uint32_t end = static_cast<uint32_t>(octree.nodes.size()) - 1;
+
     for (auto& node : octree.nodes) {
         // If the node is a leaf, reset all of its child pointers to the root.
         if (node.is_leaf()) {
@@ -105,7 +108,7 @@ std::pair<Octree, Octree::ConstructionStats> Octree::from_grid(const Constructio
         octree.generate_ropes();
     }
 
-    return {octree, ctx.stats};
+    return {std::move(octree), std::move(ctx.stats)};
 }
 
 Octree Octree::load_svo(const std::filesystem::path& path) {
@@ -221,12 +224,12 @@ uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t exten
         if (ctx.params.report && this->nodes.size() % 1'000'000 == 0) {
             ctx.params.report(this->nodes.size());
         }
-        ++ctx.stats.total_nodes;
     };
 
     auto insert = [&](const Node& node) {
         uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
         bool leaf = node.is_leaf();
+        ++ctx.stats.total_nodes;
 
         if (ctx.params.type == Type::Dag) {
             auto [it, inserted] = ctx.map.insert({node, node_index});
@@ -269,8 +272,8 @@ uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t exten
         return insert(node);
     }
 
-    // If the current area is partly outside the source cube, continue splitting
-    bool isect_max = offset.x + extent < ctx.params.src.dimensions().x &&
+    // Check if the current area is within the source bounds.
+    bool in_src_bounds = offset.x + extent < ctx.params.src.dimensions().x &&
         offset.y + extent < ctx.params.src.dimensions().y &&
         offset.z + extent < ctx.params.src.dimensions().z;
 
@@ -288,7 +291,7 @@ uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t exten
         split = stddev > stddev_heuristic.stddev;
     }
 
-    if ((!split && isect_max) || extent == 1) {
+    if ((!split && in_src_bounds) || extent == 1) {
         // This node is a leaf node
         const auto node = Node{
             .children = {0},

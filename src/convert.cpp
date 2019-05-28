@@ -91,8 +91,8 @@ void convert(Span<const char*> args) {
         fmt::print("Generated octree:\n");
         fmt::print(" Dimensions: {0}x{0}x{0}\n", octree.side());
         fmt::print(" Size: {:n} bytes\n", octree.memory_footprint());
-        fmt::print(" Unique nodes: {:n}\n", octree.data().size());
         fmt::print(" Total nodes: {:n}\n", stats.total_nodes);
+        fmt::print(" Unique nodes: {:n}\n", octree.data().size());
         fmt::print(" Total leaves: {:n}\n", stats.total_leaves);
         fmt::print(" Unique leaves: {:n}\n", stats.unique_leaves);
         fmt::print(" Depth: {:n}\n", stats.depth);
