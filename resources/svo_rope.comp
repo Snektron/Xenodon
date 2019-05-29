@@ -85,8 +85,6 @@ vec4 trace(vec3 ro, vec3 rd) {
 
     t_min = max(t_min, 0);
 
-    float density = voxel_density(rd);
-
     // Search for the first node and get its intersection
     vec3 pos = ro + t_min * rd;
 
@@ -104,7 +102,7 @@ vec4 trace(vec3 ro, vec3 rd) {
 
     float step = u_max - max(u_min, 0);
     vec4 color = unpackUnorm4x8(model.nodes[node].color);
-    vec4 total = color * step * density;
+    vec4 total = color * step;
 
     vec3 mask;
     uint n = neighbor_index(neighbor_base, far, mask);
@@ -125,7 +123,7 @@ vec4 trace(vec3 ro, vec3 rd) {
         step = u_max - max(u_min, 0);
         color = unpackUnorm4x8(model.nodes[node].color);
 
-        total += color * step * density;
+        total += color * step;
 
         vec3 mask;
         uint n = neighbor_index(neighbor_base, far, mask);
@@ -149,7 +147,8 @@ void main() {
     vec3 ro = push.camera.translation.xyz;
     vec3 rd = ray(uv);
 
-    vec4 color = trace(ro, rd);
+    float density = voxel_density(rd);
+    vec4 color = trace(ro, rd) * density;
 
     imageStore(render_target, ivec2(index), vec4(color.rgb, 1));
 }

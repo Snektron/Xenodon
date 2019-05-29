@@ -27,7 +27,6 @@ vec4 trace(vec3 ro, vec3 rd) {
     float side = 0.5;
 
     vec4 total_color = vec4(0);
-    float density = voxel_density(rd);
 
     while (stack_index < cast_stack_depth) {
         vec3 box_min = pos * rrd - bias;
@@ -41,7 +40,7 @@ vec4 trace(vec3 ro, vec3 rd) {
 
             if (model.nodes[child].is_leaf_depth >= LEAF_MASK) {
                 vec4 color = unpackUnorm4x8(model.nodes[child].color);
-                total_color += color * (t_max - t_min) * density;
+                total_color += color * (t_max - t_min);
             } else {
                 if (idx != 7) {
                     node_stack[stack_index] = parent_idx;
@@ -93,7 +92,8 @@ void main() {
     vec3 ro = push.camera.translation.xyz + vec3(1);
     vec3 rd = ray(uv);
 
-    vec4 color = trace(ro, rd);
+    float density = voxel_density(rd);
+    vec4 color = trace(ro, rd) * density;
 
     imageStore(render_target, ivec2(index), vec4(color.rgb, 1));
 }

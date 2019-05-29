@@ -35,8 +35,6 @@ vec3 trace(vec3 ro, vec3 rd) {
         return vec3(0);
     }
 
-    float density = voxel_density(rd) / side;
-
     t_min = max(t_min, 0);
 
     ivec3 end = ivec3(ro + rd * t_max);
@@ -57,7 +55,7 @@ vec3 trace(vec3 ro, vec3 rd) {
 
         side_dist += select(t_delta, mask);
         float t0 = min_elem(side_dist);
-        total += texelFetch(model, pos, 0).rgb * (t0 - t) * density;
+        total += texelFetch(model, pos, 0).rgb * (t0 - t);
         t = t0;
 
         pos += mix(ivec3(0), step, mask);
@@ -80,6 +78,8 @@ void main() {
     vec3 ro = push.camera.translation.xyz * side;
     vec3 rd = ray(uv);
 
-    vec3 color = trace(ro, rd);
+    float density = voxel_density(rd) / side;
+    vec3 color = trace(ro, rd) * density;
+
     imageStore(render_target, ivec2(index), vec4(color, 1));
 }
