@@ -188,6 +188,8 @@ namespace {
                 return std::make_unique<BenchmarkCameraController>();
             }
         }
+
+        assert(false); // make compiler happy
     }
 }
 
