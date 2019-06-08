@@ -12,10 +12,6 @@ vec3 get_voxel(ivec3 p) {
     return texelFetch(model, p, 0).rgb * uniforms.params.density;
 }
 
-vec3 select(vec3 x, bvec3 c) {
-    return mix(vec3(0), x, c);
-}
-
 vec3 trace(vec3 ro, vec3 rd) {
     vec3 rrd = 1.0 / rd;
     vec3 bias = rrd * ro;
@@ -46,15 +42,15 @@ vec3 trace(vec3 ro, vec3 rd) {
     ivec3 step = ivec3(sgn);
     vec3 side_dist = (sgn * (floor(ro) - ro + 0.5) + 0.5) * t_delta;
 
-    float t = min_elem(side_dist);
+    float t = t_min;
 
     vec3 total = vec3(0);
     int steps = abs(pos.x - end.x) + abs(pos.y - end.y) + abs(pos.z - end.z);
     for (int i = 0; i < steps; ++i) {
         bvec3 mask = lessThanEqual(side_dist.xyz, min(side_dist.yzx, side_dist.zxy));
 
-        side_dist += select(t_delta, mask);
         float t0 = min_elem(side_dist);
+        side_dist += mix(vec3(0), t_delta, mask);
         total += texelFetch(model, pos, 0).rgb * (t0 - t);
         t = t0;
 
