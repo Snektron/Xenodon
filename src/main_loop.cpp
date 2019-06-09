@@ -176,11 +176,11 @@ namespace {
         switch (render_params.camera_type) {
             case CameraType::Orbit: {
                 // LOGGER.log("Using orbit camera controller: use w/s to change pitch, a/d to change yaw, q/e to change roll and up/down to zoom");
-                LOGGER.log("Using orbit camera controller. Controlls: ");
-                LOGGER.log(" - w/s to change pitch");
-                LOGGER.log(" - a/d to change yaw");
-                LOGGER.log(" - q/e to change roll");
-                LOGGER.log(" - up/down to zoom");
+                LOGGER.log("Using orbit camera controller. Controls: ");
+                LOGGER.log("- w/s to change pitch");
+                LOGGER.log("- a/d to change yaw");
+                LOGGER.log("- q/e to change roll");
+                LOGGER.log("- up/down to zoom");
                 return std::make_unique<OrbitCameraController>(dispatcher);
             }
             case CameraType::Benchmark: {
