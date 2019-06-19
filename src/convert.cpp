@@ -107,8 +107,8 @@ void convert(Span<const char*> args) {
         fmt::print(" Dimensions: {0}x{0}x{0}\n", octree.side());
         fmt::print(" Size: {:n} bytes\n", octree.memory_footprint());
         fmt::print(" Perfect tree nodes: {:n}\n", perfect_tree_nodes);
-        fmt::print(" Total nodes: {:n} ({:.5f}%)\n", stats.total_nodes, total_nodes_proportion);
-        fmt::print(" Unique nodes: {:n} ({:.5f}%)\n", octree.data().size(), unique_nodes_proportion);
+        fmt::print(" Total nodes: {:n} ({:.5f}%)\n", stats.total_nodes, total_nodes_proportion * 100);
+        fmt::print(" Unique nodes: {:n} ({:.5f}%)\n", octree.data().size(), unique_nodes_proportion * 100);
         fmt::print(" Total leaves: {:n}\n", stats.total_leaves);
         fmt::print(" Unique leaves: {:n}\n", stats.unique_leaves);
         fmt::print(" Depth: {:n}\n", stats.depth);
