@@ -11,18 +11,6 @@
 #include "utility/serialization.h"
 
 namespace {
-    // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-    uint64_t ceil_2pow(uint64_t x) {
-        --x;
-        x |= x >> 1;
-        x |= x >> 2;
-        x |= x >> 4;
-        x |= x >> 8;
-        x |= x >> 16;
-        x |= x >> 32;
-        return ++x;
-    }
-
     // Taken from boost:
     // https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
     template <typename T>
@@ -33,19 +21,16 @@ namespace {
     constexpr const std::string_view SVO_FMT_ID = "XNDN-SVO";
 }
 
-template<>
-struct std::hash<Octree::Node> {
-    size_t operator()(const Octree::Node& node) const {
-        size_t v = std::hash<uint32_t>{}(node.is_leaf_depth);
-        v = hash_combine(v, std::hash<uint32_t>{}(node.color.pack()));
+size_t std::hash<Octree::Node>::operator()(const Octree::Node& node) const {
+    size_t v = std::hash<uint32_t>{}(node.is_leaf_depth);
+    v = hash_combine(v, std::hash<uint32_t>{}(node.color.pack()));
 
-        for (uint32_t child : node.children) {
-            v = hash_combine(v, std::hash<uint32_t>{}(child));
-        }
-
-        return v;
+    for (uint32_t child : node.children) {
+        v = hash_combine(v, std::hash<uint32_t>{}(child));
     }
-};
+
+    return v;
+}
 
 bool operator==(const Octree::Node& lhs, const Octree::Node& rhs) {
     if (lhs.is_leaf_depth != rhs.is_leaf_depth || lhs.color != rhs.color)
@@ -58,57 +43,8 @@ bool operator!=(const Octree::Node& lhs, const Octree::Node& rhs) {
     return !(lhs == rhs);
 }
 
-struct Octree::ConstructionContext {
-    std::unordered_map<Node, uint32_t> map = {};
-    const Octree::ConstructionParameters& params;
-    Octree::ConstructionStats stats;
-};
-
 Octree::Octree(size_t dim, std::vector<Node>&& nodes):
     dim(dim), nodes(std::move(nodes)) {
-}
-
-std::pair<Octree, Octree::ConstructionStats> Octree::from_grid(const ConstructionParameters& params) {
-    auto ctx = ConstructionContext{
-        .params = params,
-        .stats = {
-            .total_leaves = 0,
-            .unique_leaves = 0,
-            .total_nodes = 0,
-            .depth = 0
-        }
-    };
-
-    const auto src_dim = params.src.dimensions();
-    auto dim = std::max({ceil_2pow(src_dim.x), ceil_2pow(src_dim.y), ceil_2pow(src_dim.z)});
-
-    auto octree = Octree(dim, std::vector<Octree::Node>());
-
-    octree.construct(ctx, Vec3Sz{0, 0, 0}, dim, 0);
-    octree.nodes.shrink_to_fit();
-
-    std::reverse(octree.nodes.begin(), octree.nodes.end());
-
-    uint32_t end = static_cast<uint32_t>(octree.nodes.size()) - 1;
-
-    for (auto& node : octree.nodes) {
-        // If the node is a leaf, reset all of its child pointers to the root.
-        if (node.is_leaf()) {
-            for (uint32_t& child : node.children) {
-                child = ROOT;
-            }
-        } else {
-            for (uint32_t& child : node.children) {
-                child = end - child;
-            }
-        }
-    }
-
-    if (params.type == Type::Rope) {
-        octree.generate_ropes();
-    }
-
-    return {std::move(octree), std::move(ctx.stats)};
 }
 
 Octree Octree::load_svo(const std::filesystem::path& path) {
@@ -213,114 +149,6 @@ std::pair<const Octree::Node*, size_t> Octree::find(const Vec3Sz& pos, size_t ma
         index = this->nodes[index].children[child_index];
 
         --max_depth;
-    }
-}
-
-uint32_t Octree::construct(ConstructionContext& ctx, Vec3Sz offset, size_t extent, size_t depth) {
-    ctx.stats.depth = std::max(ctx.stats.depth, depth);
-
-    auto push_node = [&](const Node& node) {
-        this->nodes.push_back(node);
-        if (ctx.params.report && this->nodes.size() % 1'000'000 == 0) {
-            ctx.params.report(this->nodes.size());
-        }
-    };
-
-    auto insert = [&](const Node& node) {
-        uint32_t node_index = static_cast<uint32_t>(this->nodes.size());
-        bool leaf = node.is_leaf();
-        ++ctx.stats.total_nodes;
-
-        if (ctx.params.type == Type::Dag) {
-            auto [it, inserted] = ctx.map.insert({node, node_index});
-            if (inserted) {
-                push_node(node);
-
-                if (leaf) {
-                    ++ctx.stats.unique_leaves;
-                }
-            }
-
-            if (leaf) {
-                ++ctx.stats.total_leaves;
-            }
-
-            return it->second;
-        } else {
-            push_node(node);
-
-            if (leaf) {
-                ++ctx.stats.total_leaves;
-                ++ctx.stats.unique_leaves;
-            }
-
-            return node_index;
-        }
-    };
-
-    bool isect_min = offset.x < ctx.params.src.dimensions().x &&
-        offset.y < ctx.params.src.dimensions().y &&
-        offset.z < ctx.params.src.dimensions().z;
-
-    // The current area is outside the source area
-    if (!isect_min) {
-        const auto node = Node{
-            .children = {0},
-            .color = Pixel{0, 0, 0, 0},
-            .is_leaf_depth = LEAF | static_cast<uint32_t>(depth),
-        };
-        return insert(node);
-    }
-
-    // Check if the current area is within the source bounds.
-    bool in_src_bounds = offset.x + extent < ctx.params.src.dimensions().x &&
-        offset.y + extent < ctx.params.src.dimensions().y &&
-        offset.z + extent < ctx.params.src.dimensions().z;
-
-    bool split = false;
-    Pixel avg;
-
-    if (const auto* chan_diff_heuristic = std::get_if<ChannelDiffHeuristic>(&ctx.params.heuristic)) {
-        auto [avg_pix, max_diff] = ctx.params.src.vol_scan(offset, offset + extent);
-        avg = avg_pix;
-        split = max_diff > chan_diff_heuristic->channel_diff;
-    } else {
-        const auto& stddev_heuristic = std::get<StdDevHeuristic>(ctx.params.heuristic);
-        auto [avg_pix, stddev] = ctx.params.src.stddev_scan(offset, offset + extent);
-        avg = avg_pix;
-        split = stddev > stddev_heuristic.stddev;
-    }
-
-    if ((!split && in_src_bounds) || extent == 1) {
-        // This node is a leaf node
-        const auto node = Node{
-            .children = {0},
-            .color = avg,
-            .is_leaf_depth = LEAF | static_cast<uint32_t>(depth),
-        };
-
-        return insert(node);
-    } else {
-        // This node is an intermediary node
-        size_t h_extent = extent / 2;
-        size_t child = 0;
-
-        auto node = Node{
-            .children = {},
-            .color = avg,
-            .is_leaf_depth = static_cast<uint32_t>(depth),
-        };
-
-        for (auto xoff : {size_t{0}, h_extent}) {
-            for (auto yoff : {size_t{0}, h_extent}) {
-                for (auto zoff : {size_t{0}, h_extent}) {
-                    uint32_t index = this->construct(ctx, {offset.x + xoff, offset.y + yoff, offset.z + zoff}, h_extent, depth + 1);
-                    node.children[child++] = index;
-                }
-            }
-        }
-
-        return insert(node);
     }
 }
 

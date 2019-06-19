@@ -8,6 +8,7 @@
 #include "core/Error.h"
 #include "model/Grid.h"
 #include "model/Octree.h"
+#include "model/OctreeConstruction.h"
 
 void convert(Span<const char*> args) {
     auto src = std::filesystem::path();
@@ -71,28 +72,43 @@ void convert(Span<const char*> args) {
 
     fmt::print("Converting to octree...\n");
 
-    Octree::SplitHeuristic heuristic = Octree::ChannelDiffHeuristic{0};
-    if (channel_difference > 0) {
-        heuristic = Octree::ChannelDiffHeuristic{static_cast<uint8_t>(channel_difference)};
-    } else if (stddev >= 0) {
-        heuristic = Octree::StdDevHeuristic{stddev};
-    }
+    auto stats = ConstructionStats();
+    auto convert_octree = [&](auto heuristic) {
+        const auto type = dag ? Octree::Type::Dag : rope ? Octree::Type::Rope : Octree::Type::Sparse;
+        return build_octree(*grid, stats, heuristic, type);
+    };
 
-    const auto [octree, stats] = Octree::from_grid({
-        .src = *grid,
-        .type = dag ? Octree::Type::Dag : rope ? Octree::Type::Rope : Octree::Type::Sparse,
-        .heuristic = heuristic,
-        .report = [](size_t nodes) {
-            fmt::print("{:n} nodes...\n", nodes);
-        }
-    });
+    auto octree = stddev >= 0 ?
+        convert_octree(StdDevHeuristic{stddev}) :
+        convert_octree(ChannelDiffHeuristic{
+                static_cast<uint8_t>(std::max(channel_difference, 0))
+        });
 
     {
+        auto k_ary_nodes = [](size_t k, size_t h) {
+            auto ipow = [](size_t x, size_t y) {
+                size_t z = 1;
+
+                while (--y) {
+                    z *= x;
+                }
+
+                return z;
+            };
+
+            return (ipow(k, h + 1) - 1) / (k + 1);
+        };
+
+        size_t perfect_tree_nodes = k_ary_nodes(8, stats.depth);
+        double total_nodes_proportion = static_cast<double>(stats.total_nodes) / static_cast<double>(perfect_tree_nodes);
+        double unique_nodes_proportion = static_cast<double>(octree.data().size()) / static_cast<double>(perfect_tree_nodes);
+
         fmt::print("Generated octree:\n");
         fmt::print(" Dimensions: {0}x{0}x{0}\n", octree.side());
         fmt::print(" Size: {:n} bytes\n", octree.memory_footprint());
-        fmt::print(" Total nodes: {:n}\n", stats.total_nodes);
-        fmt::print(" Unique nodes: {:n}\n", octree.data().size());
+        fmt::print(" Perfect tree nodes: {:n}\n", perfect_tree_nodes);
+        fmt::print(" Total nodes: {:n} ({:.5f}%)\n", stats.total_nodes, total_nodes_proportion);
+        fmt::print(" Unique nodes: {:n} ({:.5f}%)\n", octree.data().size(), unique_nodes_proportion);
         fmt::print(" Total leaves: {:n}\n", stats.total_leaves);
         fmt::print(" Unique leaves: {:n}\n", stats.unique_leaves);
         fmt::print(" Depth: {:n}\n", stats.depth);

@@ -6,15 +6,12 @@
 #include <filesystem>
 #include <array>
 #include <utility>
-#include <variant>
 #include <functional>
 #include <cstddef>
 #include <cstdint>
 #include "math/Vec.h"
 #include "model/Pixel.h"
 #include "utility/Span.h"
-
-class Grid;
 
 class Octree {
 public:
@@ -47,46 +44,20 @@ public:
 
     static_assert(sizeof(Node) == 40, "Compiler didnt pack Node struct properly");
 
-    struct ChannelDiffHeuristic {
-        uint8_t channel_diff;
-    };
-
-    struct StdDevHeuristic {
-        double stddev;
-    };
-
-    using SplitHeuristic = std::variant<ChannelDiffHeuristic, StdDevHeuristic>;
-
-    struct ConstructionParameters {
-        const Grid& src;
-        Type type;
-        SplitHeuristic heuristic;
-        std::function<void(size_t)> report = nullptr;
-    };
-
-    struct ConstructionStats {
-        size_t total_leaves;
-        size_t unique_leaves;
-        size_t total_nodes;
-        size_t depth;
-    };
-
 private:
-    struct ConstructionContext;
-
     size_t dim;
     std::vector<Node> nodes;
 
-    Octree(size_t dim, std::vector<Node>&& nodes);
-
 public:
-    static std::pair<Octree, ConstructionStats> from_grid(const ConstructionParameters& params);
+    Octree(size_t dim, std::vector<Node>&& nodes);
 
     static Octree load_svo(const std::filesystem::path& path);
 
     void save_svo(const std::filesystem::path& path) const;
 
     std::pair<const Octree::Node*, size_t> find(const Vec3Sz& pos, size_t max_depth) const;
+
+    void generate_ropes();
 
     Span<Node> data() const {
         return this->nodes;
@@ -99,17 +70,19 @@ public:
     size_t side() const {
         return this->dim;
     }
-
 private:
-    uint32_t construct(ConstructionContext& ctx, Vec3Sz offset, size_t extent, size_t depth);
-
     template <typename F>
     void walk_leaves_r(F f, const Vec3Sz& pos, size_t extent, size_t depth, Node& node);
 
     template <typename F>
     void walk_leaves(F f);
-
-    void generate_ropes();
 };
+
+template<>
+struct std::hash<Octree::Node> {
+    size_t operator()(const Octree::Node& node) const;
+};
+
+bool operator==(const Octree::Node& lhs, const Octree::Node& rhs);
 
 #endif
