@@ -1,18 +1,20 @@
 #include "backend/headless/HeadlessDisplay.h"
 #include <vector>
 #include <cassert>
+#include <fmt/format.h>
 #include <lodepng.h>
 #include "core/Logger.h"
+#include "core/Error.h"
 #include "utility/rect_union.h"
 
 namespace {
     constexpr const auto BLACK_PIXEL = 0xFF000000;
 }
 
-HeadlessDisplay::HeadlessDisplay(EventDispatcher& dispatcher, const HeadlessConfig& config, std::optional<std::filesystem::path> out_path):
-    dispatcher(dispatcher),
+HeadlessDisplay::HeadlessDisplay(const HeadlessConfig& config, std::string_view out_path):
     instance(nullptr),
-    out_path(out_path) {
+    out_path(out_path),
+    frame(0) {
 
     auto gpus = this->instance.physical_devices();
     this->outputs.reserve(config.gpus.size());
@@ -39,23 +41,27 @@ void HeadlessDisplay::swap_buffers() {
         output.synchronize();
     }
 
-    if (this->out_path.has_value()) {
-        this->save();
+    if (!this->out_path.empty()) {
+        try {
+            auto path = fmt::format(this->out_path, this->frame);
+            this->save(path);
+        } catch (const fmt::format_error& e) {
+            throw Error("Failed to format output filename: {}", e.what());
+        }
     }
+
+    ++this->frame;
 }
 
 void HeadlessDisplay::poll_events() {
-    if (this->out_path.has_value()) {
-        this->dispatcher.dispatch_close_event();
-    }
 }
 
-void HeadlessDisplay::save() {
+void HeadlessDisplay::save(const std::filesystem::path& path) {
     vk::Rect2D enclosing = rect_union(this->outputs.begin(), this->outputs.end(), [](HeadlessOutput& output){
         return output.region();
     });
 
-    LOGGER.log("Saving image...");
+    LOGGER.log("Saving frame {}...", this->frame);
 
     auto image = std::vector<Pixel>(enclosing.extent.width * enclosing.extent.height, BLACK_PIXEL);
     size_t stride = enclosing.extent.width;
@@ -72,7 +78,7 @@ void HeadlessDisplay::save() {
     LOGGER.log("Compressing...");
 
     unsigned error = lodepng::encode(
-        this->out_path.value().c_str(),
+        path.c_str(),
         reinterpret_cast<const unsigned char*>(image.data()),
         enclosing.extent.width,
         enclosing.extent.height
@@ -81,6 +87,6 @@ void HeadlessDisplay::save() {
     if (error) {
         LOGGER.log("Error saving output: {}", lodepng_error_text(error));
     } else {
-        LOGGER.log("Saved output to '{}'", this->out_path.value().native());
+        LOGGER.log("Saved output to '{}'", path.native());
     }
 }

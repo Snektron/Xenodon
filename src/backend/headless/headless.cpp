@@ -5,7 +5,7 @@
 #include "backend/Event.h"
 #include "backend/headless/HeadlessConfig.h"
 
-std::unique_ptr<HeadlessDisplay> create_headless_display(EventDispatcher& dispatcher, std::filesystem::path config, std::optional<std::filesystem::path> output) {
+std::unique_ptr<HeadlessDisplay> create_headless_display(std::filesystem::path config, std::string_view output) {
     LOGGER.log("Using headless presenting backend");
 
     auto in = std::ifstream(config);
@@ -21,5 +21,5 @@ std::unique_ptr<HeadlessDisplay> create_headless_display(EventDispatcher& dispat
         throw Error("Failed to read config file '{}': {}", config.native(), err.what());
     }
 
-    return std::make_unique<HeadlessDisplay>(dispatcher, parsed_config, output);
+    return std::make_unique<HeadlessDisplay>(parsed_config, output);
 }

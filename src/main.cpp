@@ -25,13 +25,12 @@ namespace {
     struct RenderOptions {
         bool quiet = false;
         std::filesystem::path log_output;
-
         RenderParameters render_params;
 
         struct {
             std::filesystem::path config;
-            std::filesystem::path output;
-            bool dont_save = false;
+            std::string_view output;
+            bool discard_output = false;
 
             bool enabled() const {
                 return !this->config.empty();
@@ -87,26 +86,24 @@ namespace {
     RenderOptions parse_render_args(Span<const char*> args) {
         RenderOptions opts;
 
-        bool benchmark_camera = false;
-
         auto cmd = args::Command {
             .flags = {
                 {&opts.quiet, "--quiet", 'q'},
                 {&opts.xorg.enabled, "--xorg"},
-                {&benchmark_camera, "--benchmark-camera"},
-                {&opts.headless.dont_save, "--dont-save"}
+                {&opts.headless.discard_output, "--discard-output"}
             },
             .parameters = {
                 {args::path_opt(&opts.log_output), "output path", "--log-output"},
                 {args::path_opt(&opts.headless.config), "config path", "--headless"},
-                {args::path_opt(&opts.headless.output), "output path", "--output"},
+                {args::string_opt(&opts.headless.output), "output path", "--output"},
                 {args::path_opt(&opts.direct.config), "config path", "--direct"},
                 {args::path_opt(&opts.xorg.multi_gpu_config), "config path", "--xorg-multi-gpu"},
                 {args::float_range_opt(&opts.render_params.density, 0.f), "density", "--density"},
                 {args::string_opt(&opts.render_params.model_type_override), "model type", "--model-type"},
                 {args::string_opt(&opts.render_params.shader), "shader", "--shader", 's'},
                 {voxel_ratio_opt(&opts.render_params.voxel_ratio), "voxel dimension ratio", "--voxel-ratio", 'r'},
-                {args::path_opt(&opts.render_params.stats_save_path), "stats output", "--stats-output"}
+                {args::path_opt(&opts.render_params.stats_save_path), "stats output", "--stats-output"},
+                {args::string_opt(&opts.render_params.camera), "camera", "--camera"}
             },
             .positional = {
                 {args::path_opt(&opts.render_params.model_path), "model"}
@@ -126,23 +123,21 @@ namespace {
             throw Error("--xorg, --headless and --direct are mutually exclusive");
         }
 
-        if (!opts.headless.enabled() && opts.headless.dont_save) {
+        if (!opts.headless.enabled() && opts.headless.discard_output) {
             throw Error("--dont-save requires --headless");
         }
 
         if (!opts.headless.output.empty() && !opts.headless.enabled()) {
             throw Error("--output requires --headless");
         } else if (opts.headless.output.empty()) {
-            opts.headless.output = "out.png";
-        } else if (opts.headless.dont_save) {
+            opts.headless.output = "out-{}.png";
+        } else if (opts.headless.discard_output) {
             throw Error("--dont-save and --output are mutually exclusive");
         }
 
         if (!opts.xorg.multi_gpu_config.empty() && !opts.xorg.enabled) {
             throw Error("--xorg-multi-gpu requires --xorg");
         }
-
-        opts.render_params.camera_type = benchmark_camera ? CameraType::Benchmark : CameraType::Orbit;
 
         return opts;
     }
@@ -173,8 +168,8 @@ namespace {
             } else if (opts.direct.enabled()) {
                 display = create_direct_backend(dispatcher, opts.direct.config);
             } else {
-                auto output = !opts.headless.dont_save ? std::optional(opts.headless.output) : std::nullopt;
-                display = create_headless_backend(dispatcher, opts.headless.config, output);
+                std::string_view output = opts.headless.discard_output ? "" : opts.headless.output;
+                display = create_headless_backend(opts.headless.config, output);
             }
         } catch (const Error& e) {
             fmt::print("Error: Failed to initialize backend: {}", e.what());

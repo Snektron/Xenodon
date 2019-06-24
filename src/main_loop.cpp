@@ -13,7 +13,7 @@
 #include "render/Renderer.h"
 #include "camera/Camera.h"
 #include "camera/OrbitCameraController.h"
-#include "camera/BenchmarkCameraController.h"
+#include "camera/ScriptCameraController.h"
 #include "core/Logger.h"
 #include "core/Error.h"
 #include "model/Grid.h"
@@ -173,23 +173,17 @@ namespace {
     }
 
     std::unique_ptr<CameraController> create_camera_controller(EventDispatcher& dispatcher, const RenderParameters& render_params) {
-        switch (render_params.camera_type) {
-            case CameraType::Orbit: {
-                // LOGGER.log("Using orbit camera controller: use w/s to change pitch, a/d to change yaw, q/e to change roll and up/down to zoom");
-                LOGGER.log("Using orbit camera controller. Controls: ");
-                LOGGER.log("- w/s to change pitch");
-                LOGGER.log("- a/d to change yaw");
-                LOGGER.log("- q/e to change roll");
-                LOGGER.log("- up/down to zoom");
-                return std::make_unique<OrbitCameraController>(dispatcher);
-            }
-            case CameraType::Benchmark: {
-                LOGGER.log("Using benchmark camera controller");
-                return std::make_unique<BenchmarkCameraController>();
-            }
+        if (render_params.camera == "orbit" || render_params.camera == "") {
+            LOGGER.log("Using orbit camera controller. Controls: ");
+            LOGGER.log("- w/s to change pitch");
+            LOGGER.log("- a/d to change yaw");
+            LOGGER.log("- q/e to change roll");
+            LOGGER.log("- up/down to zoom");
+            return std::make_unique<OrbitCameraController>(dispatcher);
+        } else {
+            LOGGER.log("Reading camera transforms from '{}'", render_params.camera);
+            return std::make_unique<ScriptCameraController>(render_params.camera);
         }
-
-        assert(false); // make compiler happy
     }
 }
 

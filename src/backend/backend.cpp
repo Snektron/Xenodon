@@ -10,8 +10,8 @@
     #include "backend/direct/direct.h"
 #endif
 
-std::unique_ptr<Display> create_headless_backend(EventDispatcher& dispatcher, std::filesystem::path config, std::optional<std::filesystem::path> output) {
-    return create_headless_display(dispatcher, config, output);
+std::unique_ptr<Display> create_headless_backend(std::filesystem::path config, std::string_view output) {
+    return create_headless_display(config, output);
 }
 
 std::unique_ptr<Display> create_xorg_backend(EventDispatcher& dispatcher, std::filesystem::path multi_gpu_config) {
