@@ -55,7 +55,7 @@ void LinuxInput::poll_events() {
 
         ssize_t n = read(this->kbd_fd.fd, &buff, sizeof buff);
         if (n < ssize_t{0}) {
-            throw Error("Error reading device data: {} (core {})", strerror(errno), errno);
+            throw Error("Error reading device data: {} (code {})", strerror(errno), errno);
         }
 
         size_t m = static_cast<size_t>(n) / sizeof(struct input_event);
