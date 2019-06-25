@@ -112,7 +112,7 @@ void Renderer::render(const Camera& cam) {
                 {vk::ImageLayout::eGeneral, vk::PipelineStageFlagBits::eComputeShader}
             );
 
-            cmd_buf.bindPipeline(vk::PipelineBindPoint::eCompute, orsc.pipeline.get());
+            cmd_buf.bindPipeline(vk::PipelineBindPoint::eCompute, drsc.pipeline.get());
             cmd_buf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, drsc.pipeline_layout.get(), 0, orsc.descriptor_sets[index], nullptr);
             cmd_buf.pushConstants(drsc.pipeline_layout.get(), vk::ShaderStageFlagBits::eCompute, 0, sizeof(PushConstantBuffer), static_cast<const void*>(&push_constants));
             drsc.stats_collector.pre_dispatch(outputidx, cmd_buf);
@@ -190,20 +190,19 @@ void Renderer::create_resources() {
             vk::MemoryPropertyFlagBits::eDeviceLocal
         );
 
+        auto pipeline = device->createComputePipelineUnique(vk::PipelineCache(), {
+            {},
+            shader.info(),
+            pipeline_layout.get()
+        });
+
         auto output_resources = std::vector<OutputResources>();
         output_resources.reserve(outputs);
         for (size_t j = 0; j < outputs; ++j) {
             Output* output = this->display->output(i, j);
-            auto pipeline = device->createComputePipelineUnique(vk::PipelineCache(), {
-                {},
-                shader.info(),
-                pipeline_layout.get()
-            });
-
             output_resources.emplace_back(OutputResources{
                 output,
                 output->region(),
-                std::move(pipeline),
                 Span<vk::DescriptorSet>(nullptr),
                 std::vector<vk::UniqueCommandBuffer>()
             });
@@ -219,6 +218,7 @@ void Renderer::create_resources() {
             std::vector<vk::DescriptorSet>(),
 
             std::move(pipeline_layout),
+            std::move(pipeline),
 
             std::move(uniform_buffer),
 

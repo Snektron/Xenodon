@@ -44,7 +44,6 @@ private:
         Output* output;
 
         vk::Rect2D region;
-        vk::UniquePipeline pipeline;
 
         Span<vk::DescriptorSet> descriptor_sets;
         std::vector<vk::UniqueCommandBuffer> command_buffers;
@@ -60,6 +59,7 @@ private:
         std::vector<vk::DescriptorSet> descriptor_sets;
 
         vk::UniquePipelineLayout pipeline_layout;
+        vk::UniquePipeline pipeline;
 
         Buffer<UniformBuffer> uniform_buffer;
 
