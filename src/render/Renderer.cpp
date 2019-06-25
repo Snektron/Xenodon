@@ -21,11 +21,11 @@ Renderer::Renderer(std::shared_ptr<RenderContext> ctx, size_t device_index):
     stats_collector(this->ctx->display, this->device_index) {
 
     this->create_resources();
-    this->upload_uniform_buffers();
-
     this->create_descriptor_sets();
     this->update_descriptor_sets();
     this->create_command_buffers();
+
+    this->upload_uniform_buffers();
 }
 
 void Renderer::recreate(size_t output) {
@@ -217,8 +217,8 @@ void Renderer::update_descriptor_sets() {
             );
 
             const auto descriptor_writes = std::array{
-                write_set(set, STANDARD_BINDINGS[0], uniform_buffer_info),
-                write_set(set, STANDARD_BINDINGS[1], render_target_info)
+                write_set(set, this->ctx->bindings[0], uniform_buffer_info),
+                write_set(set, this->ctx->bindings[1], render_target_info)
             };
 
             this->rendev->device->updateDescriptorSets(descriptor_writes, nullptr);
