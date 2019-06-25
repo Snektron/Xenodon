@@ -43,6 +43,8 @@ sources = [
     'src/graphics/command/CommandPool.cpp',
     'src/graphics/utility.cpp',
     'src/render/Renderer.cpp',
+    'src/render/RenderContext.cpp',
+    'src/render/MultiplexRenderer.cpp',
     'src/render/SvoRaytraceAlgorithm.cpp',
     'src/render/DdaRaytraceAlgorithm.cpp',
     'src/render/RenderStats.cpp',

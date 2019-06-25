@@ -2,6 +2,7 @@
 #define _XENODON_RENDER_RENDERER_H
 
 #include <vector>
+#include <memory>
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include "backend/Display.h"
@@ -10,18 +11,13 @@
 #include "graphics/memory/Buffer.h"
 #include "render/RenderAlgorithm.h"
 #include "render/RenderStats.h"
+#include "render/RenderContext.h"
 #include "camera/Camera.h"
 #include "math/Vec.h"
 
 class Renderer {
-public:
-    struct ShaderParameters {
-        Vec4F voxel_ratio;
-        Vec4<unsigned> model_dim;
-        float density;
-    };
+    using ShaderParameters = RenderContext::ShaderParameters;
 
-private:
     struct UniformBuffer {
         vk::Rect2D output_region;
         vk::Rect2D display_region;
@@ -49,34 +45,30 @@ private:
         std::vector<vk::UniqueCommandBuffer> command_buffers;
     };
 
-    struct DeviceResources {
-        const RenderDevice* rendev;
-        std::unique_ptr<RenderResources> resources;
-        RenderStatsCollector stats_collector;
+    std::shared_ptr<RenderContext> ctx;
+    size_t device_index;
 
-        vk::UniqueDescriptorSetLayout descriptor_set_layout;
-        vk::UniqueDescriptorPool descriptor_pool;
-        std::vector<vk::DescriptorSet> descriptor_sets;
+    const RenderDevice* rendev;
+    std::unique_ptr<RenderResources> resources;
+    RenderStatsCollector stats_collector;
 
-        vk::UniquePipelineLayout pipeline_layout;
-        vk::UniquePipeline pipeline;
+    vk::UniqueDescriptorSetLayout descriptor_set_layout;
+    vk::UniqueDescriptorPool descriptor_pool;
+    std::vector<vk::DescriptorSet> descriptor_sets;
 
-        Buffer<UniformBuffer> uniform_buffer;
+    vk::UniquePipelineLayout pipeline_layout;
+    vk::UniquePipeline pipeline;
 
-        std::vector<OutputResources> output_resources;
-    };
+    std::unique_ptr<Buffer<UniformBuffer>> uniform_buffer;
 
-    Display* display;
-    const RenderAlgorithm* algorithm;
-    ShaderParameters shader_params;
-    vk::Rect2D display_region;
-    std::vector<DeviceResources> device_resources;
-    std::vector<vk::DescriptorSetLayoutBinding> bindings;
+    std::vector<OutputResources> output_resources;
 
 public:
-    Renderer(Display* display, const RenderAlgorithm* algorithm, const ShaderParameters& shader_params);
-    void recreate(size_t device, size_t output);
+    Renderer(std::shared_ptr<RenderContext> ctx, size_t device_index);
+    void recreate(size_t output);
+    void resize();
     void render(const Camera& cam);
+    void collect_stats();
     RenderStats stats() const;
 
 private:
@@ -86,7 +78,6 @@ private:
     void update_descriptor_sets();
     void upload_uniform_buffers();
     vk::UniqueDescriptorPool create_descriptor_pool(const Device& device, uint32_t sets);
-    void calculate_display_rect();
 };
 
 #endif

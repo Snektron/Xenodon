@@ -10,7 +10,8 @@
 #include "render/RenderAlgorithm.h"
 #include "render/SvoRaytraceAlgorithm.h"
 #include "render/DdaRaytraceAlgorithm.h"
-#include "render/Renderer.h"
+#include "render/RenderContext.h"
+#include "render/MultiplexRenderer.h"
 #include "camera/Camera.h"
 #include "camera/OrbitCameraController.h"
 #include "camera/ScriptCameraController.h"
@@ -193,13 +194,13 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     auto [algo, dim] = create_render_algorithm(render_params);
     LOGGER.log("Model dimensions: {}x{}x{}", dim.x, dim.y, dim.z);
 
-    auto shader_params = Renderer::ShaderParameters {
+    auto shader_params = RenderContext::ShaderParameters {
         .voxel_ratio = Vec4F(render_params.voxel_ratio, 0),
         .model_dim = Vec4<unsigned>(static_cast<Vec3<unsigned>>(dim), 0),
         .density = render_params.density
     };
 
-    auto renderer = Renderer(display, algo.get(), shader_params);
+    auto renderer = MultiplexRenderer(display, std::move(algo), shader_params);
 
     auto controller = create_camera_controller(dispatcher, render_params);
 
