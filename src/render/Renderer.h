@@ -73,6 +73,7 @@ public:
 
 private:
     void create_resources();
+    void create_pipeline();
     void create_descriptor_sets();
     void create_command_buffers();
     void update_descriptor_sets();

@@ -21,6 +21,7 @@ Renderer::Renderer(std::shared_ptr<RenderContext> ctx, size_t device_index):
     stats_collector(this->ctx->display, this->device_index) {
 
     this->create_resources();
+    this->create_pipeline();
     this->create_descriptor_sets();
     this->update_descriptor_sets();
     this->create_command_buffers();
@@ -115,6 +116,28 @@ void Renderer::create_resources() {
 
     this->resources = this->ctx->algorithm->upload_resources(*this->rendev);
 
+    this->uniform_buffer = std::make_unique<Buffer<UniformBuffer>>(
+        device,
+        outputs,
+        vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst,
+        vk::MemoryPropertyFlagBits::eDeviceLocal
+    );
+
+    this->output_resources.reserve(outputs);
+    for (size_t j = 0; j < outputs; ++j) {
+        Output* output = this->ctx->display->output(this->device_index, j);
+        this->output_resources.emplace_back(OutputResources{
+            output,
+            output->region(),
+            Span<vk::DescriptorSet>(nullptr),
+            std::vector<vk::UniqueCommandBuffer>()
+        });
+    }
+}
+
+void Renderer::create_pipeline() {
+    const auto& device = this->rendev->device;
+
     this->descriptor_set_layout = device->createDescriptorSetLayoutUnique({
         {},
         static_cast<uint32_t>(this->ctx->bindings.size()),
@@ -137,29 +160,11 @@ void Renderer::create_resources() {
         &push_constant_range
     });
 
-    this->uniform_buffer = std::make_unique<Buffer<UniformBuffer>>(
-        device,
-        outputs,
-        vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst,
-        vk::MemoryPropertyFlagBits::eDeviceLocal
-    );
-
     this->pipeline = device->createComputePipelineUnique(vk::PipelineCache(), {
         {},
         shader.info(),
         this->pipeline_layout.get()
     });
-
-    this->output_resources.reserve(outputs);
-    for (size_t j = 0; j < outputs; ++j) {
-        Output* output = this->ctx->display->output(this->device_index, j);
-        this->output_resources.emplace_back(OutputResources{
-            output,
-            output->region(),
-            Span<vk::DescriptorSet>(nullptr),
-            std::vector<vk::UniqueCommandBuffer>()
-        });
-    }
 }
 
 void Renderer::create_descriptor_sets() {
