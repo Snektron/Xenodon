@@ -5,9 +5,6 @@
 #include "utility/rect_union.h"
 
 namespace {
-    // The local group size all RenderAlgorithm shaders should have
-    constexpr const Vec2<uint32_t> LOCAL_SIZE{8, 8};
-
     // Standard bindings all RenderAlgorithm shaders should have
     const auto COMMON_BINDINGS = std::array {
         vk::DescriptorSetLayoutBinding(

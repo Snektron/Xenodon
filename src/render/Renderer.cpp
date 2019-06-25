@@ -12,22 +12,6 @@
 namespace {
     // The local group size all RenderAlgorithm shaders should have
     constexpr const Vec2<uint32_t> LOCAL_SIZE{8, 8};
-
-    // Standard bindings all RenderAlgorithm shaders should have
-    const auto STANDARD_BINDINGS = std::array {
-        vk::DescriptorSetLayoutBinding(
-            0, // layout(binding = 0) uniform OutputRegionBuffer
-            vk::DescriptorType::eUniformBuffer,
-            1,
-            vk::ShaderStageFlagBits::eCompute
-        ),
-        vk::DescriptorSetLayoutBinding(
-            1, // layout(binding = 1) restrict writeonly uniform image2D render_target
-            vk::DescriptorType::eStorageImage,
-            1,
-            vk::ShaderStageFlagBits::eCompute
-        )
-    };
 }
 
 Renderer::Renderer(std::shared_ptr<RenderContext> ctx, size_t device_index):
