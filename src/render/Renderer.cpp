@@ -23,9 +23,9 @@ Renderer::Renderer(std::shared_ptr<RenderContext> ctx, size_t device_index):
     this->create_resources();
     this->create_pipeline();
     this->create_descriptor_sets();
-    this->update_descriptor_sets();
     this->create_command_buffers();
 
+    this->update_descriptor_sets();
     this->upload_uniform_buffers();
 }
 
