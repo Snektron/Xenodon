@@ -38,7 +38,7 @@ namespace {
         ShaderOption{"dda", FileType::Tiff, resources::open("resources/dda.comp")},
         ShaderOption{"svo-naive", FileType::Svo, resources::open("resources/svo_naive.comp")},
         ShaderOption{"esvo", FileType::Svo, resources::open("resources/esvo.comp")},
-        ShaderOption{"svo-2", FileType::Svo, resources::open("resources/svo2.comp")},
+        ShaderOption{"svo-df", FileType::Svo, resources::open("resources/svo_df.comp")},
         ShaderOption{"svo-rope", FileType::Svo, resources::open("resources/svo_rope.comp")}
     };
 

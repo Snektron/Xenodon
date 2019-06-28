@@ -65,7 +65,7 @@ shaders = [
     'resources/dda.comp',
     'resources/svo_naive.comp',
     'resources/esvo.comp',
-    'resources/svo2.comp',
+    'resources/svo_df.comp',
     'resources/svo_rope.comp'
 ]
 
