@@ -9,16 +9,12 @@ layout(binding = 2) uniform sampler3D model;
 const int STEPS = 7000;
 
 vec3 get_voxel(ivec3 p) {
-    return texelFetch(model, p, 0).rgb * uniforms.params.density;
+    return texelFetch(model, p, 0).rgb;
 }
 
 vec3 trace(vec3 ro, vec3 rd) {
     vec3 rrd = 1.0 / rd;
     vec3 bias = rrd * ro;
-
-    // Intersect the bounding cube
-    float side = max_elem(vec3(textureSize(model, 0)));
-    float half_voxel_size = 0.5 / side;
 
     vec3 box_min = -bias;
     vec3 box_max = uniforms.params.model_dim.xyz * rrd - bias;
@@ -33,7 +29,6 @@ vec3 trace(vec3 ro, vec3 rd) {
 
     t_min = max(t_min, 0);
 
-    ivec3 end = ivec3(ro + rd * t_max);
     ro += rd * t_min;
     ivec3 pos = ivec3(ro);
 
@@ -42,18 +37,17 @@ vec3 trace(vec3 ro, vec3 rd) {
     ivec3 step = ivec3(sgn);
     vec3 side_dist = (sgn * (floor(ro) - ro + 0.5) + 0.5) * t_delta;
 
-    float t = 0;
+    float t = t_min;
 
     vec3 total = vec3(0);
-    int steps = abs(pos.x - end.x) + abs(pos.y - end.y) + abs(pos.z - end.z);
-    for (int i = 0; i < steps; ++i) {
+    while (t <= t_max) {
         bvec3 mask = lessThanEqual(side_dist.xyz, min(side_dist.yzx, side_dist.zxy));
 
         float t0 = min_elem(side_dist);
-        side_dist += mix(vec3(0), t_delta, mask);
         total += texelFetch(model, pos, 0).rgb * (t0 - t);
         t = t0;
 
+        side_dist += mix(vec3(0), t_delta, mask);
         pos += mix(ivec3(0), step, mask);
     }
 
@@ -74,8 +68,8 @@ void main() {
     vec3 ro = push.camera.translation.xyz * side;
     vec3 rd = ray(uv);
 
-    float density = voxel_density(rd) / side;
-    vec3 color = trace(ro, rd) * density;
+    float ec = voxel_emission_coeff(rd) / side;
+    vec3 color = trace(ro, rd) * ec;
 
     imageStore(render_target, ivec2(index), vec4(color, 1));
 }

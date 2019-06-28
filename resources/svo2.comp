@@ -92,8 +92,7 @@ void main() {
     vec3 ro = push.camera.translation.xyz + vec3(1);
     vec3 rd = ray(uv);
 
-    float density = voxel_density(rd);
-    vec4 color = trace(ro, rd) * density;
+    vec4 color = trace(ro, rd) * voxel_emission_coeff(rd);
 
     imageStore(render_target, ivec2(index), vec4(color.rgb, 1));
 }

@@ -16,7 +16,7 @@ struct RenderParameters {
     std::filesystem::path stats_save_path;
     Vec3F voxel_ratio = Vec3F(1, 1, 1);
     std::string_view camera;
-    float density = 1.f;
+    float emission_coeff = 1.f;
 };
 
 void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParameters& render_params);

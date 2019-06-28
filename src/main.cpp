@@ -98,7 +98,7 @@ namespace {
                 {args::string_opt(&opts.headless.output), "output path", "--output"},
                 {args::path_opt(&opts.direct.config), "config path", "--direct"},
                 {args::path_opt(&opts.xorg.multi_gpu_config), "config path", "--xorg-multi-gpu"},
-                {args::float_range_opt(&opts.render_params.density, 0.f), "density", "--density"},
+                {args::float_range_opt(&opts.render_params.emission_coeff, 0.f), "emission coefficient", "--emission-coeff", 'e'},
                 {args::string_opt(&opts.render_params.model_type_override), "model type", "--model-type"},
                 {args::string_opt(&opts.render_params.shader), "shader", "--shader", 's'},
                 {voxel_ratio_opt(&opts.render_params.voxel_ratio), "voxel dimension ratio", "--voxel-ratio", 'r'},

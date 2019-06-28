@@ -197,7 +197,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     auto shader_params = RenderContext::ShaderParameters {
         .voxel_ratio = Vec4F(render_params.voxel_ratio, 0),
         .model_dim = Vec4<unsigned>(static_cast<Vec3<unsigned>>(dim), 0),
-        .density = render_params.density
+        .emission_coeff = render_params.emission_coeff
     };
 
     auto renderer = MultiplexRenderer(display, std::move(algo), shader_params);
