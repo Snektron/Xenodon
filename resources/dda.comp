@@ -40,7 +40,7 @@ vec3 trace(vec3 ro, vec3 rd) {
     float t = t_min;
 
     vec3 total = vec3(0);
-    while (t <= t_max) {
+    while (t < t_max) {
         bvec3 mask = lessThanEqual(side_dist.xyz, min(side_dist.yzx, side_dist.zxy));
 
         float t0 = min_elem(side_dist);

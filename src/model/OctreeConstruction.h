@@ -41,7 +41,7 @@ struct StdDevHeuristic {
     double stddev;
 
     std::pair<Pixel, bool> grid_scan(const Grid& grid, const Vec3Sz& offset, size_t extent) const {
-        const auto [avg, stddev] = grid.vol_scan(offset, offset + extent);
+        const auto [avg, stddev] = grid.stddev_scan(offset, offset + extent);
         return {avg, stddev > this->stddev};
     }
 };

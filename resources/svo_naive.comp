@@ -8,7 +8,7 @@ const float MIN_STEP_SIZE = 0.00001;
 uint find(vec3 pos, out vec3 base, out float side) {
     float extent = 1.0;
 
-    uint index = 0;
+    uint index = 0; // root
     vec3 offset = vec3(0);
 
     while (true) {
@@ -26,7 +26,7 @@ uint find(vec3 pos, out vec3 base, out float side) {
     }
 }
 
-vec4 trace(vec3 ro, vec3 rd) {
+vec3 trace(vec3 ro, vec3 rd) {
     vec3 rrd = 1.0 / rd;
     vec3 bias = rrd * ro;
 
@@ -38,12 +38,12 @@ vec4 trace(vec3 ro, vec3 rd) {
 
     if (t_min > t_max) {
         // Ray misses bounding cube
-        return vec4(0);
+        return vec3(0);
     }
 
     t_min = max(t_min, 0);
 
-    vec4 total = vec4(0);
+    vec3 total = vec3(0);
 
     float t = t_min + MIN_STEP_SIZE;
 
@@ -63,7 +63,7 @@ vec4 trace(vec3 ro, vec3 rd) {
         float step = max(u_max - u_min, MIN_STEP_SIZE);
         t += step;
 
-        vec4 color = unpackUnorm4x8(model.nodes[node].color);
+        vec3 color = unpackUnorm4x8(model.nodes[node].color).rgb;
         total += color * step;
     }
 
@@ -83,7 +83,7 @@ void main() {
     vec3 ro = push.camera.translation.xyz;
     vec3 rd = ray(uv);
 
-    vec4 color = trace(ro, rd) * voxel_emission_coeff(rd);
+    vec3 color = trace(ro, rd) * voxel_emission_coeff(rd);
 
-    imageStore(render_target, ivec2(index), vec4(color.rgb, 1));
+    imageStore(render_target, ivec2(index), vec4(color, 1));
 }

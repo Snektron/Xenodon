@@ -3,80 +3,70 @@
 #include "common.glsl"
 #include "octree.glsl"
 
-vec4 trace(vec3 ro, vec3 rd) {
+vec3 trace(vec3 ro, vec3 rd) {
     vec3 rrd = 1.0 / rd;
     vec3 bias = rrd * ro;
 
     const uint cast_stack_depth = FLOAT_MANTISSA_BITS;
+    int sp = 0;
 
-    int stack_index = int(cast_stack_depth - 1);
+    uint node_stack[cast_stack_depth];
+    uint child_index_stack[cast_stack_depth];
+    float side_stack[cast_stack_depth];
 
-    // Extra slot to prevent out-of-bounds read
-    uint node_stack[cast_stack_depth + 1];
-    uint child_index_stack[cast_stack_depth + 1];
-    float side_stack[cast_stack_depth + 1];
+    uint node = 0;
+    uint child_idx = 0;
 
-    node_stack[cast_stack_depth] = 0;
-    child_index_stack[cast_stack_depth] = 8;
-
-    uint parent_idx = 0;
-    Node parent = model.nodes[parent_idx];
-
-    uint idx = 0;
-    vec3 pos = vec3(1);
+    vec3 pos = vec3(0);
     float side = 0.5;
 
-    vec4 total_color = vec4(0);
+    vec3 total = vec3(0);
 
-    while (stack_index < cast_stack_depth) {
+    while (true) {
         vec3 box_min = pos * rrd - bias;
         vec3 box_max = (pos + side) * rrd - bias;
 
         float t_min = max_elem(min(box_min, box_max));
         float t_max = min_elem(max(box_min, box_max));
 
-        if (t_min <= t_max) {
-            uint child = parent.children[idx];
+        if (t_min < t_max && t_max > 0) {
+            uint child = model.nodes[node].children[child_idx];
 
             if (model.nodes[child].is_leaf_depth >= LEAF_MASK) {
-                vec4 color = unpackUnorm4x8(model.nodes[child].color);
-                total_color += color * (t_max - t_min);
+                vec3 color = unpackUnorm4x8(model.nodes[child].color).rgb;
+                total += color * (t_max - max(t_min, 0));
             } else {
-                if (idx != 7) {
-                    node_stack[stack_index] = parent_idx;
-                    child_index_stack[stack_index] = idx;
-                    side_stack[stack_index] = side;
-                    --stack_index;
+                if (child_idx != 7) {
+                    node_stack[sp] = node;
+                    child_index_stack[sp] = child_idx;
+                    side_stack[sp] = side;
+                    ++sp;
                 }
 
                 side *= 0.5;
-
-                parent_idx = child;
-                parent = model.nodes[parent_idx];
-
-                idx = 0;
+                node = child;
+                child_idx = 0;
                 continue;
             }
         }
 
-        if (idx == 7) {
-            ++stack_index;
-
-            if (stack_index >= cast_stack_depth) {
-                return total_color;
+        if (child_idx == 7) {
+            --sp;
+            if (sp < 0) {
+                break;
             }
 
-            parent_idx = node_stack[stack_index];
-            idx = child_index_stack[stack_index];
-            side = side_stack[stack_index];
-
-            parent = model.nodes[parent_idx];
+            node = node_stack[sp];
+            child_idx = child_index_stack[sp];
+            side = side_stack[sp];
         }
 
         pos -= mod(pos, side * 2.0);
-        ++idx;
-        pos += mix(vec3(0), vec3(side), notEqual(uvec3(idx) & uvec3(4, 2, 1), uvec3(0)));
+        ++child_idx;
+        pos += mix(vec3(0), vec3(side), notEqual(uvec3(child_idx) & uvec3(4, 2, 1), uvec3(0)));
     }
+
+    return total;
 }
 
 void main() {
@@ -89,10 +79,10 @@ void main() {
     ivec2 pixel = uniforms.output_region.offset + ivec2(index);
     vec2 uv = vec2(pixel - uniforms.display_region.offset) / vec2(uniforms.display_region.extent);
 
-    vec3 ro = push.camera.translation.xyz + vec3(1);
+    vec3 ro = push.camera.translation.xyz;
     vec3 rd = ray(uv);
 
-    vec4 color = trace(ro, rd) * voxel_emission_coeff(rd);
+    vec3 color = trace(ro, rd) * voxel_emission_coeff(rd);
 
-    imageStore(render_target, ivec2(index), vec4(color.rgb, 1));
+    imageStore(render_target, ivec2(index), vec4(color, 1));
 }
