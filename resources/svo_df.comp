@@ -30,7 +30,6 @@ vec3 trace(vec3 ro, vec3 rd) {
         float t_max = min_elem(max(box_min, box_max));
 
         if (t_min < t_max && t_max > 0) {
-
             if (model.nodes[child].is_leaf_depth >= LEAF_MASK) {
                 vec3 color = unpackUnorm4x8(model.nodes[child].color).rgb;
                 total += color * (t_max - max(t_min, 0));
