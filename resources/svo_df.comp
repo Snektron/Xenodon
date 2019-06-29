@@ -12,7 +12,6 @@ vec3 trace(vec3 ro, vec3 rd) {
 
     uint node_stack[cast_stack_depth];
     uint child_index_stack[cast_stack_depth];
-    float side_stack[cast_stack_depth];
 
     uint node = 0;
     uint child_idx = 0;
@@ -23,6 +22,7 @@ vec3 trace(vec3 ro, vec3 rd) {
     vec3 total = vec3(0);
 
     while (true) {
+        uint child = model.nodes[node].children[child_idx];
         vec3 box_min = pos * rrd - bias;
         vec3 box_max = (pos + side) * rrd - bias;
 
@@ -30,7 +30,6 @@ vec3 trace(vec3 ro, vec3 rd) {
         float t_max = min_elem(max(box_min, box_max));
 
         if (t_min < t_max && t_max > 0) {
-            uint child = model.nodes[node].children[child_idx];
 
             if (model.nodes[child].is_leaf_depth >= LEAF_MASK) {
                 vec3 color = unpackUnorm4x8(model.nodes[child].color).rgb;
@@ -39,7 +38,6 @@ vec3 trace(vec3 ro, vec3 rd) {
                 if (child_idx != 7) {
                     node_stack[sp] = node;
                     child_index_stack[sp] = child_idx;
-                    side_stack[sp] = side;
                     ++sp;
                 }
 
@@ -58,7 +56,7 @@ vec3 trace(vec3 ro, vec3 rd) {
 
             node = node_stack[sp];
             child_idx = child_index_stack[sp];
-            side = side_stack[sp];
+            side = exp2(-float(model.nodes[node].is_leaf_depth & DEPTH_MASK)) * 0.5;
         }
 
         pos -= mod(pos, side * 2.0);
