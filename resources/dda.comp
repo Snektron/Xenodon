@@ -37,10 +37,10 @@ vec3 trace(vec3 ro, vec3 rd) {
     ivec3 step = ivec3(sgn);
     vec3 side_dist = (sgn * (floor(ro) - ro + 0.5) + 0.5) * t_delta;
 
-    float t = t_min;
+    float t = 0;
 
     vec3 total = vec3(0);
-    while (t < t_max) {
+    while (t < t_max - t_min) {
         bvec3 mask = lessThanEqual(side_dist.xyz, min(side_dist.yzx, side_dist.zxy));
 
         float t0 = min_elem(side_dist);
