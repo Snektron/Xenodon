@@ -103,7 +103,8 @@ namespace {
                 {args::string_opt(&opts.render_params.shader), "shader", "--shader", 's'},
                 {voxel_ratio_opt(&opts.render_params.voxel_ratio), "voxel dimension ratio", "--voxel-ratio", 'r'},
                 {args::path_opt(&opts.render_params.stats_save_path), "stats output", "--stats-output"},
-                {args::string_opt(&opts.render_params.camera), "camera", "--camera"}
+                {args::string_opt(&opts.render_params.camera), "camera", "--camera"},
+                {args::int_range_opt(&opts.render_params.repeat), "frame repeat", "--repeat"}
             },
             .positional = {
                 {args::path_opt(&opts.render_params.model_path), "model"}

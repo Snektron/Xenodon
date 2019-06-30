@@ -3,6 +3,7 @@
 
 #include <string_view>
 #include <filesystem>
+#include <cstddef>
 #include "utility/Span.h"
 #include "math/Vec.h"
 
@@ -17,6 +18,7 @@ struct RenderParameters {
     Vec3F voxel_ratio = Vec3F(1, 1, 1);
     std::string_view camera;
     float emission_coeff = 1.f;
+    size_t repeat = 1;
 };
 
 void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParameters& render_params);

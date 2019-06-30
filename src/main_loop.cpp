@@ -234,8 +234,11 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
 
         auto frame_end = std::chrono::high_resolution_clock::now();
         float dt = std::chrono::duration<float>(frame_end - last_frame).count();
-        if (controller->update(dt)) {
-            break;
+
+        if (frames % render_params.repeat == 0) {
+            if (controller->update(dt)) {
+                break;
+            }
         }
 
         last_frame = frame_end;
