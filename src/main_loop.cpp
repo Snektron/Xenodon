@@ -221,6 +221,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     auto start = std::chrono::high_resolution_clock::now();
     auto last_frame = start;
     size_t frames = 0;
+    size_t total_frames = 0;
 
     auto accum = RenderStatsAccumulator();
     accum.start();
@@ -228,6 +229,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
     LOGGER.log("Starting render loop...");
     while (!quit) {
         ++frames;
+        ++total_frames;
 
         renderer.render(controller->camera());
         accum(renderer.stats());
@@ -235,7 +237,7 @@ void main_loop(EventDispatcher& dispatcher, Display* display, const RenderParame
         auto frame_end = std::chrono::high_resolution_clock::now();
         float dt = std::chrono::duration<float>(frame_end - last_frame).count();
 
-        if (frames % render_params.repeat == 0) {
+        if (total_frames % render_params.repeat == 0) {
             if (controller->update(dt)) {
                 break;
             }
