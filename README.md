@@ -71,7 +71,9 @@ Creating movies or GIFs can be done by rendering an image for each frame. Includ
 $ build/xenodon render --headless headless.conf bunny.tif --camera ./camera-rotate.txt -e 10 --output 'out-{:0>3}.png'
 ```
 Images can then be converted to an MP4 file with ffmpeg:
-```$ ffmpeg -r 30 -f image2 -i out-%03d.png -vcodec libx264 -crf 25 -pix_fmt yuv420p out.mp4```
+```
+$ ffmpeg -r 30 -f image2 -i out-%03d.png -vcodec libx264 -crf 25 -pix_fmt yuv420p out.mp4
+```
 Or to a gif:
 ```
 $ ffmpeg -i out-%3d.png -vf palettegen palette.png
