@@ -1,0 +1,15 @@
+The xorg multi-gpu configuration file requires the following format:
+
+output {
+    displayname = "<xorg display>"
+    offset = (<offset x>, <offset y>)
+}
+
+This configuration file format can take any number of 'output' statements.
+<xorg display> is an X.org display identifier, which usually takes the form
+of 'hostname:display.screen'. The hostname can be discarded when it is the
+local computer. Display and screen take a numerical index of the display and
+screen. The primary screen can for example be :0.0. Note that when using
+multiple monitors on a single GPU, connected monitors are typically
+grouped into a virtual screen. <offset x> and <offset y> are offsets of the
+surfaces represented by their outputs, in pixels.

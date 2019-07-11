@@ -91,11 +91,11 @@ namespace {
     }
 
     FileType guess_file_type(const RenderParameters& render_params) {
-        if (!render_params.model_type_override.empty()) {
-            return parse_file_type(render_params.model_type_override);
+        if (!render_params.volume_type_override.empty()) {
+            return parse_file_type(render_params.volume_type_override);
         }
 
-        std::string_view extension = render_params.model_path.extension().native();
+        std::string_view extension = render_params.volume_path.extension().native();
         if (extension.empty()) {
             return FileType::Unknown;
         }
@@ -106,7 +106,7 @@ namespace {
         return parse_file_type(extension);
     }
 
-    const ShaderOption& select_shader(const RenderParameters& render_params, FileType model_type) {
+    const ShaderOption& select_shader(const RenderParameters& render_params, FileType volume_type) {
         if (!render_params.shader.empty()) {
             auto it = std::find_if(SHADER_OPTIONS.begin(), SHADER_OPTIONS.end(), [&](const auto& opt) {
                 return opt.option == render_params.shader;
@@ -114,13 +114,13 @@ namespace {
 
             if (it == SHADER_OPTIONS.end()) {
                 throw Error("Invalid shader '{}'", render_params.shader);
-            } else if (it->required_type == model_type) {
+            } else if (it->required_type == volume_type) {
                 return *it;
             } else {
                 throw Error(
                     "Shader '{}' is incompatible with model type '{}' (requires '{}')",
                     it->option,
-                    file_type_to_string(model_type),
+                    file_type_to_string(volume_type),
                     file_type_to_string(it->required_type)
                 );
             }
@@ -128,7 +128,7 @@ namespace {
             // Select a default: the first one of the right file type appearing in the SHADER_OPTIONS list
 
             for (const auto& opt : SHADER_OPTIONS) {
-                if (opt.required_type == model_type) {
+                if (opt.required_type == volume_type) {
                     return opt;
                 }
             }
@@ -155,14 +155,14 @@ namespace {
         switch (model_type) {
             case FileType::Tiff: {
                 // There is only one DDA shader, so that should always be picked here
-                auto grid = std::make_shared<Grid>(Grid::load_tiff(render_params.model_path));
+                auto grid = std::make_shared<Grid>(Grid::load_tiff(render_params.volume_path));
                 return {
                     std::make_unique<DdaRaytraceAlgorithm>(grid),
                     grid->dimensions()
                 };
             }
             case FileType::Svo: {
-                auto octree = std::make_shared<Octree>(Octree::load_svo(render_params.model_path));
+                auto octree = std::make_shared<Octree>(Octree::load_svo(render_params.volume_path));
                 return {
                     std::make_unique<SvoRaytraceAlgorithm>(shader.source, octree),
                     Vec3Sz(octree->side())

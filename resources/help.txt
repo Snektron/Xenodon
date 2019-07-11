@@ -1,70 +1,27 @@
 Usage:
-    {} [subcommand]
+    xenodon [subcommand] [subcommand options]
 
 Subcommands:
-help
-    Show this message.
+help [subcommand or topic]
+    Show help for a particular subcommand or topic, or without arguments, this message.
 
 sysinfo
     Detect system information such as connected monitors and video cards.
 
-render [flags] <mode> [mode flags]
-    Run the program in render mode. <mode> is one of the available presenting
-    modes, see below.
+convert [options] <source> <destination>
+    Convert 3D TIFF images to octrees.
 
-    Flags:
-    -q --quiet
-        Dont output logs to console.
+render [options] <volume>
+    Render a volume.
 
-    --log <file>
-        Output logs to <file>.
+xorg-multi-gpu
+    Information about the config format required for rendering with multiple
+    GPUs on X.org.
 
-    Presenting modes:
-    direct <config>
-        Direct presenting mode. This requires there to be no x-server
-        running and is able to run on a multi-gpu setup. <config> is a path to
-        a configuration file specifying the system setup. Entries in this file
-        have the following format:
+headless-config
+    Information about the config format required for rendering with the
+    headless backend.
 
-        device {{
-            vkindex = <number>
-            screen {{
-                vkindex = <number>
-                offset = (<offset x>, <offset y>)
-            }}
-        }}
-
-        input {{
-            keyboard = "/dev/input/path/to/keyboard"
-            mouse = "/dev/input/mouse0"
-        }}
-
-        The config file must have at least one device entry, and each device
-        entry must have at least one screen entry. The indices of the devices
-        and the screens are the vulkan indices and must be unique. They can be 
-        queried with the sysinfo subcommand. <offset>s are relative to (0, 0)
-        and must be positive, with the origin at the top-left. The input paths
-        are paths to the linux event files of the keyboard and mouse.
-
-    xorg
-        X11 presenting mode. This makes the program behave as if it were
-        a normal program, but it is not able to use multiple video cards.
-
-    headless <config>
-        Render an image without a monitor, and save it to a .png file.
-        <config> is a path of a config file, which has entries in the
-        following format:
-
-        device {{
-            vkindex = <number>
-            offset = (<offset x>, <offset y>)
-            extent = (<width>, <height>)
-        }}
-
-        There must be at least one device entry, but vkindex does not have
-        to be unique. The resulting image will have the size of the smallest
-        enclosing rectangle around the images of each device.
-
-        Additional flags:
-        -o --output <output image>
-            Override the output image location. The default is 'out.png'.
+direct-config
+    Information about the config format required for rendering with the
+    diret backend.

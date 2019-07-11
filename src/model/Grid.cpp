@@ -4,7 +4,7 @@
 #include <tiffio.h>
 #include <x86intrin.h>
 #include "core/Error.h"
-#include "core/Logger.h"
+#include "fmt/format.h"
 
 namespace {
     struct TiffCloser {
@@ -57,7 +57,10 @@ Grid Grid::load_tiff(const std::filesystem::path& path) {
         ++depth;
     } while (TIFFReadDirectory(tiff.get()));
 
-    auto data = std::make_unique<Pixel[]>(depth * width * height);
+    const size_t size = static_cast<size_t>(depth) * width * height;
+    auto data = std::make_unique<Pixel[]>(size);
+
+    fmt::print("{}x{}x{} = {} pixels\n", width, height, depth, size);
 
     size_t layer_stride = width * height;
     for (uint16_t i = 0; i < depth; ++i) {

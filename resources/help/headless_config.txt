@@ -1,0 +1,13 @@
+The headless backend configuration file has the following format:
+
+device {
+    vkindex = <gpu-index>
+    offset = (<offset x>, <offset-y>)
+    extent = (<surface width>, <surface height>)
+}
+
+Any number of device statements are allowed. <offset x> and <offset y> are
+offsets of the surfaces represented by their outputs, in pixels.
+<surace width> and <surface height> are the dimensions of the surface rendered
+by this GPU, in pixels. <gpu-index> is the index of the GPU as reported by
+'xenodon sysinfo'.

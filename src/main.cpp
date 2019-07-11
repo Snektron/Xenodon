@@ -18,9 +18,20 @@
 #include "convert.h"
 
 namespace {
-    void print_help(const char* program_name) {
-        fmt::print(resources::open("resources/help.txt"), program_name);
-    }
+    struct HelpTopic {
+        std::string_view topic;
+        std::string_view help_message;
+    };
+
+    constexpr const auto HELP_TOPICS = std::array {
+        HelpTopic{"help", resources::open("resources/help/help.txt")},
+        HelpTopic{"sysinfo", resources::open("resources/help/sysinfo.txt")},
+        HelpTopic{"convert", resources::open("resources/help/convert.txt")},
+        HelpTopic{"render", resources::open("resources/help/render.txt")},
+        HelpTopic{"xorg-multi-gpu", resources::open("resources/help/xorg_multi_gpu.txt")},
+        HelpTopic{"headless-config", resources::open("resources/help/headless_config.txt")},
+        HelpTopic{"direct-config", resources::open("resources/help/direct_config.txt")},
+    };
 
     struct RenderOptions {
         bool quiet = false;
@@ -99,7 +110,7 @@ namespace {
                 {args::path_opt(&opts.direct.config), "config path", "--direct"},
                 {args::path_opt(&opts.xorg.multi_gpu_config), "config path", "--xorg-multi-gpu"},
                 {args::float_range_opt(&opts.render_params.emission_coeff, 0.f), "emission coefficient", "--emission-coeff", 'e'},
-                {args::string_opt(&opts.render_params.model_type_override), "model type", "--model-type"},
+                {args::string_opt(&opts.render_params.volume_type_override), "volume type", "--volume-type"},
                 {args::string_opt(&opts.render_params.shader), "shader", "--shader", 's'},
                 {voxel_ratio_opt(&opts.render_params.voxel_ratio), "voxel dimension ratio", "--voxel-ratio", 'r'},
                 {args::path_opt(&opts.render_params.stats_save_path), "stats output", "--stats-output"},
@@ -107,7 +118,7 @@ namespace {
                 {args::int_range_opt(&opts.render_params.repeat), "frame repeat", "--repeat"}
             },
             .positional = {
-                {args::path_opt(&opts.render_params.model_path), "model"}
+                {args::path_opt(&opts.render_params.volume_path), "volume path"}
             }
         };
 
@@ -173,7 +184,7 @@ namespace {
                 display = create_headless_backend(opts.headless.config, output);
             }
         } catch (const Error& e) {
-            fmt::print("Error: Failed to initialize backend: {}", e.what());
+            fmt::print("Error: Failed to initialize backend: {}\n", e.what());
             return;
         }
 
@@ -183,11 +194,36 @@ namespace {
             fmt::print("Error: {}\n", e.what());
         }
     }
+
+    void help(const char* program_name, Span<const char*> args) {
+        if (args.empty()) {
+            fmt::print("{}", resources::open("resources/help.txt"));
+            return;
+        } else if (args.size() != 1) {
+            fmt::print("Error: Invalid usage of subcommand 'help', see '{} help'\n", program_name);
+            return;
+        }
+
+        auto topic = std::string_view(args.front());
+
+        auto it = std::find_if(
+            HELP_TOPICS.begin(),
+            HELP_TOPICS.end(),
+            [&topic](const HelpTopic& help) {
+            return help.topic == topic;
+        });
+
+        if (it != HELP_TOPICS.end()) {
+            fmt::print("{}", it->help_message);
+        } else {
+            fmt::print("Error: No such topic {}, see '{} help'\n", topic, program_name);
+        }
+    }
 }
 
 int main(int argc, const char* argv[]) {
     if (argc < 2) {
-        fmt::print("Error: Subcommand required, see `{} help`\n", argv[0]);
+        help(argv[0], nullptr);
         return 0;
     }
 
@@ -195,7 +231,7 @@ int main(int argc, const char* argv[]) {
     auto subcommand = std::string_view(argv[1]);
 
     if (subcommand == "help") {
-        print_help(argv[0]);
+        help(argv[0], args);
     } else if (subcommand == "sysinfo") {
         sysinfo();
     } else if (subcommand == "render") {
@@ -203,7 +239,7 @@ int main(int argc, const char* argv[]) {
     } else if (subcommand == "convert") {
         convert(args);
     } else {
-        fmt::print("Error: Invalid subcommand '{}', see `{} help`\n", subcommand, argv[0]);
+        fmt::print("Error: Invalid subcommand '{}', see '{} help'\n", subcommand, argv[0]);
     }
 
     return EXIT_SUCCESS;

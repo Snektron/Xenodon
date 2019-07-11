@@ -11,8 +11,8 @@ struct EventDispatcher;
 struct Display;
 
 struct RenderParameters {
-    std::filesystem::path model_path;
-    std::string_view model_type_override;
+    std::filesystem::path volume_path;
+    std::string_view volume_type_override;
     std::string_view shader;
     std::filesystem::path stats_save_path;
     Vec3F voxel_ratio = Vec3F(1, 1, 1);

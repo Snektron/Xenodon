@@ -1,0 +1,32 @@
+Usage:
+    xenodon convert [options] <source tiff path> <destination svo path>
+
+Utility function to convert a 3D stacked TIFF image at <source tiff path>
+into a sparse voxel octree at <destination svo path> which is accepted
+by Xenodon.
+
+Options:
+--dag
+    Compact this tree into a directed acyclic graph by eliminating equivalent
+    subtrees. The basis of this method is described in 'High Resolution Sparse
+    Voxel DAGs' by Kampe, Sintorn and Assarsson.
+
+--rope
+    Create a rope tree. Each leaf gets a point to its neighboring nodes, which
+    increases traversal speed. The basis of this method is described in 'Ray
+    Tracing with Rope Trees' by Havran, Bittner and Zara. These trees are
+    compatible with other types of sparse voxel octreetraversal algorithms.
+
+--chan-diff <value>
+    Prune the generated tree with a 'channel difference' heuristic: Each node
+    of which the corresponding voxels in each color channel differ by less
+    than <value> will be pruned. Values range from 0-255. Note that
+    --chan-diff 0 will create a lossless tree.
+
+--std-dev <value>
+    Prune the generated tree with a 'standard deviation' heuristic: Each node
+    of which the standard deviation of the corresponding voxel colors is less
+    than <value> will be pruned. The standard deviation is calculated over the
+    euclidean distance of the voxel color channel values to the average.
+    Values range from 0-255. Note that --std-dev 0 will create a lossless
+    tree, though --chan-diff 0 is usually faster for that.

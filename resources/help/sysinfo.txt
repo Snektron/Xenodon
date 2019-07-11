@@ -1,0 +1,26 @@
+Usage:
+    xenodon sysinfo
+
+Display information about the host system which is relevant to operating
+Xenodon. This includes listing GPUs detected, and listing their connected
+displays. Output has the following format:
+
+GPU <gpu-index>:
+    name: <gpu-name>
+    type: <type>
+    Display <gpu-index>:
+        name <display-name>
+        resolution: <width>x<height>
+
+GPU and Display entries can repeat. <gpu-index> and <display-index> can be
+used in configuration files as identifiers for these particular devices.
+
+Note that a Display in this context refers to a Vulkan VkDisplay object. A
+list of these objects is obtained through the host operating system, and
+on GNU/Linux this will not report anything if a display server such as X.org
+is running. This is perfectly normal, as these modes are intended for the
+direct rendering backend, which is intended for usage on systems without
+a display server running.
+
+If this utility function fails, it likely means Vulkan is not properly
+set up on your system.

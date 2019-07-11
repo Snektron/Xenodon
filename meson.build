@@ -70,7 +70,14 @@ shaders = [
 ]
 
 resources = [
-    'resources/help.txt'
+    'resources/help.txt',
+    'resources/help/help.txt',
+    'resources/help/sysinfo.txt',
+    'resources/help/convert.txt',
+    'resources/help/render.txt',
+    'resources/help/xorg_multi_gpu.txt',
+    'resources/help/headless_config.txt',
+    'resources/help/direct_config.txt',
 ]
 
 add_project_arguments(

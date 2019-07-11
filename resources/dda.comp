@@ -6,8 +6,6 @@
 
 layout(binding = 2) uniform sampler3D model;
 
-const int STEPS = 7000;
-
 vec3 get_voxel(ivec3 p) {
     return texelFetch(model, p, 0).rgb;
 }

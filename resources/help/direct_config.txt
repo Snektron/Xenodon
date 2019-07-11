@@ -1,0 +1,25 @@
+The direct backend configuration file has the following format:
+
+device {
+    vkindex = <gpu-index>
+    output {
+        vkindex = <output-index>
+        offset = (<offset-x>, <offset-y>)
+    }
+}
+
+input {
+    keyboard = "<keyboard event path>"
+}
+
+Any number of 'device' and 'output' statements are allowed, however each output
+should be unique. <gpu-index> is the index of the gpu and <output-index> the
+index of the display, as reported by 'xenodon sysinfo'. <offset x> and
+<offset y> are offsets of the surfaces represented by their outputs, in pixels.
+
+<keyboard event path> specifies the path to the Linux evdev input file for the
+keyboard to be used for input events. The easiest way to find this is by
+iterating the files found in /dev/input/by-id, and checking wether its the
+right input file by checking if 'cat /dev/input/by-id/file' prints stuff when
+one types on the desired keyboard. Note that all input events of this keyboard
+are totally grabbed by the program until it terminates.

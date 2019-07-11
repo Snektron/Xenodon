@@ -1,0 +1,5 @@
+Usage:
+    xenodon help [subcommand or topic]
+
+Display a help message about Xenodon, or a about a particular subcommand
+or topic.

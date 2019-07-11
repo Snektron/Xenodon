@@ -6,6 +6,7 @@
 #include <utility>
 #include <cstdint>
 #include <cstddef>
+#include <fmt/format.h>
 #include "model/Octree.h"
 #include "model/Grid.h"
 
@@ -79,6 +80,10 @@ namespace detail {
             if (inserted) {
                 // The node was not present in the cache, so insert it at the end of the list
                 this->nodes.push_back(node);
+
+                if (this->nodes.size() % 1'000'000 == 0) {
+                    fmt::print("{} nodes...\n", this->nodes.size());
+                }
             }
 
             return {actual_index, inserted};

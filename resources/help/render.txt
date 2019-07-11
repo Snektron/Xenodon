@@ -1,0 +1,117 @@
+Usage:
+    xenodon render [options] <volume path>
+
+Render the volumetric model at <volume path>. One of the rendering backends
+--xorg, --direct or --headless is required, see below for details.
+
+Options:
+-q --quiet
+    Dont output logging information to standard out.
+
+--log-output <file>
+    Output logging information to <file>.
+
+--repeat <amount>
+    Render each frame <amount> times. Default is 1.
+
+--volume-type <type>
+    Override the type of the rendered volume, which by default is guessed
+    from the file extension of the volume path. Accepted values are 'tiff',
+    'tif', and 'svo'.
+
+--camera <camera>
+    Render from viewpoints provided by <camera>. Possible alternatives
+    include:
+    --camera orbit
+        Render with an interactive orbit camera, which responds to keyboard
+        input. This option is the default. Controls are
+        - w/s to change pitch
+        - a/d to change yaw
+        - q/e to change roll
+        - up/down to change zoom
+
+    --camera <file>
+        Read camera transformations from <file>. Each line of this file
+        denotes a camera transformation, and has the following form:
+        <forward x> <forward y> <forward z> <up x> <up y> <up z> <position x>
+        <position y> <position z>
+        The forward vector denotes the camera viewing direction, the up vector
+        denotes the cameras up direction. The volume is always rendered at
+        position (0, 0, 0) and stretches to (voxel ratio). Note that the viewing
+        direction and the up vector must be perpendicular.
+
+-e --emission-coeff
+    Set the emission coefficient. Pixel colors are multiplied by this value.
+    The default is 1.
+
+-s --shader
+    Set the ray traversal algorithm. Possible values include:
+    dda
+        The dda traversal algorithm, a modified version of 'A Fast Voxel
+        Traversal Algorithm' by Amanatides and Woo. This algorithm can only be
+        used for TIFF files, and is the default for volumes with a .tif or
+        .tiff extension.
+
+    svo-naive
+        A naive traversal algorithm, which traverses the tree each iteration.
+        This algorithm only traverses sparse voxel octrees, and is the default
+        for volumes ending with a '.svo' extension.
+
+    svo-df
+        A depth-first traversal algorithm. This algorithm only traverses
+        sparse voxel octrees.
+
+    esvo
+        A traversal algorithm adapted from 'Efficient Sparse Voxel Octrees' by
+        Laine and Kerras. This algorithm only traverses sparse voxel octrees.
+
+    svo-rope
+        A traversal algorithm based on sparse voxel rope octrees, as generated
+        by the --rope option (see 'xenodon help convert'). This algorithm only
+        traverses sparse voxel octrees.
+
+-r --voxel-ratio <ratio x>:<ratio y>:<ratio z>
+    Set the scale size of the volume. Default is (1, 1, 1).
+
+--stats-output <file>
+    Save gathered statistics to <file>
+
+Render output backends:
+--xorg
+    Select the xorg rendering backend. This opens an xorg window to which
+    rendering output will be displayed.
+
+    Additional options:
+    --xorg-multi-gpu <config>
+        Use the xorg backend with multiple GPUs. This opens a set of
+        fullscreen windows on the screens connected to each GPU. please refer
+        to 'xenodon help xorg-multi-gpu' for further details on the format of
+        <config>.
+
+--headless <config>
+    Select the headless rendering backend. This allows the program to render
+    on a system with or without any monitor output attached, and saves
+    the output of each frame in a PNG-image on disk instead. No interaction
+    events are emitted by this backend. Please refer to 'xenodon help
+    headless-config' for further details on the format of <config>.
+
+    Additional options:
+    --discard-output
+        Don't save the output to disk. This option is particularly useful
+        when benchmarking.
+
+    --output <format>
+        Override the rendering output path format. This format is a fmt format
+        string, see https://fmt.dev/latest/syntax.html for details. The frame
+        number is given in the first argument. The default is 'out-{}.png',
+        for rendering images intended to be transformed into a video (for
+        example with ffmpeg), 'out-{:0>3}.png' is a useful value.
+
+--direct <config>
+    Select the direct rendering backend. This allows the program to render
+    directly to attached monitors, and requires there to be no display server
+    outputting to the monitors. This can be achieved on GNU/Linux by switching
+    to a different TTy, for example with ctrl+alt+F2. Xenodon can also be
+    launched on a system running this way via a remote shell such as SSH.
+    Please refer to 'xenodon help direct-config' for more information on the
+    format of <config>.
