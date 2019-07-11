@@ -7,6 +7,10 @@ Xenodon offers several different render output backends:
 - Direct: Render to monitors without a display server.
 
 ## Usage
+Basic usage of rendering with the X.org backend can be achieved by
+```
+$ build/xenodon render --xorg <volume>
+```
 See `xenodon help` for a detailed explanation on how to operate the program.
 
 ## Volumes
@@ -56,3 +60,26 @@ $ ninja
 
 ## Creating volumes
 The volumes tested with are created with the utility scripts make-tng-volume.py and make-bunny-volume located in tools/. See the comments in those files for further details.
+
+## Creating screenshots and movies/gifs
+Creating screenshot images can be done by rendering with the headless backend. Included in the project is a camera file which can be used to take a single screenshot. As an example:
+```
+$ build/xenodon render --headless headless.conf bunny.tif --camera ./camera-single.txt -e 10
+```
+Creating movies or GIFs can be done by rendering an image for each frame. Included is a camera file which perform a complete rotation around the volume in 150 frames:
+```
+$ build/xenodon render --headless headless.conf bunny.tif --camera ./camera-rotate.txt -e 10 --output 'out-{:0>3}.png'
+```
+Images can then be converted to an MP4 file with ffmpeg:
+```$ ffmpeg -r 30 -f image2 -i out-%03d.png -vcodec libx264 -crf 25 -pix_fmt yuv420p out.mp4```
+Or to a gif:
+```
+$ ffmpeg -i out-%3d.png -vf palettegen palette.png
+$ ffmpeg -i out-%3d.png -i palette.png -filter_complex "scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse" out.gif
+```
+
+## Benchmarking
+The program can be benchmarked with the headless backend by omitting saving images. Per-frame statistics and summaries can be saved with the `--stats-output` option. Included in the project is also a camera file which provides a good benchmark bases: the camera is rotated around the volume, zoomed in and rotated inside the volume.
+```
+$ build/xenodon render --headless headless.conf bunny.tif --camera ./camera.txt -e 10 --discard-output --stats-output stats.txt'
+```

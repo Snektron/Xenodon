@@ -74,7 +74,7 @@ Options:
     Set the scale size of the volume. Default is (1, 1, 1).
 
 --stats-output <file>
-    Save gathered statistics to <file>
+    Save gathered statistics to <file>.
 
 Render output backends:
 --xorg
