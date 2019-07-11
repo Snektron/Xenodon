@@ -29,13 +29,13 @@ A rendering of the CT-Scan of the stanford bunny. The original volume is 512 by 
 
 ![TNG-100](screenshots/TNG100.gif)
 
-Rendering of the TNG100-2 volume from the [TNG project](http://tng-project.org/). This volume is synthesized almost 700 million gas cells from snapshot 99, processed to a volume of 2048³.
+Rendering of the TNG100-2 volume from the [TNG project](http://tng-project.org/). This volume is synthesized almost 700 million gas cells from snapshot 99, processed to a volume of 2048³ voxels.
 
 ![TNG-300](screenshots/TNG300.png)
 
 Rendering of the TNG300-3 volume, also from the TNG project. 1024³ voxels constructed from over 224 million gas cells.
 
-It should be noted that the latter two do not reach interactive framerates. Tests results from a Nvidia Titan X (pascal) 12 GB reach about 20 FPS on the DDA algorithm.
+It should be noted that the latter two do not reach interactive framerates. Tests results from a Nvidia Titan X (pascal) 12 GB reach about 20 FPS with the DDA algorithm on the TNG300 volume, and below that for the TNG100 volume.
 
 ## Compiling
 Several dependencies are automatically downloaded and compiled, however, the X.org and Direct render output backends in particular require some additional system libraries:
