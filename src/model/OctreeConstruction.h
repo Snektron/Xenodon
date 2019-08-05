@@ -154,9 +154,9 @@ namespace detail {
         }
 
         // Check if the current area [offset, offset + extent] is partly outside the source grid
-        const bool partly_in_grid = offset.x + extent < ctx.grid.dimensions().x &&
-            offset.y + extent < ctx.grid.dimensions().y &&
-            offset.z + extent < ctx.grid.dimensions().z;
+        const bool partly_in_grid = offset.x + extent <= ctx.grid.dimensions().x &&
+            offset.y + extent <= ctx.grid.dimensions().y &&
+            offset.z + extent <= ctx.grid.dimensions().z;
 
         const auto [avg, split] = ctx.heuristic.grid_scan(ctx.grid, offset, extent);
 
