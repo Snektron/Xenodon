@@ -85,3 +85,10 @@ The program can be benchmarked with the headless backend by omitting saving imag
 ```
 $ build/xenodon render --headless headless.conf bunny.tif --camera ./camera.txt -e 10 --discard-output --stats-output stats.txt'
 ```
+
+## Known problems
+Currently (spec version 1.1.120), there is a problem with sparse voxel octree-type volumes of over 4 GB. This is caused by two limitations in the vulkan specifications:
+- maxStorageBufferRange specifies the maximum size of a buffer that can be bound to a shader. This limit is specified in a `uint32_t` which limits it to 4 GB. Even if this limit is changed to a VkDeviceSize, it's unlikely that manufacterers will up this limit. See [this issue](https://github.com/KhronosGroup/Vulkan-Docs/issues/1016).
+- VK_KHR_maintenance3 brings a limit of the maximum size of a single allocation. According to https://gpuinfo.org, many manufacterers seem to limit this to 4 GB as well. Grid-based volumes up to 4 GB were tested, i'm not sure if larger ones will have allocation problems.
+
+A solution could be to split the volume over multiple buffers somehow, but there is at the moment no intent for implementing that.
