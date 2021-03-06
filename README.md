@@ -6,6 +6,8 @@ Xenodon offers several different render output backends:
 - Headless: Render to a file
 - Direct: Render to monitors without a display server.
 
+This software was written as part of my bachelor thesis: https://theses.liacs.nl/1729.
+
 ## Usage
 Basic usage of rendering with the X.org backend can be achieved by
 ```
